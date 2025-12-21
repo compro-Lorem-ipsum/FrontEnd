@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@plugin "./hero.ts"; /* path relatif ke file CSS ini */
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+  font-family: Poppins;
+  src: url("../src/assets/fonts/Poppins-Medium.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+:root {
+  font-family: Poppins, sans-serif;
+  color: black;
+}
