@@ -238,6 +238,46 @@ const AdminDownloadRekap = () => {
     }
   };
 
+  // --- HANDLER DOWNLOAD DENGAN TOKEN ---
+  const handleDownload = async (endpoint: string, filename: string) => {
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Token dikirim di sini
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh file");
+      }
+
+      // 1. Ubah response menjadi Blob (Binary Large Object)
+      const blob = await response.blob();
+
+      // 2. Buat URL objek sementara dari blob tersebut
+      const url = window.URL.createObjectURL(blob);
+
+      // 3. Buat elemen <a> fiktif untuk men-trigger download
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename; // Nama file saat disimpan
+      document.body.appendChild(a);
+      a.click();
+
+      // 4. Bersihkan elemen dan URL
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      addToast({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat mengunduh file.",
+        color: "danger",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-10 p-5">
       {/* ================= REKAP ABSENSI ================= */}
@@ -248,7 +288,7 @@ const AdminDownloadRekap = () => {
           </h2>
           <Button
             onPress={() =>
-              window.open(`${baseUrl}/v1/presensi/export`, "_blank")
+              handleDownload("/v1/presensi/export", "rekap_absensi.xlsx")
             }
             className="bg-[#122C93] text-white font-semibold h-12 px-6"
             startContent={<FaDownload />}
@@ -308,7 +348,7 @@ const AdminDownloadRekap = () => {
           </h2>
           <Button
             onPress={() =>
-              window.open(`${baseUrl}/v1/laporan/export`, "_blank")
+              handleDownload("/v1/laporan/export", "rekap_patroli.xlsx")
             }
             className="bg-[#122C93] text-white font-semibold h-12 px-6"
             startContent={<FaDownload />}
@@ -346,7 +386,7 @@ const AdminDownloadRekap = () => {
                 <TableCell>{item.created_at.split(" ")[1]}</TableCell>
                 <TableCell>{item.pos_assigned}</TableCell>
                 <TableCell>{item.status_lokasi}</TableCell>
-                <TableCell className="max-w-[200px] truncate">
+                <TableCell className="max-w-10 truncate">
                   {item.keterangan}
                 </TableCell>
                 <TableCell>

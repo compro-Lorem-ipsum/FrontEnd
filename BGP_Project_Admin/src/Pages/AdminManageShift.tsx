@@ -23,7 +23,7 @@ import {
   addToast,
   Pagination,
 } from "@heroui/react";
-import { FaEdit, FaTrash, FaMagic, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { CalendarDate, parseDate } from "@internationalized/date";
 
 // --- INTERFACES ---
@@ -191,12 +191,22 @@ const AdminManageShift = () => {
       });
       const result = await res.json();
       const item = result.data;
+
+      // --- LOGIC CARI ID (WORKAROUND) ---
+      // Karena API tidak return satpam_id, kita cari dari listSatpam berdasarkan NIP
+      const foundSatpam = listSatpam.find((s) => s.nip === item.nip);
+      const recoveredSatpamId = foundSatpam ? String(foundSatpam.id) : "";
+
+      // Cari pos_id dari listPos berdasarkan nama_pos
+      const foundPos = listPos.find((p) => p.nama_pos === item.nama_pos);
+      const recoveredPosId = foundPos ? String(foundPos.id) : "";
+
       setFormData({
-        satpam_id: String(item.satpam_id),
-        pos_id: String(item.pos_id),
-        tanggal: parseDate(item.tanggal.split("T")[0]),
-        jam_mulai_shift: item.jam_mulai_shift,
-        jam_selesai_shift: item.jam_selesai_shift,
+        satpam_id: recoveredSatpamId, // Pakai ID hasil pencarian
+        pos_id: recoveredPosId, // Pakai ID hasil pencarian
+        tanggal: item.tanggal ? parseDate(item.tanggal.split("T")[0]) : null,
+        jam_mulai_shift: item.jam_mulai_shift || "",
+        jam_selesai_shift: item.jam_selesai_shift || "",
       });
       onOpenForm();
     } catch (error) {
@@ -306,14 +316,12 @@ const AdminManageShift = () => {
             <Button
               onPress={onOpenGenerate}
               className="bg-[#122C93] text-white h-12"
-              startContent={<FaMagic />}
             >
               Generate Jadwal +
             </Button>
             <Button
               onPress={handleOpenAdd}
               className="bg-[#122C93] text-white h-12"
-              startContent={<FaPlus />}
             >
               Tambah +
             </Button>
@@ -390,7 +398,10 @@ const AdminManageShift = () => {
                         }
                       >
                         {listSatpam.map((s) => (
-                          <SelectItem key={s.id}>
+                          <SelectItem
+                            key={s.id}
+                            textValue={`${s.nama} - ${s.nip}`}
+                          >
                             {s.nama} - {s.nip}
                           </SelectItem>
                         ))}
@@ -524,7 +535,10 @@ const AdminManageShift = () => {
                         }
                       >
                         {listSatpam.map((s) => (
-                          <SelectItem key={s.id}>
+                          <SelectItem
+                            key={String(s.id)}
+                            textValue={`${s.nama} - ${s.nip}`}
+                          >
                             {s.nama} - {s.nip}
                           </SelectItem>
                         ))}
