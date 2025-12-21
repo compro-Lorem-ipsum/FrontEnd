@@ -71,7 +71,8 @@ const ReportPatroli = () => {
           if (data.data) {
             const posArray = Array.isArray(data.data) ? data.data : [data.data];
             setListPos(posArray);
-            if (posArray.length === 1) setSelectedPos(String(posArray[0].pos_id));
+            if (posArray.length === 1)
+              setSelectedPos(String(posArray[0].pos_id));
           }
         })
         .catch((err) => console.error("Gagal fetch plotting pos:", err));
@@ -108,70 +109,74 @@ const ReportPatroli = () => {
   };
 
   const handleSubmit = async () => {
-  // 1. Validasi Kelengkapan
-  const isPhotosIncomplete = photos.some((p) => p === "" || p === null);
-  if (isPhotosIncomplete) return alert("Harap lengkapi 4 foto!");
-  if (!selectedSatpam || !selectedPos || !status) return alert("Harap lengkapi semua pilihan!");
+    // 1. Validasi Kelengkapan
+    const isPhotosIncomplete = photos.some((p) => p === "" || p === null);
+    if (isPhotosIncomplete) return alert("Harap lengkapi 4 foto!");
+    if (!selectedSatpam || !selectedPos || !status)
+      return alert("Harap lengkapi semua pilihan!");
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    // Mengirim ID sebagai string
-    formData.append("satpam_id", selectedSatpam);
-    formData.append("pos_id", selectedPos);
-    
-    // MENGIRIM TERPISAH (Sesuai permintaan Anda)
-    formData.append("latitude", coords.latitude);
-    formData.append("longitude", coords.longitude);
-    
-    // SESUAIKAN DENGAN ERROR: Backend meminta "status" (bukan status_lokasi)
-    formData.append("status_lokasi", status); 
-    
-    // Mengirim catatan/keterangan
-    formData.append("keterangan", notes || "-");
+      // Mengirim ID sebagai string
+      formData.append("satpam_id", selectedSatpam);
+      formData.append("pos_id", selectedPos);
 
-    // Mengirim 4 Foto
-    photos.forEach((photo, i) => {
-      const blob = dataURLtoBlob(photo);
-      if (blob) {
-        formData.append("foto_laporan", blob, `patroli_${i + 1}.jpg`);
+      // MENGIRIM TERPISAH (Sesuai permintaan Anda)
+      formData.append("latitude", coords.latitude);
+      formData.append("longitude", coords.longitude);
+
+      // SESUAIKAN DENGAN ERROR: Backend meminta "status" (bukan status_lokasi)
+      formData.append("status_lokasi", status);
+
+      // Mengirim catatan/keterangan
+      formData.append("keterangan", notes || "-");
+
+      // Mengirim 4 Foto
+      photos.forEach((photo, i) => {
+        const blob = dataURLtoBlob(photo);
+        if (blob) {
+          formData.append("foto_laporan", blob, `patroli_${i + 1}.jpg`);
+        }
+      });
+
+      // DEBUG: Cek isi di Console sebelum kirim
+      console.log("Data yang dikirim ke backend:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
       }
-    });
 
-    // DEBUG: Cek isi di Console sebelum kirim
-    console.log("Data yang dikirim ke backend:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
+      const res = await fetch("http://localhost:5500/v1/laporan/", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        onOpen();
+      } else {
+        // Jika masih error "Missing required fields", cek result.message di sini
+        console.error("Gagal dari server:", result);
+        alert(`Gagal: ${result.message}`);
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan koneksi ke server.");
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch("http://localhost:5500/v1/laporan/", {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await res.json();
-    if (res.ok) {
-      onOpen();
-    } else {
-      // Jika masih error "Missing required fields", cek result.message di sini
-      console.error("Gagal dari server:", result);
-      alert(`Gagal: ${result.message}`);
-    }
-  } catch (error) {
-    alert("Terjadi kesalahan koneksi ke server.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F5F7FF] px-6 py-10 text-[#122C93]">
       <div className="text-center mb-6">
         <h2 className="text-[20px] font-bold">Data Hasil Patroli</h2>
         <p className="text-[14px] opacity-80">
-          Koordinat: {coords.latitude ? `${coords.latitude}, ${coords.longitude}` : "Mencari lokasi..."}
+          Koordinat:{" "}
+          {coords.latitude
+            ? `${coords.latitude}, ${coords.longitude}`
+            : "Mencari lokasi..."}
         </p>
       </div>
 
@@ -183,7 +188,11 @@ const ReportPatroli = () => {
             onClick={() => handleCapture(i)}
             className="aspect-[3/4] bg-white rounded-xl border-2 border-dashed border-[#122C93] flex items-center justify-center overflow-hidden cursor-pointer"
           >
-            {p ? <img src={p} className="w-full h-full object-cover" /> : <span className="text-xl font-bold">+</span>}
+            {p ? (
+              <img src={p} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold">+</span>
+            )}
           </div>
         ))}
       </div>
@@ -194,10 +203,14 @@ const ReportPatroli = () => {
           label="Petugas"
           placeholder="Pilih Nama"
           selectedKeys={selectedSatpam ? [selectedSatpam] : []}
-          onSelectionChange={(k) => setSelectedSatpam(Array.from(k)[0] as string)}
+          onSelectionChange={(k) =>
+            setSelectedSatpam(Array.from(k)[0] as string)
+          }
         >
           {listSatpam.map((s) => (
-            <SelectItem key={String(s.id)} textValue={s.nama}>{s.nama}</SelectItem>
+            <SelectItem key={String(s.id)} textValue={s.nama}>
+              {s.nama}
+            </SelectItem>
           ))}
         </Select>
 
@@ -210,7 +223,12 @@ const ReportPatroli = () => {
           onSelectionChange={(k) => setSelectedPos(Array.from(k)[0] as string)}
         >
           {listPos.map((p) => (
-            <SelectItem key={String(p.pos_id)} textValue={p.nama_pos || `Pos ${p.pos_id}`}>{p.nama_pos || `Pos ${p.pos_id}`}</SelectItem>
+            <SelectItem
+              key={String(p.pos_id)}
+              textValue={p.nama_pos || `Pos ${p.pos_id}`}
+            >
+              {p.nama_pos || `Pos ${p.pos_id}`}
+            </SelectItem>
           ))}
         </Select>
 
@@ -221,8 +239,12 @@ const ReportPatroli = () => {
           selectedKeys={status ? [status] : []}
           onSelectionChange={(k) => setStatus(Array.from(k)[0] as string)}
         >
-          <SelectItem key="Aman" textValue="Aman">Aman</SelectItem>
-          <SelectItem key="Tidak Aman" textValue="Tidak Aman">Tidak Aman</SelectItem>
+          <SelectItem key="Aman" textValue="Aman">
+            Aman
+          </SelectItem>
+          <SelectItem key="Tidak Aman" textValue="Tidak Aman">
+            Tidak Aman
+          </SelectItem>
         </Select>
 
         {/* Input Keterangan */}
@@ -244,10 +266,19 @@ const ReportPatroli = () => {
 
       <Modal isOpen={isOpen} onClose={onClose} backdrop="blur" hideCloseButton>
         <ModalContent>
-          <ModalHeader className="justify-center pt-6 text-xl">Laporan Berhasil</ModalHeader>
-          <ModalBody className="text-center pb-6">Data patroli telah terkirim.</ModalBody>
+          <ModalHeader className="justify-center pt-6 text-xl">
+            Laporan Berhasil
+          </ModalHeader>
+          <ModalBody className="text-center pb-6">
+            Data patroli telah terkirim.
+          </ModalBody>
           <ModalFooter>
-            <Button className="bg-[#122C93] text-white w-full h-12" onPress={() => navigate("/")}>Selesai</Button>
+            <Button
+              className="bg-[#122C93] text-white w-full h-12"
+              onPress={() => navigate("/")}
+            >
+              Selesai
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -65,6 +65,10 @@ const TakePhoto_Patroli = () => {
     });
   };
 
+  const handleRetake = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="flex flex-col items-center text-[#122C93] p-10 justify-between min-h-screen bg-[#F5F7FF]">
       <div className="text-center">
@@ -81,7 +85,11 @@ const TakePhoto_Patroli = () => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <img src={photoData!} className="w-full h-full object-cover" alt="Captured" />
+          <img
+            src={photoData!}
+            className="w-full h-full object-cover"
+            alt="Captured"
+          />
         )}
         <canvas ref={canvasRef} className="hidden" />
       </div>
@@ -102,11 +110,7 @@ const TakePhoto_Patroli = () => {
             >
               Gunakan Foto
             </Button>
-            <Button
-              variant="flat"
-              color="danger"
-              onPress={() => setPhotoTaken(false)}
-            >
+            <Button variant="flat" color="danger" onPress={handleRetake}>
               Foto Ulang
             </Button>
           </div>
