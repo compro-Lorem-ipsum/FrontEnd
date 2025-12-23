@@ -47,6 +47,12 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
     },
   });
 
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
   return position ? (
     <Marker
       position={position}
@@ -120,6 +126,55 @@ const AdminManagePosUtama = () => {
     fetchData();
   }, []);
 
+  const updateCoordinates = (latlng: LatLng) => {
+    setSelectedPosition(latlng);
+    setFormData((prev) => ({
+      ...prev,
+      latitude: latlng.lat.toString(),
+      longitude: latlng.lng.toString(),
+    }));
+  };
+
+  const handleManualCoordChange = (
+    field: "latitude" | "longitude",
+    value: string
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    const latVal =
+      field === "latitude" ? parseFloat(value) : parseFloat(formData.latitude);
+    const lngVal =
+      field === "longitude"
+        ? parseFloat(value)
+        : parseFloat(formData.longitude);
+
+    if (!isNaN(latVal) && !isNaN(lngVal)) {
+      setSelectedPosition(new LatLng(latVal, lngVal));
+    }
+  };
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const newPos = new LatLng(latitude, longitude);
+          updateCoordinates(newPos);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          addToast({
+            title: "Lokasi Gagal",
+            description: "Pastikan GPS aktif dan izin diberikan.",
+            color: "warning",
+          });
+        }
+      );
+    } else {
+      console.error("Geolocation not supported");
+    }
+  };
+
   // Buka modal tambah
   const handleOpenAdd = () => {
     setFormData({
@@ -131,6 +186,7 @@ const AdminManagePosUtama = () => {
       created_at: "",
     });
     setSelectedPosition(null);
+    getCurrentLocation();
     onOpen();
   };
 
@@ -299,24 +355,22 @@ const AdminManagePosUtama = () => {
                       variant="underlined"
                       size="lg"
                       label="Latitude"
-                      value={
-                        selectedPosition
-                          ? selectedPosition.lat.toString()
-                          : formData.latitude
+                      placeholder="-6.xxxxx"
+                      value={formData.latitude}
+                      onChange={(e) =>
+                        handleManualCoordChange("latitude", e.target.value)
                       }
-                      readOnly
                     />
                     <Input
                       type="text"
                       variant="underlined"
                       size="lg"
                       label="Longitude"
-                      value={
-                        selectedPosition
-                          ? selectedPosition.lng.toString()
-                          : formData.longitude
+                      placeholder="107.xxxxx"
+                      value={formData.longitude}
+                      onChange={(e) =>
+                        handleManualCoordChange("longitude", e.target.value)
                       }
-                      readOnly
                     />
                   </div>
 
@@ -326,7 +380,8 @@ const AdminManagePosUtama = () => {
                       Titik Koordinat Maps
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Klik di peta untuk memilih lokasi, atau drag marker.
+                      Klik di peta untuk memilih lokasi, drag marker, atau isi
+                      Latitude/Longitude manual.
                     </p>
                     <div className="w-full h-[400px] rounded-lg overflow-hidden z-10">
                       <MapContainer
@@ -341,7 +396,7 @@ const AdminManagePosUtama = () => {
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <LocationMarker
                           position={selectedPosition}
-                          setPosition={setSelectedPosition}
+                          setPosition={updateCoordinates}
                         />
                       </MapContainer>
                     </div>
