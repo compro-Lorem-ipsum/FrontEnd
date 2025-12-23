@@ -10,8 +10,6 @@ const TakePhoto_Patroli = () => {
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoData, setPhotoData] = useState<string | null>(null);
 
-  // 1. Ambil data allPhotos yang dikirim dari ReportPatroli
-  // Gunakan nama 'allPhotos' agar sinkron dengan state di ReportPatroli
   const allPhotos = location.state?.allPhotos || Array(4).fill("");
   const indexToReplace = location.state?.indexToReplace;
 
@@ -55,12 +53,11 @@ const TakePhoto_Patroli = () => {
   };
 
   const handleNext = () => {
-    // 2. KUNCI PERBAIKAN: Kirimkan kembali 'allPhotos' ke halaman Report
     navigate("/ReportPatroli", {
       state: {
         newPhoto: photoData,
         indexToReplace: indexToReplace,
-        allPhotos: allPhotos, // Ini yang menjaga agar foto lain tidak hilang
+        allPhotos: allPhotos,
       },
     });
   };

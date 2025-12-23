@@ -26,12 +26,13 @@ const Verification = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // State untuk menyimpan data hasil hit API
   const [resultData, setResultData] = useState<AttendanceResponse | null>(null);
 
   const photoFromState = location.state?.photo;
   const latitude = location.state?.latitude;
   const longitude = location.state?.longitude;
+
+  const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const dataURLtoBlob = (dataurl: string) => {
     let arr = dataurl.split(","),
@@ -55,7 +56,7 @@ const Verification = () => {
       formData.append("latitude", latitude || "0");
       formData.append("longitude", longitude || "0");
 
-      const response = await fetch("http://localhost:5500/v1/presensi/", {
+      const response = await fetch(`${BASE_API_URL}/v1/presensi/`, {
         method: "POST",
         body: formData,
       });
@@ -63,9 +64,8 @@ const Verification = () => {
       const result = await response.json();
 
       if (response.ok) {
-        // Simpan data response (nama, nip, status, dll) ke state
         setResultData(result);
-        onOpen(); // Buka modal sukses
+        onOpen(); 
       } else {
         alert(result.message || "Gagal melakukan presensi.");
       }

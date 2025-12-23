@@ -31,6 +31,8 @@ const ReportPatroli = () => {
   const [coords, setCoords] = useState({ latitude: "", longitude: "" });
   const [loading, setLoading] = useState(false);
 
+  const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     if (routeLocation.state?.newPhoto) {
       const { newPhoto, indexToReplace } = routeLocation.state;
@@ -46,7 +48,7 @@ const ReportPatroli = () => {
   }, [routeLocation.state]);
 
   useEffect(() => {
-    fetch("http://localhost:5500/v1/satpams/?mode=dropdown")
+    fetch(`${BASE_API_URL}/v1/satpams/?mode=dropdown`)
       .then((res) => res.json())
       .then((data) => setListSatpam(data.satpams || []))
       .catch((err) => console.error("Gagal fetch satpam:", err));
@@ -65,7 +67,7 @@ const ReportPatroli = () => {
 
   useEffect(() => {
     if (selectedSatpam) {
-      fetch(`http://localhost:5500/v1/plotting/route/${selectedSatpam}`)
+      fetch(`${BASE_API_URL}/v1/plotting/route/${selectedSatpam}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.data) {
@@ -109,7 +111,6 @@ const ReportPatroli = () => {
   };
 
   const handleSubmit = async () => {
-    // 1. Validasi Kelengkapan
     const isPhotosIncomplete = photos.some((p) => p === "" || p === null);
     if (isPhotosIncomplete) return alert("Harap lengkapi 4 foto!");
     if (!selectedSatpam || !selectedPos || !status)
@@ -120,21 +121,19 @@ const ReportPatroli = () => {
     try {
       const formData = new FormData();
 
-      // Mengirim ID sebagai string
       formData.append("satpam_id", selectedSatpam);
       formData.append("pos_id", selectedPos);
 
-      // MENGIRIM TERPISAH (Sesuai permintaan Anda)
+   
       formData.append("latitude", coords.latitude);
       formData.append("longitude", coords.longitude);
 
-      // SESUAIKAN DENGAN ERROR: Backend meminta "status" (bukan status_lokasi)
+    
       formData.append("status_lokasi", status);
 
-      // Mengirim catatan/keterangan
       formData.append("keterangan", notes || "-");
 
-      // Mengirim 4 Foto
+     
       photos.forEach((photo, i) => {
         const blob = dataURLtoBlob(photo);
         if (blob) {
@@ -142,13 +141,12 @@ const ReportPatroli = () => {
         }
       });
 
-      // DEBUG: Cek isi di Console sebelum kirim
       console.log("Data yang dikirim ke backend:");
       for (let pair of formData.entries()) {
         console.log(pair[0] + ": " + pair[1]);
       }
 
-      const res = await fetch("http://localhost:5500/v1/laporan/", {
+      const res = await fetch(`${BASE_API_URL}/v1/laporan/`, {
         method: "POST",
         body: formData,
       });
@@ -157,7 +155,6 @@ const ReportPatroli = () => {
       if (res.ok) {
         onOpen();
       } else {
-        // Jika masih error "Missing required fields", cek result.message di sini
         console.error("Gagal dari server:", result);
         alert(`Gagal: ${result.message}`);
       }

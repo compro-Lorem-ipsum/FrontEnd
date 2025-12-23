@@ -30,8 +30,6 @@ const TakePhoto = () => {
 
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
-
-    // 1. Ambil Lokasi saat ambil foto
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -47,7 +45,6 @@ const TakePhoto = () => {
       );
     }
 
-    // 2. Gambar ke canvas
     const video = videoRef.current;
     const canvas = canvasRef.current;
     canvas.width = video.videoWidth;
@@ -62,7 +59,6 @@ const TakePhoto = () => {
   };
 
   const handleNavigate = () => {
-    // Kirim foto dan lokasi ke halaman verifikasi
     navigate("/Verification", {
       state: {
         photo: photoData,
