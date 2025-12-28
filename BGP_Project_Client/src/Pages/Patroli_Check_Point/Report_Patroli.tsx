@@ -124,16 +124,13 @@ const ReportPatroli = () => {
       formData.append("satpam_id", selectedSatpam);
       formData.append("pos_id", selectedPos);
 
-   
       formData.append("latitude", coords.latitude);
       formData.append("longitude", coords.longitude);
 
-    
       formData.append("status_lokasi", status);
 
       formData.append("keterangan", notes || "-");
 
-     
       photos.forEach((photo, i) => {
         const blob = dataURLtoBlob(photo);
         if (blob) {
@@ -262,7 +259,13 @@ const ReportPatroli = () => {
         </Button>
       </div>
 
-      <Modal isOpen={isOpen} onClose={onClose} backdrop="blur" hideCloseButton>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        backdrop="blur"
+        placement="center"
+        hideCloseButton
+      >
         <ModalContent>
           <ModalHeader className="justify-center pt-6 text-xl">
             Laporan Berhasil
