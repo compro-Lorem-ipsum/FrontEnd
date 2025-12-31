@@ -104,7 +104,7 @@ const AdminDownloadRekap = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
-      setDataAbsen((result.data || []).slice(0, 3));
+      setDataAbsen((result.data || []).slice(0, 4));
     } catch (error) {
       console.error(error);
     } finally {
@@ -120,7 +120,7 @@ const AdminDownloadRekap = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
-      setDataPatroli(result.data || []);
+      setDataPatroli((result.data || []).slice(0, 4));
     } catch (error) {
       console.error(error);
     } finally {
