@@ -1,5 +1,14 @@
-### SETUP TUTOR
-clone dulu make git clone {url buat clonenya}
+### SETUP ENV
+1. Install terlebih dulu node.js di website https://nodejs.org/en/download
+2. Pastikan kembali node sudah berhasil di install di setup anda
+3. Cek npm --version
+4. Jika tidak ada maka lakukan npm install npm
+5. Cek kembali npm nya
+6. masuk ke directory bgp (pilih salah 1 ya)
+7. ketik ini di cmd untuk install dependensi "npm install"
+8. lakukan hal yang serupa di bgp 1 nya
+9. untuk menjalankan ini terpisah tidak bisa dalam 1 kali perintah karena beda direktori
+10. env diganti apabila ingin mengganti domain API
 
 #### FOR BGP_ADMIN
 1. cd BGP_Project_Admin
