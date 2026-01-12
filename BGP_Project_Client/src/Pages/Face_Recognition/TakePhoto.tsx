@@ -9,7 +9,6 @@ const TakePhoto = () => {
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoData, setPhotoData] = useState<string | null>(null);
 
-  // State untuk lokasi
   const [location, setLocation] = useState({ latitude: "", longitude: "" });
 
   useEffect(() => {
@@ -30,6 +29,7 @@ const TakePhoto = () => {
 
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -40,18 +40,23 @@ const TakePhoto = () => {
         },
         (err) => {
           console.error("Gagal ambil lokasi", err);
-          alert("Izin lokasi diperlukan untuk absensi.");
         }
       );
     }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    
     const ctx = canvas.getContext("2d");
     if (ctx) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
       const dataUrl = canvas.toDataURL("image/png");
       setPhotoData(dataUrl);
       setPhotoTaken(true);
@@ -82,6 +87,8 @@ const TakePhoto = () => {
               ref={videoRef}
               autoPlay
               playsInline
+              
+              style={{ transform: "scaleX(-1)" }} 
               className="object-cover w-full h-full rounded-xl"
             />
           ) : (
