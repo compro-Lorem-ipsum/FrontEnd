@@ -97,8 +97,11 @@ const TakePhoto = () => {
           )}
         </div>
         {photoTaken && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 flex flex-col items-center gap-5">
             Lokasi Tercatat: {location.latitude}, {location.longitude}
+            <span className="text-[#122C93] font-semibold">
+              Pastikan Lokasi Sudah Didapatkan
+            </span>
           </p>
         )}
       </div>

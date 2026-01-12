@@ -10,14 +10,16 @@ import {
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-// Interface untuk menampung response API
 interface AttendanceResponse {
-  action: string;
+  action?: string;
   message: string;
-  status: string;
-  nama: string;
-  nip: string;
-  time: string;
+  status?: string;
+  nama?: string;
+  nip?: string;
+  time?: string;
+  similarity?: number;
+  distance?: string;
+  allowed?: string;
 }
 
 const Verification = () => {
@@ -63,15 +65,41 @@ const Verification = () => {
 
       const result = await response.json();
 
-      if (response.ok) {
+      // --- LOGIKA PENANGANAN RESPONSE ---
+
+      // 1. Cek Error Lokasi
+      if (result.message && result.message.includes("Location invalid")) {
         setResultData(result);
         onOpen();
-      } else {
-        alert(result.message || "Gagal melakukan presensi.");
+      }
+      // 2. Cek Error Wajah
+      else if (result.message === "Face not recognized") {
+        setResultData(result);
+        onOpen();
+      }
+      // 3. Cek Error Jadwal
+      else if (result.message === "No schedule found for this Satpam today.") {
+        setResultData(result);
+        onOpen();
+      }
+      // 4. Sukses
+      else if (response.ok) {
+        setResultData(result);
+        onOpen();
+      }
+      // 5. Error Lainnya dari Server (selain 3 di atas)
+      else {
+        // Kita anggap ini error server umum, tampilkan pesan dari API atau default
+        setResultData({
+          message: result.message || "SERVER_ERROR_DEFAULT",
+        });
+        onOpen();
       }
     } catch (error) {
       console.error("Error submitting attendance:", error);
-      alert("Terjadi kesalahan jaringan.");
+      // 6. Error Jaringan / Catch (Fetch gagal total)
+      setResultData({ message: "NETWORK_ERROR" });
+      onOpen();
     } finally {
       setIsSubmitting(false);
     }
@@ -80,6 +108,21 @@ const Verification = () => {
   const handleCancel = () => {
     navigate("/TakePhoto");
   };
+
+  // --- HELPER VARIABLES ---
+  const isLocationInvalid = resultData?.message?.includes("Location invalid");
+  const isFaceMismatch = resultData?.message === "Face not recognized";
+  const isNoSchedule =
+    resultData?.message === "No schedule found for this Satpam today.";
+
+  // Cek apakah error Jaringan atau Server Error umum
+  const isServerError =
+    resultData?.message === "NETWORK_ERROR" ||
+    resultData?.message === "SERVER_ERROR_DEFAULT" ||
+    (!isLocationInvalid &&
+      !isFaceMismatch &&
+      !isNoSchedule &&
+      !resultData?.time);
 
   return (
     <>
@@ -93,7 +136,6 @@ const Verification = () => {
 
         <div className="flex flex-col items-center mt-4 gap-10">
           <div className="flex flex-col items-center mt-4 text-center">
-            {/* Tampilkan Absensi Awal/Akhir secara statis sebelum konfirmasi */}
             <p className="text-[20px] font-semibold">Konfirmasi Absensi</p>
             <p className="text-[20px] font-medium">
               Waktu Scan:{" "}
@@ -113,8 +155,6 @@ const Verification = () => {
           </div>
 
           <div className="flex flex-col items-center mt-3">
-            {/* Nama dan NIP di bawah ini tetap Yohanes sebagai Placeholder 
-                sebelum divalidasi oleh sistem/API */}
             <p className="text-[20px] font-semibold text-[#122C93]">
               Menunggu Konfirmasi Anda
             </p>
@@ -139,7 +179,7 @@ const Verification = () => {
         </div>
       </div>
 
-      {/* MODAL HASIL ABSENSI (Dinamis dari Response API) */}
+      {/* --- MODAL DINAMIS --- */}
       <Modal
         backdrop="blur"
         isOpen={isOpen}
@@ -147,52 +187,317 @@ const Verification = () => {
         placement="center"
         className="mx-5"
         isDismissable={false}
+        hideCloseButton={true}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col items-center text-[#122C93] pt-8">
-                <h2 className="text-[22px] font-bold">
-                  {resultData?.message || "Berhasil"}
-                </h2>
-              </ModalHeader>
+              {/* === KONDISI 1: ERROR LOKASI === */}
+              {isLocationInvalid ? (
+                <>
+                  <ModalHeader className="flex flex-col items-center text-[#A80808] pt-8">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8 text-[#A80808]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h2 className="text-[22px] font-bold text-center">
+                      Lokasi Tidak Valid
+                    </h2>
+                  </ModalHeader>
 
-              <ModalBody className="flex flex-col items-center gap-4 py-6">
-                <div className="text-center">
-                  <p className="text-[18px] font-semibold">
-                    {resultData?.nama}
-                  </p>
-                  <p className="text-[16px] text-gray-500">{resultData?.nip}</p>
-                </div>
+                  <ModalBody className="flex flex-col items-center gap-4 py-4 text-center">
+                    <p className="text-[16px] text-gray-600 px-2">
+                      Anda berada di luar jangkauan area presensi.
+                    </p>
+                    <div className="bg-red-50 p-4 rounded-xl w-full border border-red-100 flex flex-col gap-2">
+                      <div className="flex justify-between items-center border-b border-red-200 pb-2">
+                        <span className="text-[14px] text-gray-600">
+                          Jarak Anda
+                        </span>
+                        <span className="text-[16px] font-bold text-[#A80808]">
+                          {resultData?.distance}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-[14px] text-gray-600">
+                          Maksimal
+                        </span>
+                        <span className="text-[16px] font-bold text-green-700">
+                          {resultData?.allowed}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[13px] text-gray-400 italic">
+                      Silakan bergerak mendekat ke titik lokasi (Pos Utama).
+                    </p>
+                  </ModalBody>
 
-                <div className="bg-gray-100 p-4 rounded-xl w-full text-center">
-                  <p className="text-[14px]">Waktu Absensi</p>
-                  <p className="text-[20px] font-bold">{resultData?.time}</p>
-                </div>
+                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                    <Button
+                      variant="bordered"
+                      className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
+                      onPress={onClose}
+                    >
+                      Cek GPS Ulang
+                    </Button>
+                    <Button
+                      className="bg-[#122C93] text-white w-full h-12 font-semibold"
+                      onPress={() => {
+                        onClose();
+                        handleCancel();
+                      }}
+                    >
+                      Kembali
+                    </Button>
+                  </ModalFooter>
+                </>
+              ) : isFaceMismatch ? (
+                /* === KONDISI 2: ERROR WAJAH === */
+                <>
+                  <ModalHeader className="flex flex-col items-center text-[#A80808] pt-8">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8 text-[#A80808]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                    </div>
+                    <h2 className="text-[22px] font-bold text-center">
+                      Wajah Tidak Dikenali
+                    </h2>
+                  </ModalHeader>
 
-                <p
-                  className={`text-[18px] font-bold ${
-                    resultData?.status === "tepat waktu"
-                      ? "text-green-600"
-                      : "text-orange-500"
-                  }`}
-                >
-                  {resultData?.status?.toUpperCase()}
-                </p>
-              </ModalBody>
+                  <ModalBody className="flex flex-col items-center gap-4 py-4 text-center">
+                    <p className="text-[16px] text-gray-600 px-2">
+                      Sistem mendeteksi kemiripan wajah terlalu rendah (
+                      {((resultData?.similarity || 0) * 100).toFixed(1)}%).
+                    </p>
+                    <div className="bg-red-50 p-4 rounded-xl w-full border border-red-100">
+                      <p className="text-[14px] font-medium text-[#A80808]">
+                        Silakan periksa pencahayaan sekitar dan pastikan wajah
+                        Anda pas di dalam frame kamera.
+                      </p>
+                    </div>
+                  </ModalBody>
 
-              <ModalFooter className="flex justify-center pb-8">
-                <Button
-                  color="primary"
-                  className="bg-[#122C93] text-white rounded-lg w-full h-12 font-semibold"
-                  onPress={() => {
-                    onClose();
-                    navigate("/");
-                  }}
-                >
-                  Selesai
-                </Button>
-              </ModalFooter>
+                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                    <Button
+                      variant="bordered"
+                      className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
+                      onPress={onClose}
+                    >
+                      Coba Kirim Ulang
+                    </Button>
+                    <Button
+                      className="bg-[#122C93] text-white w-full h-12 font-semibold"
+                      onPress={() => {
+                        onClose();
+                        handleCancel();
+                      }}
+                    >
+                      Ambil Foto Ulang
+                    </Button>
+                  </ModalFooter>
+                </>
+              ) : isNoSchedule ? (
+                /* === KONDISI 3: ERROR JADWAL === */
+                <>
+                  <ModalHeader className="flex flex-col items-center text-[#d97706] pt-8">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8 text-[#d97706]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </div>
+                    <h2 className="text-[22px] font-bold text-center">
+                      Jadwal Tidak Ditemukan
+                    </h2>
+                  </ModalHeader>
+
+                  <ModalBody className="flex flex-col items-center gap-4 py-4 text-center">
+                    <p className="text-[16px] text-gray-600 px-2">
+                      Sistem tidak menemukan jadwal kerja untuk Anda hari ini.
+                    </p>
+                    <div className="bg-orange-50 p-4 rounded-xl w-full border border-orange-100">
+                      <p className="text-[14px] font-medium text-[#d97706] leading-relaxed">
+                        Pastikan Anda berada dijadwal yang benar dan pastikan
+                        kembali bahwa wajah Anda sudah teregistrasi di sistem.
+                      </p>
+                    </div>
+                  </ModalBody>
+
+                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                    <Button
+                      className="bg-[#122C93] text-white w-full h-12 font-semibold"
+                      onPress={() => {
+                        onClose();
+                        handleCancel();
+                      }}
+                    >
+                      Kembali
+                    </Button>
+                  </ModalFooter>
+                </>
+              ) : isServerError ? (
+                /* === KONDISI 4: ERROR JARINGAN / SERVER (BARU) === */
+                <>
+                  <ModalHeader className="flex flex-col items-center text-[#A80808] pt-8">
+                    {/* Icon Cloud Off / Server Error */}
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8 text-[#A80808]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 10l4 4m0-4l-4 4"
+                        />
+                      </svg>
+                    </div>
+                    <h2 className="text-[22px] font-bold text-center">
+                      Kesalahan Sistem
+                    </h2>
+                  </ModalHeader>
+
+                  <ModalBody className="flex flex-col items-center gap-4 py-4 text-center">
+                    <p className="text-[16px] text-gray-600 px-2">
+                      Terjadi gangguan saat menghubungi server.
+                    </p>
+                    <div className="bg-red-50 p-4 rounded-xl w-full border border-red-100">
+                      <p className="text-[14px] font-medium text-[#A80808]">
+                        {resultData?.message === "NETWORK_ERROR"
+                          ? "Gagal terhubung ke jaringan. Pastikan koneksi internet Anda stabil."
+                          : resultData?.message === "SERVER_ERROR_DEFAULT"
+                          ? "Terjadi kesalahan internal pada server."
+                          : resultData?.message}
+                      </p>
+                    </div>
+                  </ModalBody>
+
+                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                    <Button
+                      variant="bordered"
+                      className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
+                      onPress={onClose}
+                    >
+                      Tutup
+                    </Button>
+                    <Button
+                      className="bg-[#122C93] text-white w-full h-12 font-semibold"
+                      onPress={() => {
+                        onClose();
+                        handleConfirm(); // Coba kirim ulang
+                      }}
+                    >
+                      Coba Lagi
+                    </Button>
+                  </ModalFooter>
+                </>
+              ) : (
+                /* === KONDISI 5: SUKSES (DEFAULT) === */
+                <>
+                  <ModalHeader className="flex flex-col items-center text-[#122C93] pt-8">
+                    <h2 className="text-[22px] font-bold">
+                      {resultData?.message || "Berhasil"}
+                    </h2>
+                  </ModalHeader>
+
+                  <ModalBody className="flex flex-col items-center gap-4 py-6">
+                    <div className="text-center">
+                      <p className="text-[18px] font-semibold">
+                        {resultData?.nama}
+                      </p>
+                      <p className="text-[16px] text-gray-500">
+                        {resultData?.nip}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-100 p-4 rounded-xl w-full text-center">
+                      <p className="text-[14px]">Waktu Absensi</p>
+                      <p className="text-[20px] font-bold">
+                        {resultData?.time}
+                      </p>
+                    </div>
+
+                    <p
+                      className={`text-[18px] font-bold ${
+                        resultData?.status === "tepat waktu"
+                          ? "text-green-600"
+                          : "text-orange-500"
+                      }`}
+                    >
+                      {resultData?.status?.toUpperCase()}
+                    </p>
+                  </ModalBody>
+
+                  <ModalFooter className="flex justify-center pb-8">
+                    <Button
+                      color="primary"
+                      className="bg-[#122C93] text-white rounded-lg w-full h-12 font-semibold"
+                      onPress={() => {
+                        onClose();
+                        navigate("/");
+                      }}
+                    >
+                      Selesai
+                    </Button>
+                  </ModalFooter>
+                </>
+              )}
             </>
           )}
         </ModalContent>
