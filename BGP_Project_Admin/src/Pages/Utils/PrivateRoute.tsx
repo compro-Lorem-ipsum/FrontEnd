@@ -14,6 +14,7 @@ const PrivateRoute = () => {
     }
   }, [navigate, token]);
 
+  // return <Outlet/> bypass mode
   return token ? <Outlet /> : null;
 };
 
