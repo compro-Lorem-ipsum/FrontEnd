@@ -23,10 +23,9 @@ import {
   addToast,
   Pagination,
 } from "@heroui/react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { CalendarDate, parseDate } from "@internationalized/date";
 
-// --- INTERFACES ---
 interface Satpam {
   id: number;
   nama: string;
@@ -71,7 +70,6 @@ const AdminManageShift = () => {
 
   const token = getToken();
 
-  // --- DISCLOSURES ---
   const {
     isOpen: isOpenGenerate,
     onOpen: onOpenGenerate,
@@ -83,19 +81,18 @@ const AdminManageShift = () => {
     onClose: onCloseForm,
   } = useDisclosure();
 
-  // --- STATES ---
   const [listSatpam, setListSatpam] = useState<Satpam[]>([]);
   const [listPos, setListPos] = useState<Pos[]>([]);
   const [dataJadwal, setDataJadwal] = useState<Jadwal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingDeleteId, setLoadingDeleteId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // --- PAGINATION STATES ---
   const [page, setPage] = useState(1);
   const rowsPerPage = 12;
 
-  // --- FORM STATES ---
   const [formData, setFormData] = useState({
     satpam_id: "",
     pos_id: "",
@@ -114,7 +111,6 @@ const AdminManageShift = () => {
     jam_selesai_shift: "",
   });
 
-  // --- PAGINATION LOGIC ---
   const pages = Math.ceil(dataJadwal.length / rowsPerPage);
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -135,7 +131,6 @@ const AdminManageShift = () => {
     return days[new Date(dateString).getDay()];
   };
 
-  // --- FETCH DATA ---
   const fetchJadwal = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -171,7 +166,6 @@ const AdminManageShift = () => {
     if (isOpenForm || isOpenGenerate) fetchDropdowns();
   }, [isOpenForm, isOpenGenerate, fetchJadwal, token]);
 
-  // --- HANDLERS ---
   const handleOpenAdd = () => {
     setSelectedId(null);
     setFormData({
@@ -193,18 +187,15 @@ const AdminManageShift = () => {
       const result = await res.json();
       const item = result.data;
 
-      // --- LOGIC CARI ID (WORKAROUND) ---
-      // Karena API tidak return satpam_id, kita cari dari listSatpam berdasarkan NIP
       const foundSatpam = listSatpam.find((s) => s.nip === item.nip);
       const recoveredSatpamId = foundSatpam ? String(foundSatpam.id) : "";
 
-      // Cari pos_id dari listPos berdasarkan nama_pos
       const foundPos = listPos.find((p) => p.nama_pos === item.nama_pos);
       const recoveredPosId = foundPos ? String(foundPos.id) : "";
 
       setFormData({
-        satpam_id: recoveredSatpamId, // Pakai ID hasil pencarian
-        pos_id: recoveredPosId, // Pakai ID hasil pencarian
+        satpam_id: recoveredSatpamId,
+        pos_id: recoveredPosId,
         tanggal: item.tanggal ? parseDate(item.tanggal.split("T")[0]) : null,
         jam_mulai_shift: item.jam_mulai_shift || "",
         jam_selesai_shift: item.jam_selesai_shift || "",
@@ -288,22 +279,39 @@ const AdminManageShift = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Hapus data ini?")) return;
-    setLoadingDeleteId(id);
-    const res = await fetch(`${BASE_URL_API}/v1/jadwals/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
+  const openDeleteModal = (id: number) => {
+    setDeleteTargetId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${BASE_URL_API}/v1/jadwals/${deleteTargetId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        addToast({
+          title: "Berhasil",
+          description: "Data shift berhasil dihapus",
+          color: "success",
+        });
+        fetchJadwal();
+        setDeleteModalOpen(false);
+      }
+    } catch (error) {
+      console.error(error);
       addToast({
-        title: "Berhasil",
-        description: "Data berhasil dihapus",
+        title: "Gagal",
+        description: "Gagal menghapus data shift",
         color: "danger",
       });
-      fetchJadwal();
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
     }
-    setLoadingDeleteId(null);
   };
 
   return (
@@ -593,6 +601,43 @@ const AdminManageShift = () => {
           </ModalContent>
         </Modal>
 
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          size="sm"
+          backdrop="opaque"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1 items-center text-danger">
+                  <FaExclamationTriangle size={40} />
+                  <span className="mt-2 text-lg">Konfirmasi Hapus</span>
+                </ModalHeader>
+                <ModalBody className="text-center font-medium">
+                  <p>Apakah Anda yakin ingin menghapus data shift ini?</p>
+                </ModalBody>
+                <ModalFooter className="justify-center">
+                  <Button
+                    variant="light"
+                    onPress={onClose}
+                    isDisabled={isDeleting}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    color="danger"
+                    onPress={executeDelete}
+                    isLoading={isDeleting}
+                  >
+                    Ya, Hapus
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+
         {/* TABLE SECTION */}
         <div className="table-section-container mt-6">
           <Table
@@ -621,7 +666,7 @@ const AdminManageShift = () => {
               <TableColumn>Nama</TableColumn>
               <TableColumn>NIP</TableColumn>
               <TableColumn>Pos</TableColumn>
-              <TableColumn className="text-center">Action</TableColumn>
+              <TableColumn className="text-center">Aksi</TableColumn>
             </TableHeader>
             <TableBody
               emptyContent="Tidak ada data."
@@ -634,7 +679,7 @@ const AdminManageShift = () => {
                   <TableCell>{getHari(item.tanggal)}</TableCell>
                   <TableCell>{`${item.jam_mulai_shift.slice(
                     0,
-                    5
+                    5,
                   )} - ${item.jam_selesai_shift.slice(0, 5)}`}</TableCell>
                   <TableCell>{item.nama_satpam}</TableCell>
                   <TableCell>{item.nip}</TableCell>
@@ -643,20 +688,19 @@ const AdminManageShift = () => {
                     <div className="flex justify-center gap-3">
                       <Button
                         size="sm"
-                        className="bg-[#02A758] text-white"
+                        className="bg-[#02A758] text-white font-semibold"
                         startContent={<FaEdit />}
                         onPress={() => handleOpenEdit(item.id)}
                       >
-                        Edit
+                        Ubah
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-[#A70202] text-white"
+                        className="bg-[#A70202] text-white font-semibold"
                         startContent={<FaTrash />}
-                        isLoading={loadingDeleteId === item.id}
-                        onPress={() => handleDelete(item.id)}
+                        onPress={() => openDeleteModal(item.id)}
                       >
-                        Delete
+                        Hapus
                       </Button>
                     </div>
                   </TableCell>

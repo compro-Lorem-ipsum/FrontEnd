@@ -82,12 +82,11 @@ const AdminManagePosUtama = () => {
   const [loadingTable, setLoadingTable] = useState(false);
 
   const [page, setPage] = useState(1);
-  const rowsPerPage = 13;
+  const rowsPerPage = 12;
 
   const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
   const API_URL = `${BASE_API_URL}/v1/poss`;
 
-  // Ambil token dari cookie
   const getToken = () => {
     const token = document.cookie
       .split("; ")
@@ -96,17 +95,15 @@ const AdminManagePosUtama = () => {
     return token;
   };
 
-  // Fetch semua data pos
   const fetchData = async () => {
     try {
       setLoadingTable(true);
-      // GET All tetap menggunakan query param tipe=jaga sesuai aturan awal
       const res = await fetch(`${API_URL}?tipe=utama`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
 
-      // Sesuai respons JSON Anda: data.results
+
       if (data && Array.isArray(data.results)) {
         setDataPos(data.results);
       } else {
@@ -175,7 +172,6 @@ const AdminManagePosUtama = () => {
     }
   };
 
-  // Buka modal tambah
   const handleOpenAdd = () => {
     setFormData({
       id: null,
@@ -190,7 +186,6 @@ const AdminManagePosUtama = () => {
     onOpen();
   };
 
-  // Buka modal edit (GET by ID)
   const handleEdit = async (id: number) => {
     try {
       const res = await fetch(`${API_URL}/${id}`, {
@@ -198,7 +193,6 @@ const AdminManagePosUtama = () => {
       });
       const data = await res.json();
 
-      // Sesuai respons baru Anda: data.pos
       const item = data.pos;
 
       if (item) {
@@ -211,12 +205,10 @@ const AdminManagePosUtama = () => {
           created_at: item.created_at || "",
         });
 
-        // Konversi string koordinat dari database ke float untuk Leaflet
         const lat = parseFloat(item.latitude);
         const lng = parseFloat(item.longitude);
 
         if (!isNaN(lat) && !isNaN(lng)) {
-          // Mengatur posisi marker di peta
           setSelectedPosition(new LatLng(lat, lng));
         } else {
           setSelectedPosition(null);
@@ -239,14 +231,13 @@ const AdminManagePosUtama = () => {
     }
   };
 
-  // Simpan (add atau edit)
   const handleSave = async () => {
     if (!formData.kode_pos || !formData.nama_pos || !selectedPosition) return;
 
     const payload = {
       kode_pos: formData.kode_pos,
       nama_pos: formData.nama_pos,
-      tipe_pos: "utama", // Tembak langsung sesuai instruksi
+      tipe_pos: "utama", 
       latitude: selectedPosition.lat,
       longitude: selectedPosition.lng,
     };
@@ -282,11 +273,9 @@ const AdminManagePosUtama = () => {
     }
   };
 
-  // Hapus pos
   const handleDelete = async (id: number) => {
     if (!confirm("Yakin ingin menghapus pos ini?")) return;
     try {
-      // Tambahkan query param tipe=jaga
       await fetch(`${API_URL}/${id}?tipe=jaga`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -456,8 +445,8 @@ const AdminManagePosUtama = () => {
                 <TableColumn>Kode Pos</TableColumn>
                 <TableColumn>Longitude</TableColumn>
                 <TableColumn>Latitude</TableColumn>
-                <TableColumn>Created At</TableColumn>
-                <TableColumn className="text-center">Action</TableColumn>
+                <TableColumn>Pembuatan</TableColumn>
+                <TableColumn className="text-center">Aksi</TableColumn>
               </TableHeader>
               <TableBody>
                 {dataPos.map((item, index) => (
@@ -482,7 +471,7 @@ const AdminManagePosUtama = () => {
                           startContent={<FaEdit />}
                           onPress={() => handleEdit(item.id)}
                         >
-                          Edit
+                          Ubah
                         </Button>
                         <Button
                           size="sm"
@@ -490,7 +479,7 @@ const AdminManagePosUtama = () => {
                           startContent={<FaTrash />}
                           onPress={() => handleDelete(item.id)}
                         >
-                          Delete
+                          Hapus
                         </Button>
                       </div>
                     </TableCell>

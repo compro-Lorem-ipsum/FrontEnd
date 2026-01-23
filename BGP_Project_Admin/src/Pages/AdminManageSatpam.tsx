@@ -1,4 +1,3 @@
-// AdminManageSatpam.tsx
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Button,
@@ -11,7 +10,7 @@ import {
   Input,
   Spinner,
   addToast,
-  Pagination, // Import Pagination
+  Pagination,
 } from "@heroui/react";
 
 import {
@@ -20,9 +19,11 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  ModalHeader,
 } from "@heroui/react";
 
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
+import { MdAssignmentInd } from "react-icons/md";
 
 interface Satpam {
   id: number;
@@ -46,11 +47,9 @@ const AdminManageSatpam: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // --- PAGINATION STATES ---
   const [page, setPage] = useState(1);
-  const rowsPerPage = 13;
+  const rowsPerPage = 12;
 
-  // form state (shared for add & edit)
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formNama, setFormNama] = useState<string>("");
@@ -59,7 +58,11 @@ const AdminManageSatpam: React.FC = () => {
   const [formNoTelp, setFormNoTelp] = useState<string>("");
   const [formFile, setFormFile] = useState<File | null>(null);
 
-  // ambil token dari cookie
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isErrorModalOpen, setErrorModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const getToken = (): string | undefined => {
     const token = document.cookie
       .split("; ")
@@ -77,7 +80,6 @@ const AdminManageSatpam: React.FC = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // fetch data
   const fetchSatpam = async () => {
     setLoading(true);
     try {
@@ -106,7 +108,6 @@ const AdminManageSatpam: React.FC = () => {
     fetchSatpam();
   }, []);
 
-  // --- PAGINATION LOGIC ---
   const pages = Math.ceil(dataSatpam.length / rowsPerPage);
 
   const items = useMemo(() => {
@@ -115,7 +116,6 @@ const AdminManageSatpam: React.FC = () => {
     return dataSatpam.slice(start, end);
   }, [page, dataSatpam]);
 
-  // reset form
   const resetForm = () => {
     setFormNama("");
     setFormAsal("");
@@ -127,14 +127,12 @@ const AdminManageSatpam: React.FC = () => {
     setPreviewImage(null);
   };
 
-  // open add modal
   const openAddModal = () => {
     resetForm();
     setIsEditMode(false);
     onOpen();
   };
 
-  // open edit modal and fill form
   const openEditModal = async (item: Satpam) => {
     setIsEditMode(true);
     setEditingId(item.id);
@@ -170,7 +168,6 @@ const AdminManageSatpam: React.FC = () => {
     onOpen();
   };
 
-  // submit add (POST)
   const handleAdd = async () => {
     setSubmitting(true);
     try {
@@ -215,7 +212,6 @@ const AdminManageSatpam: React.FC = () => {
     }
   };
 
-  // submit edit (PUT)
   const handleEdit = async () => {
     if (editingId === null) return;
     setSubmitting(true);
@@ -261,12 +257,19 @@ const AdminManageSatpam: React.FC = () => {
     }
   };
 
-  // delete
-  const handleDelete = async (id: number) => {
-    if (!confirm("Apakah anda yakin ingin menghapus data ini?")) return;
+  const confirmDelete = (id: number) => {
+    setDeleteId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (deleteId === null) return;
+
+    setDeleteModalOpen(false);
+
     try {
       const token = getToken();
-      const res = await fetch(`${API_BASE}/v1/satpams/${id}`, {
+      const res = await fetch(`${API_BASE}/v1/satpams/${deleteId}`, {
         method: "DELETE",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -274,8 +277,7 @@ const AdminManageSatpam: React.FC = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Delete failed: ${res.status} - ${text}`);
+        throw new Error("CONSTRAINT_VIOLATION");
       }
 
       await fetchSatpam();
@@ -284,11 +286,24 @@ const AdminManageSatpam: React.FC = () => {
         description: "Data satpam berhasil dihapus.",
         variant: "flat",
         timeout: 3000,
-        color: "danger",
+        color: "success",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete error:", error);
-      alert("Gagal menghapus satpam.");
+
+      if (error.message === "CONSTRAINT_VIOLATION") {
+        setErrorMessage(
+          "Tidak berhasil menghapus, satpam berada dalam shift, anda harus menghapusnya dulu",
+        );
+      } else {
+        setErrorMessage(
+          "Gagal menghapus satpam. Terjadi kesalahan jaringan atau server.",
+        );
+      }
+
+      setErrorModalOpen(true);
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -346,8 +361,9 @@ const AdminManageSatpam: React.FC = () => {
               <TableColumn>NIP</TableColumn>
               <TableColumn>Asal Daerah</TableColumn>
               <TableColumn>No Telp</TableColumn>
-              <TableColumn>Created At</TableColumn>
-              <TableColumn className="text-center">Action</TableColumn>
+              <TableColumn>Mitra</TableColumn>
+              <TableColumn>Pembuatan</TableColumn>
+              <TableColumn className="text-center">Aksi</TableColumn>
             </TableHeader>
 
             <TableBody
@@ -360,6 +376,7 @@ const AdminManageSatpam: React.FC = () => {
                   <TableCell>{item.nip}</TableCell>
                   <TableCell>{item.asal_daerah}</TableCell>
                   <TableCell>{item.no_telp}</TableCell>
+                  <TableCell>Lorem</TableCell>
                   <TableCell>{formatTanggal(item.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-3">
@@ -369,15 +386,22 @@ const AdminManageSatpam: React.FC = () => {
                         startContent={<FaEdit />}
                         onPress={() => openEditModal(item)}
                       >
-                        Edit
+                        Ubah
                       </Button>
                       <Button
                         size="sm"
                         className="bg-[#A70202] text-white font-semibold"
                         startContent={<FaTrash />}
-                        onPress={() => handleDelete(item.id)}
+                        onPress={() => confirmDelete(item.id)}
                       >
-                        Delete
+                        Hapus
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-[#122C93] text-white font-semibold"
+                        startContent={<MdAssignmentInd />}
+                      >
+                        Mitra
                       </Button>
                     </div>
                   </TableCell>
@@ -386,6 +410,60 @@ const AdminManageSatpam: React.FC = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Modal konfirmasi delete */}
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          size="sm"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1 items-center text-danger">
+                  <FaExclamationTriangle size={40} />
+                  <span className="mt-2">Konfirmasi Hapus</span>
+                </ModalHeader>
+                <ModalBody className="text-center font-medium">
+                  <p>Apakah anda yakin ingin menghapus data satpam ini?</p>
+                </ModalBody>
+                <ModalFooter className="justify-center">
+                  <Button variant="light" onPress={onClose}>
+                    Batal
+                  </Button>
+                  <Button color="danger" onPress={executeDelete}>
+                    Ya, Hapus
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+
+        {/* Modal eror */}
+        <Modal
+          isOpen={isErrorModalOpen}
+          onClose={() => setErrorModalOpen(false)}
+          size="sm"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1 items-center text-[#122C93]">
+                  Peringatan
+                </ModalHeader>
+                <ModalBody className="text-center">
+                  <p className="text-gray-700">{errorMessage}</p>
+                </ModalBody>
+                <ModalFooter className="justify-center">
+                  <Button className="bg-[#122C93] text-white" onPress={onClose}>
+                    Mengerti
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
 
         {/* MODAL ADD/EDIT */}
         <Modal
@@ -472,7 +550,7 @@ const AdminManageSatpam: React.FC = () => {
                                 "none";
                               console.error(
                                 "Gagal memuat gambar di URL:",
-                                previewImage
+                                previewImage,
                               );
                             }}
                           />
@@ -482,7 +560,7 @@ const AdminManageSatpam: React.FC = () => {
                         variant="underlined"
                         size="lg"
                         type="file"
-                        label="Foto Anggota (opsional)"
+                        label="Foto Anggota"
                         placeholder="Pilih File"
                         labelPlacement="outside-top"
                         className="w-[300px]"

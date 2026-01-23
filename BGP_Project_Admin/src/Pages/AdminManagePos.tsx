@@ -39,7 +39,6 @@ interface LocationMarkerProps {
   setPosition: (position: LatLng) => void;
 }
 
-// Component Marker & Map Controller
 function LocationMarker({ position, setPosition }: LocationMarkerProps) {
   const map = useMapEvents({
     click(e: L.LeafletMouseEvent) {
@@ -83,7 +82,7 @@ const AdminManagePos = () => {
   const [loadingTable, setLoadingTable] = useState(false);
 
   const [page, setPage] = useState(1);
-  const rowsPerPage = 13;
+  const rowsPerPage = 12;
 
   const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
   const API_URL = `${BASE_API_URL}/v1/poss`;
@@ -442,8 +441,8 @@ const AdminManagePos = () => {
                 <TableColumn>Kode Pos</TableColumn>
                 <TableColumn>Longitude</TableColumn>
                 <TableColumn>Latitude</TableColumn>
-                <TableColumn>Created At</TableColumn>
-                <TableColumn className="text-center">Action</TableColumn>
+                <TableColumn>Pembuatan</TableColumn>
+                <TableColumn className="text-center">Aksi</TableColumn>
               </TableHeader>
               <TableBody>
                 {dataPos.map((item, index) => (

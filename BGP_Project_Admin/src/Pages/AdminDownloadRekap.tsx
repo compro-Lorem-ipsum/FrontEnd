@@ -22,7 +22,6 @@ import {
 } from "@heroui/react";
 import { FaEdit, FaDownload, FaImage } from "react-icons/fa";
 
-// --- INTERFACES ---
 interface Satpam {
   id: number;
   nama: string;
@@ -65,7 +64,6 @@ const AdminDownloadRekap = () => {
 
   const token = getToken();
 
-  // Modal Controls
   const {
     isOpen: isOpenAbsen,
     onOpen: onOpenAbsen,
@@ -77,7 +75,6 @@ const AdminDownloadRekap = () => {
     onClose: onClosePatroli,
   } = useDisclosure();
 
-  // --- STATES ---
   const [dataAbsen, setDataAbsen] = useState<Presensi[]>([]);
   const [dataPatroli, setDataPatroli] = useState<Laporan[]>([]);
   const [listSatpam, setListSatpam] = useState<Satpam[]>([]);
@@ -85,7 +82,6 @@ const AdminDownloadRekap = () => {
   const [isLoadingPatroli, setIsLoadingPatroli] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // Form States
   const [formAbsen, setFormAbsen] = useState({
     satpam_id: "",
     check_in: "",
@@ -96,7 +92,6 @@ const AdminDownloadRekap = () => {
     keterangan: "",
   });
 
-  // --- FETCH DATA ABSENSI ---
   const fetchAbsensi = useCallback(async () => {
     setIsLoadingAbsen(true);
     try {
@@ -112,7 +107,6 @@ const AdminDownloadRekap = () => {
     }
   }, [token]);
 
-  // --- FETCH DATA PATROLI ---
   const fetchPatroli = useCallback(async () => {
     setIsLoadingPatroli(true);
     try {
@@ -128,7 +122,6 @@ const AdminDownloadRekap = () => {
     }
   }, [token]);
 
-  // --- FETCH DROPDOWN SATPAM ---
   const fetchSatpamList = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}/v1/satpams/?mode=dropdown`, {
@@ -146,7 +139,6 @@ const AdminDownloadRekap = () => {
     fetchPatroli();
   }, [fetchAbsensi, fetchPatroli]);
 
-  // --- HANDLERS ABSENSI ---
   const handleOpenEditAbsen = async (id: number) => {
     setSelectedId(id);
     await fetchSatpamList();
@@ -195,7 +187,6 @@ const AdminDownloadRekap = () => {
     }
   };
 
-  // --- HANDLERS PATROLI ---
   const handleOpenEditPatroli = async (id: number) => {
     setSelectedId(id);
     try {
@@ -238,7 +229,6 @@ const AdminDownloadRekap = () => {
     }
   };
 
-  // --- HANDLER DOWNLOAD DENGAN TOKEN ---
   const handleDownload = async (endpoint: string, filename: string) => {
     try {
       const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -262,7 +252,6 @@ const AdminDownloadRekap = () => {
       document.body.appendChild(a);
       a.click();
 
-      // 4. Bersihkan elemen dan URL
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -277,7 +266,6 @@ const AdminDownloadRekap = () => {
 
   return (
     <div className="flex flex-col gap-10 p-5">
-      {/* ================= REKAP ABSENSI ================= */}
       <div className="container-content flex flex-col gap-4">
         <div className="header-container flex flex-row items-center justify-between mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
@@ -306,7 +294,7 @@ const AdminDownloadRekap = () => {
             <TableColumn>Kategori</TableColumn>
             <TableColumn>Jam Masuk</TableColumn>
             <TableColumn>Jam Keluar</TableColumn>
-            <TableColumn className="text-center">Action</TableColumn>
+            <TableColumn className="text-center">Aksi</TableColumn>
           </TableHeader>
           <TableBody
             emptyContent="Data tidak ditemukan"
@@ -328,7 +316,7 @@ const AdminDownloadRekap = () => {
                     className="bg-[#02A758] text-white font-semibold"
                     startContent={<FaEdit />}
                   >
-                    Edit
+                    Ubah
                   </Button>
                 </TableCell>
               </TableRow>
@@ -337,7 +325,6 @@ const AdminDownloadRekap = () => {
         </Table>
       </div>
 
-      {/* ================= REKAP PATROLI ================= */}
       <div className="container-content flex flex-col gap-4">
         <div className="header-container flex flex-row items-center justify-between mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
@@ -368,7 +355,7 @@ const AdminDownloadRekap = () => {
             <TableColumn>Status</TableColumn>
             <TableColumn>Keterangan</TableColumn>
             <TableColumn className="text-center">Dokumentasi</TableColumn>
-            <TableColumn className="text-center">Action</TableColumn>
+            <TableColumn className="text-center">Aksi</TableColumn>
           </TableHeader>
           <TableBody
             emptyContent="Data tidak ditemukan"
@@ -389,7 +376,6 @@ const AdminDownloadRekap = () => {
                 <TableCell>
                   <div className="flex justify-center gap-2">
                     {item.gambar_paths.map((path, i) => {
-                      // Perbaikan URL Gambar: Menggunakan /uploads/laporan/...
                       const imageUrl = `${baseUrl}/uploads${path}`;
                       return (
                         <Tooltip key={i} content={`Buka Foto ${i + 1}`}>
@@ -414,7 +400,7 @@ const AdminDownloadRekap = () => {
                     className="bg-[#02A758] text-white font-semibold"
                     startContent={<FaEdit />}
                   >
-                    Edit
+                    Ubah
                   </Button>
                 </TableCell>
               </TableRow>

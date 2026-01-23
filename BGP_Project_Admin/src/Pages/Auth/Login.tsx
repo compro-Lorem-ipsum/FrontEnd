@@ -1,6 +1,6 @@
 import { Button, Input, Spinner } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
-import loginImg from "../../assets/images/login.jpg";
+import loginImg from "../../assets/images/cover.png";
 import logo from "../../assets/images/logo.png";
 import { useState } from "react";
 
@@ -55,9 +55,9 @@ const Login = () => {
         document.cookie = `role=${userRole}; path=/;`;
 
         if (userRole === "SuperAdmin") {
-          navigate("/AdminManageShift");
+          navigate("/AdminDashboard");
         } else {
-          navigate("/AdminManageSatpam");
+          navigate("/AdminDashboard");
         }
       } catch (decodeErr) {
         console.error("Error decoding token:", decodeErr);
@@ -121,7 +121,7 @@ const Login = () => {
           className="mt-5"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={handleKeyDown} // Trigger Enter
+          onKeyDown={handleKeyDown} 
         />
 
         <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
@@ -134,7 +134,7 @@ const Login = () => {
           className="mt-5"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={handleKeyDown} // Trigger Enter
+          onKeyDown={handleKeyDown}
         />
 
         {error && <p className="text-red-500 mt-3 font-medium">{error}</p>}

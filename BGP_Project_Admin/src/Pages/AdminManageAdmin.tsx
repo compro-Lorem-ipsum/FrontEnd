@@ -8,18 +8,19 @@ import {
   TableCell,
   Input,
   Spinner,
-  addToast, // 1. Tambahkan import addToast
+  addToast,
 } from "@heroui/react";
 import {
   Modal,
   ModalContent,
+  ModalHeader,
   ModalBody,
   ModalFooter,
   useDisclosure,
   Pagination,
 } from "@heroui/react";
-import { FaTrash } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { FaTrash, FaExclamationTriangle } from "react-icons/fa";
+import { useEffect, useState, useMemo } from "react";
 
 interface Admin {
   id: number;
@@ -30,7 +31,11 @@ interface Admin {
 }
 
 const AdminManageAdmin = () => {
+
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const [dataadmin, setDataAdmin] = useState<Admin[]>([]);
   const [loadingTable, setLoadingTable] = useState(false);
@@ -39,9 +44,8 @@ const AdminManageAdmin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // --- PAGINATION STATES ---
   const [page, setPage] = useState(1);
-  const rowsPerPage = 13;
+  const rowsPerPage = 12;
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,6 +57,14 @@ const AdminManageAdmin = () => {
   };
 
   const filteredAdmins = dataadmin.filter((item) => item.role !== "SuperAdmin");
+
+  const items = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    return filteredAdmins.slice(start, end);
+  }, [page, filteredAdmins]);
+
+  const pages = Math.ceil(filteredAdmins.length / rowsPerPage);
 
   const formatDate = (dateString: any) => {
     const d = new Date(dateString);
@@ -83,10 +95,6 @@ const AdminManageAdmin = () => {
     fetchAdmins();
   }, []);
 
-  // --- PAGINATION LOGIC ---
-  const pages = Math.ceil(dataadmin.length / rowsPerPage);
-
-  // ADD Admin dengan Toast
   const handleAddAdmin = async () => {
     if (!nama || !username || !password) {
       addToast({
@@ -116,7 +124,6 @@ const AdminManageAdmin = () => {
       const result = await res.json();
 
       if (res.ok) {
-        // Toast Berhasil Tambah
         addToast({
           title: "Berhasil",
           description: "Admin berhasil ditambahkan.",
@@ -142,12 +149,17 @@ const AdminManageAdmin = () => {
     }
   };
 
-  // DELETE admin dengan Toast
-  const handleDelete = async (id: any) => {
-    if (!confirm("Yakin ingin menghapus admin ini?")) return;
+  const confirmDelete = (id: number) => {
+    setDeleteTargetId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (deleteTargetId === null) return;
+    setDeleteModalOpen(false);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/admins/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/v1/admins/${deleteTargetId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${getToken()}`,
@@ -157,13 +169,12 @@ const AdminManageAdmin = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Toast Berhasil Hapus
         addToast({
           title: "Berhasil",
           description: "Data admin berhasil dihapus.",
           variant: "flat",
           timeout: 3000,
-          color: "danger", // Warna merah untuk indikasi hapus
+          color: "danger",
         });
         fetchAdmins();
       } else {
@@ -176,6 +187,8 @@ const AdminManageAdmin = () => {
         variant: "flat",
         color: "danger",
       });
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -184,7 +197,7 @@ const AdminManageAdmin = () => {
       <div className="container-content flex flex-col gap-4">
         <div className="header-container flex flex-row items-center justify-between mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
-            Manage Admin
+            Manage Client
           </h2>
           <Button
             variant="solid"
@@ -195,6 +208,7 @@ const AdminManageAdmin = () => {
           </Button>
         </div>
 
+        {/* MODAL ADD ADMIN */}
         <Modal backdrop={"opaque"} isOpen={isOpen} onClose={onClose} size="4xl">
           <ModalContent>
             <ModalBody>
@@ -274,15 +288,17 @@ const AdminManageAdmin = () => {
             >
               <TableHeader>
                 <TableColumn>No</TableColumn>
-                <TableColumn>Nama Pengguna</TableColumn>
+                <TableColumn>Nama Mitra</TableColumn>
                 <TableColumn>Username</TableColumn>
-                <TableColumn>Created At</TableColumn>
-                <TableColumn className="text-center">Action</TableColumn>
+                <TableColumn>Pembuatan</TableColumn>
+                <TableColumn className="text-center">Aksi</TableColumn>
               </TableHeader>
               <TableBody emptyContent={"Tidak ada data admin"}>
-                {filteredAdmins.map((item, index) => (
+                {items.map((item, index) => (
                   <TableRow key={item.id}>
-                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      {(page - 1) * rowsPerPage + index + 1}
+                    </TableCell>
                     <TableCell>{item.nama}</TableCell>
                     <TableCell>{item.username}</TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
@@ -292,9 +308,9 @@ const AdminManageAdmin = () => {
                           size="sm"
                           className="bg-[#A70202] text-white font-semibold"
                           startContent={<FaTrash />}
-                          onPress={() => handleDelete(item.id)}
+                          onPress={() => confirmDelete(item.id)}
                         >
-                          Delete
+                          Hapus
                         </Button>
                       </div>
                     </TableCell>
@@ -304,6 +320,36 @@ const AdminManageAdmin = () => {
             </Table>
           )}
         </div>
+
+        {/* MODAL KONFIRMASI DELETE */}
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          size="sm"
+          backdrop="opaque"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1 items-center text-danger">
+                  <FaExclamationTriangle size={40} />
+                  <span className="mt-2">Konfirmasi Hapus</span>
+                </ModalHeader>
+                <ModalBody className="text-center font-medium">
+                  <p>Apakah anda yakin ingin menghapus data admin ini?</p>
+                </ModalBody>
+                <ModalFooter className="justify-center">
+                  <Button variant="light" onPress={onClose}>
+                    Batal
+                  </Button>
+                  <Button color="danger" onPress={executeDelete}>
+                    Ya, Hapus
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
       </div>
     </div>
   );
