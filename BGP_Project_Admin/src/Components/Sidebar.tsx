@@ -1,21 +1,25 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Listbox, ListboxItem, Button, Divider } from "@heroui/react";
+import { Listbox, ListboxItem, Button, Divider, Tooltip } from "@heroui/react";
+
 import { IoPersonAdd } from "react-icons/io5";
 import { IoMdSettings } from "react-icons/io";
 import { AiFillHome } from "react-icons/ai";
 import { GoClockFill } from "react-icons/go";
-import { LuRadius } from "react-icons/lu";
+import { LuRadius, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import {
   MdFileDownload,
   MdCoPresent,
   MdOutlineManageHistory,
 } from "react-icons/md";
+import { TbLogout, TbLayoutDashboardFilled } from "react-icons/tb";
 import logo from "../assets/images/logo.png";
-import { TbLogout } from "react-icons/tb";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const role = document.cookie
     .split("; ")
@@ -24,6 +28,12 @@ const Sidebar = () => {
 
   const menu = [
     {
+      key: "dashboard",
+      name: "Dashboard",
+      icon: <TbLayoutDashboardFilled className="text-xl" />,
+      path: "/AdminDashboard",
+    },
+    {
       key: "manage-satpam",
       name: "Manage Satpam",
       icon: <IoPersonAdd className="text-xl" />,
@@ -31,10 +41,10 @@ const Sidebar = () => {
     },
     {
       key: "manage-admin",
-      name: "Manage Admin",
+      name: "Manage Client",
       icon: <IoMdSettings className="text-xl" />,
       path: "/AdminManageAdmin",
-      disabled: role !== "SuperAdmin",
+      hidden: role !== "SuperAdmin",
     },
     {
       key: "manage-pos",
@@ -74,6 +84,8 @@ const Sidebar = () => {
     },
   ];
 
+  const filteredMenu = menu.filter((item) => !item.hidden);
+
   const handleLogout = () => {
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -81,78 +93,97 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-screen w-[280px] bg-white border-r border-gray-100 flex flex-col shadow-xl shadow-blue-900/5 relative z-20">
+    <div
+      className={`
+        h-screen bg-white border-r border-gray-100 flex flex-col shadow-xl shadow-blue-900/5 relative z-20 
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? "w-[88px]" : "w-[280px]"}
+      `}
+    >
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-[50%] bg-white border border-gray-200 text-gray-500 rounded-full p-1 shadow-sm hover:text-[#122C93] hover:border-[#122C93] transition-colors z-50"
+      >
+        {isCollapsed ? <LuChevronRight /> : <LuChevronLeft />}
+      </button>
+
       {/* --- Header Section --- */}
-      <div className="px-6 pt-8 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img src={logo} alt="" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-lg font-bold text-[#122C93] tracking-tight leading-none">
-              PT. Bima Global
-            </h1>
-            <span className="text-[10px] text-gray-400 font-medium tracking-wider mt-1 uppercase">
-              Dashboard Admin
-            </span>
-          </div>
+      <div
+        className={`px-6 pt-8 pb-6 flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}
+      >
+        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+          <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+        </div>
+
+        {/* Teks Header - Hide saat collapsed */}
+        <div
+          className={`flex flex-col overflow-hidden transition-all duration-300 ${
+            isCollapsed ? "w-0 opacity-0 ml-0" : "w-auto opacity-100"
+          }`}
+        >
+          <h1 className="text-lg font-bold text-[#122C93] tracking-tight leading-none whitespace-nowrap">
+            PT. Bima Global
+          </h1>
+          <span className="text-[10px] text-gray-400 font-medium tracking-wider mt-1 uppercase whitespace-nowrap">
+            Dashboard Admin
+          </span>
         </div>
       </div>
 
       {/* --- Menu Section --- */}
       <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide">
-        <div className="mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          Main Menu
-        </div>
+        {!isCollapsed && (
+          <div className="mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300">
+            Main Menu
+          </div>
+        )}
 
         <Listbox
           aria-label="Sidebar Menu"
           variant="light"
           className="p-0 gap-1"
         >
-          {menu.map((item) => {
+          {filteredMenu.map((item) => {
             const isActive = location.pathname === item.path;
 
-            // --- Logic Render Item Disabled ---
-            if (item.disabled) {
-              return (
-                <ListboxItem
-                  key={item.key}
-                  textValue={item.name}
-                  startContent={item.icon}
-                  className="opacity-40 grayscale my-1 py-3 cursor-not-allowed data-[hover=true]:bg-transparent"
-                  isReadOnly
-                >
-                  <div className="flex justify-between items-center w-full text-gray-400">
-                    <span>{item.name}</span>
-                    <span className="text-[9px] border border-gray-300 px-1 rounded">
-                      LOCK
-                    </span>
-                  </div>
-                </ListboxItem>
-              );
-            }
-
-            // --- Logic Render Item Normal/Active ---
             return (
               <ListboxItem
                 key={item.key}
                 textValue={item.name}
-                // Menggunakan onPress bawaan HeroUI + useNavigate lebih stabil daripada <Link>
                 onPress={() => navigate(item.path)}
                 startContent={
-                  // Ikon berubah putih jika active, abu-abu jika tidak (tapi jadi biru saat hover via CSS parent)
-                  <span
-                    className={`transition-colors duration-200 ${
-                      isActive
-                        ? "text-white"
-                        : "text-gray-400 group-data-[hover=true]:text-[#122C93]"
-                    }`}
+                  <div
+                    className={`flex items-center justify-center ${isCollapsed ? "w-full" : ""}`}
                   >
-                    {item.icon}
-                  </span>
+                    {isCollapsed ? (
+                      <Tooltip
+                        content={item.name}
+                        placement="right"
+                        color="foreground"
+                      >
+                        <span
+                          className={`text-xl transition-colors duration-200 ${
+                            isActive
+                              ? "text-white"
+                              : "text-gray-400 group-data-[hover=true]:text-[#122C93]"
+                          }`}
+                        >
+                          {item.icon}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span
+                        className={`text-xl transition-colors duration-200 ${
+                          isActive
+                            ? "text-white"
+                            : "text-gray-400 group-data-[hover=true]:text-[#122C93]"
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                    )}
+                  </div>
                 }
-                // Custom Class Names
                 className={`
                   group my-1 py-3 px-3 rounded-xl transition-all duration-200
                   ${
@@ -160,9 +191,19 @@ const Sidebar = () => {
                       ? "bg-[#122C93] text-white shadow-md shadow-blue-900/30 data-[hover=true]:bg-[#122C93] data-[hover=true]:text-white"
                       : "bg-transparent text-gray-500 data-[hover=true]:bg-blue-50 data-[hover=true]:text-[#122C93]"
                   }
+                  ${isCollapsed ? "justify-center gap-0 px-0" : "gap-2"} 
                 `}
               >
-                <span className="font-medium text-sm">{item.name}</span>
+                {/* Teks Menu - Hide saat collapsed */}
+                <span
+                  className={`font-medium text-sm ml-2 transition-all duration-200 ${
+                    isCollapsed
+                      ? "hidden opacity-0 w-0"
+                      : "block opacity-100 w-auto"
+                  }`}
+                >
+                  {item.name}
+                </span>
               </ListboxItem>
             );
           })}
@@ -175,15 +216,28 @@ const Sidebar = () => {
         <Button
           variant="light"
           color="danger"
-          startContent={<TbLogout className="text-xl" />}
+          startContent={!isCollapsed && <TbLogout className="text-xl" />}
           onPress={handleLogout}
-          className="w-full justify-start font-semibold h-12 hover:bg-red-50 data-[hover=true]:bg-red-50 transition-colors"
+          isIconOnly={isCollapsed}
+          className={`
+            font-semibold hover:bg-red-50 data-[hover=true]:bg-red-50 transition-colors
+            ${isCollapsed ? "w-full h-12 flex items-center justify-center" : "w-full justify-start h-12"}
+          `}
         >
-          Keluar
+          {isCollapsed ? (
+            <Tooltip content="Keluar" placement="right" color="danger">
+              <TbLogout className="text-xl" />
+            </Tooltip>
+          ) : (
+            "Keluar"
+          )}
         </Button>
-        <div className="text-center mt-2 text-[10px] text-gray-300">
-          v1.0.0 &copy; 2026 Bima Global
-        </div>
+
+        {!isCollapsed && (
+          <div className="text-center mt-2 text-[10px] text-gray-300 whitespace-nowrap overflow-hidden">
+            v1.0.0 &copy; 2026 Bima Global
+          </div>
+        )}
       </div>
     </div>
   );

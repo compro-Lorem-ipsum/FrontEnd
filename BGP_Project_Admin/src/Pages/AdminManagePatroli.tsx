@@ -19,9 +19,8 @@ import {
   addToast,
   Pagination,
 } from "@heroui/react";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 
-// --- INTERFACES ---
 interface Satpam {
   id: number;
   nama: string;
@@ -61,23 +60,23 @@ const AdminManagePlotting = () => {
     onClose: onCloseForm,
   } = useDisclosure();
 
-  // --- STATES ---
   const [listSatpam, setListSatpam] = useState<Satpam[]>([]);
   const [listPos, setListPos] = useState<Pos[]>([]);
   const [dataPlotting, setDataPlotting] = useState<Plotting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingDeleteId, setLoadingDeleteId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const rowsPerPage = 13;
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const rowsPerPage = 12;
 
-  // Form states
+
   const [formData, setFormData] = useState<FormData>({
     satpam_id: "",
     pos_id: "",
   });
 
-  // --- FETCH ALL PLOTTING ---
   const fetchPlotting = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -95,7 +94,6 @@ const AdminManagePlotting = () => {
 
   const pages = Math.ceil(dataPlotting.length / rowsPerPage);
 
-  // --- FETCH DROPDOWNS ---
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
@@ -179,26 +177,40 @@ const AdminManagePlotting = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Hapus data ini?")) return;
-    setLoadingDeleteId(id);
+  const openDeleteModal = (id: number) => {
+    setDeleteTargetId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteTargetId) return;
+
+    setIsDeleting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/plotting/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/v1/plotting/${deleteTargetId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (res.ok) {
+        setDeleteModalOpen(false);
         fetchPlotting();
         addToast({
           title: "Berhasil",
-          description: "Data plotting berhasil di hapus.",
+          description: "Data plotting berhasil dihapus.",
           color: "danger",
         });
       }
     } catch (error) {
       console.error(error);
+      addToast({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat menghapus data.",
+        color: "danger",
+      });
     } finally {
-      setLoadingDeleteId(null);
+      setIsDeleting(false);
+      setDeleteTargetId(null);
     }
   };
 
@@ -213,8 +225,7 @@ const AdminManagePlotting = () => {
           <div className="container-generate flex flex-row gap-5">
             <Button
               onPress={handleOpenAdd}
-              className="bg-[#122C93] text-white font-semibold h-12"
-              startContent={<FaPlus />}
+              className="bg-[#122C93] text-white font-semibold w-30 h-12 text-[16px]"
             >
               Tambah +
             </Button>
@@ -336,7 +347,7 @@ const AdminManagePlotting = () => {
               <TableColumn>Nama Satpam</TableColumn>
               <TableColumn>Nama Pos</TableColumn>
               <TableColumn>Kode Pos</TableColumn>
-              <TableColumn className="text-center">Action</TableColumn>
+              <TableColumn className="text-center">Aksi</TableColumn>
             </TableHeader>
             <TableBody
               emptyContent="Tidak ada data plotting."
@@ -357,16 +368,15 @@ const AdminManagePlotting = () => {
                         startContent={<FaEdit />}
                         onPress={() => handleOpenEdit(item.id)}
                       >
-                        Edit
+                        Ubah
                       </Button>
                       <Button
                         size="sm"
                         className="bg-[#A70202] text-white font-semibold"
                         startContent={<FaTrash />}
-                        isLoading={loadingDeleteId === item.id}
-                        onPress={() => handleDelete(item.id)}
+                        onPress={() => openDeleteModal(item.id)}
                       >
-                        Delete
+                        Hapus
                       </Button>
                     </div>
                   </TableCell>
@@ -374,6 +384,43 @@ const AdminManagePlotting = () => {
               ))}
             </TableBody>
           </Table>
+
+          <Modal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setDeleteModalOpen(false)}
+            size="sm"
+            backdrop="opaque"
+          >
+            <ModalContent>
+              {(onClose) => (
+                <>
+                  <ModalHeader className="flex flex-col gap-1 items-center text-danger">
+                    <FaExclamationTriangle size={40} />
+                    <span className="mt-2 text-lg">Konfirmasi Hapus</span>
+                  </ModalHeader>
+                  <ModalBody className="text-center font-medium">
+                    <p>Apakah Anda yakin ingin menghapus data plotting ini?</p>
+                  </ModalBody>
+                  <ModalFooter className="justify-center">
+                    <Button
+                      variant="light"
+                      onPress={onClose}
+                      isDisabled={isDeleting}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      color="danger"
+                      onPress={executeDelete}
+                      isLoading={isDeleting}
+                    >
+                      Ya, Hapus
+                    </Button>
+                  </ModalFooter>
+                </>
+              )}
+            </ModalContent>
+          </Modal>
         </div>
       </div>
     </div>

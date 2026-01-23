@@ -11,6 +11,7 @@ import AdminDownloadRekap from "./Pages/AdminDownloadRekap";
 import AdminManagePosUtama from "./Pages/AdminManagePosUtama";
 import AdminManagePatroli from "./Pages/AdminManagePatroli";
 import AdminManageRadius from "./Pages/AdminManageRadius";
+import AdminDashboard from "./Pages/AdminDashboard";
 function App() {
   return (
     <Router>
@@ -21,6 +22,7 @@ function App() {
         <Route element={<PrivateRoute />}>
           {/* ada side bar sama navbarnya */}
           <Route element={<Mainlayouts />}>
+            <Route path="/AdminDashboard" element={<AdminDashboard />} />
             <Route path="/AdminManageSatpam" element={<AdminManageSatpam />} />
             <Route path="/AdminManageAdmin" element={<AdminManageAdmin />} />
             <Route path="/AdminManageShift" element={<AdminManageShift />} />

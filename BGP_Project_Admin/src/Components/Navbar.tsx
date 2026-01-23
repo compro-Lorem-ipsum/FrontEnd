@@ -83,7 +83,7 @@ const Navbar = () => {
             </span>
           </div>
 
-          {/* Chip Waktu (Lebih Bold) */}
+          {/* Chip Waktu */}
           <div className="flex items-center gap-2 px-4 py-2 bg-[#122C93] text-white rounded-2xl shadow-lg shadow-blue-900/20">
             <IoTimeOutline className="text-lg" />
             <span className="text-sm font-bold tracking-wide">
