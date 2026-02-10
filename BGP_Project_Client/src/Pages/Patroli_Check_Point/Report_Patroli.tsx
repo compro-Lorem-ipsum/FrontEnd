@@ -328,6 +328,8 @@ const ReportPatroli = () => {
         backdrop="blur"
         hideCloseButton
         isDismissable={false}
+        placement="center"
+        className="mx-5"
       >
         <ModalContent>
           {(onClose) => (
