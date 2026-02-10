@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Listbox, ListboxItem, Button, Divider, Tooltip } from "@heroui/react";
-
-import { IoPersonAdd } from "react-icons/io5";
-import { IoMdSettings } from "react-icons/io";
-import { AiFillHome } from "react-icons/ai";
+import { IoMdSettings, IoMdPhotos } from "react-icons/io";
+import { GiPoliceOfficerHead } from "react-icons/gi";
 import { GoClockFill } from "react-icons/go";
-import { LuRadius, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import {
-  MdFileDownload,
+  LuRadius,
+  LuChevronLeft,
+  LuChevronRight,
+  LuScanFace,
+} from "react-icons/lu";
+
+import {
   MdCoPresent,
-  MdOutlineManageHistory,
+  MdOutlineLockClock,
 } from "react-icons/md";
-import { TbLogout, TbLayoutDashboardFilled } from "react-icons/tb";
+import {
+  TbLogout,
+  TbLayoutDashboardFilled,
+  TbPhotoCheck,
+} from "react-icons/tb";
 import logo from "../assets/images/logo.png";
 
 const Sidebar = () => {
@@ -36,7 +43,7 @@ const Sidebar = () => {
     {
       key: "manage-satpam",
       name: "Manage Satpam",
-      icon: <IoPersonAdd className="text-xl" />,
+      icon: <GiPoliceOfficerHead className="text-xl" />,
       path: "/AdminManageSatpam",
     },
     {
@@ -44,43 +51,54 @@ const Sidebar = () => {
       name: "Manage Client",
       icon: <IoMdSettings className="text-xl" />,
       path: "/AdminManageAdmin",
-      hidden: role !== "SuperAdmin",
+      hidden: role !== "Admin",
     },
     {
       key: "manage-pos",
       name: "Manage Pos Patroli",
-      icon: <AiFillHome className="text-xl" />,
+      icon: <TbPhotoCheck className="text-xl" />,
       path: "/AdminManagePos",
+      hidden: role !== "Client",
     },
     {
       key: "manage-pos-utama",
       name: "Manage Pos Utama",
       icon: <MdCoPresent className="text-xl" />,
       path: "/AdminManagePosUtama",
+      hidden: role !== "Client",
+    },
+    {
+      key: "manage-waktu",
+      name: "Manage Waktu",
+      icon: <MdOutlineLockClock className="text-xl" />,
+      path: "/AdminManageWaktu",
+      hidden: role !== "Client",
     },
     {
       key: "manage-shift",
       name: "Manage Shift",
       icon: <GoClockFill className="text-xl" />,
       path: "/AdminManageShift",
-    },
-    {
-      key: "manage-patroli",
-      name: "Manage Patroli",
-      icon: <MdOutlineManageHistory className="text-xl" />,
-      path: "/AdminManagePosPatroli",
+      hidden: role !== "Client",
     },
     {
       key: "manage-radius",
       name: "Manage Radius",
       icon: <LuRadius className="text-xl" />,
       path: "/AdminManageRadius",
+      hidden: role !== "Client",
     },
     {
-      key: "download-rekap",
-      name: "Download Rekap",
-      icon: <MdFileDownload className="text-xl" />,
-      path: "/AdminDownloadRekap",
+      key: "download-absensi",
+      name: "Download Absensi",
+      icon: <LuScanFace className="text-xl" />,
+      path: "/AdminRekapAbsensi",
+    },
+    {
+      key: "download-patroli",
+      name: "Download Patroli",
+      icon: <IoMdPhotos className="text-xl" />,
+      path: "/AdminRekapPatroli",
     },
   ];
 

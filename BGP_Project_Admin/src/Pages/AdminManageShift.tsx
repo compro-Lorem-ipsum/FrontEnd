@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Button,
   Table,
@@ -16,7 +16,6 @@ import {
   useDisclosure,
   Select,
   SelectItem,
-  Input,
   Spinner,
   CheckboxGroup,
   Checkbox,
@@ -26,40 +25,55 @@ import {
 import { FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { CalendarDate, parseDate } from "@internationalized/date";
 
-interface Satpam {
-  id: number;
+interface SatpamOption {
+  uuid: string;
   nama: string;
   nip: string;
 }
-interface Pos {
-  id: number;
-  kode_pos: string;
-  nama_pos: string;
+
+interface ShiftOption {
+  uuid: string;
+  nama: string;
+  mulai: string;
+  selesai: string;
 }
+
+interface PosOption {
+  uuid: string;
+  nama: string;
+}
+
 interface Jadwal {
-  id: number;
+  uuid: string;
   tanggal: string;
-  jam_mulai_shift: string;
-  jam_selesai_shift: string;
-  nama_satpam: string;
-  nip: string;
+  satpam_id: number;
+  user_id: number;
+  satpam_name: string;
+  shift_nama: string;
+  mulai: string;
+  selesai: string;
   nama_pos: string;
-  tipe_pos: string;
-  satpam_id?: number;
-  pos_id?: number;
 }
+
+interface FormData {
+  satpam_uuid: string;
+  pos_uuid: string;
+  shift_uuid: string;
+  tanggal: CalendarDate | null;
+}
+
 interface GenerateFormData {
-  satpam_id: string;
-  pos_id: string;
+  satpam_uuid: string;
+  pos_uuid: string;
+  shift_uuid: string;
   start_date: CalendarDate | null;
   end_date: CalendarDate | null;
   days_of_week: string[];
-  jam_mulai_shift: string;
-  jam_selesai_shift: string;
 }
 
 const AdminManageShift = () => {
   const BASE_URL_API = import.meta.env.VITE_API_BASE_URL;
+
   const getToken = (): string | undefined => {
     const token = document.cookie
       .split("; ")
@@ -75,48 +89,46 @@ const AdminManageShift = () => {
     onOpen: onOpenGenerate,
     onClose: onCloseGenerate,
   } = useDisclosure();
+
   const {
     isOpen: isOpenForm,
     onOpen: onOpenForm,
     onClose: onCloseForm,
   } = useDisclosure();
 
-  const [listSatpam, setListSatpam] = useState<Satpam[]>([]);
-  const [listPos, setListPos] = useState<Pos[]>([]);
+  const [listSatpam, setListSatpam] = useState<SatpamOption[]>([]);
+  const [listPos, setListPos] = useState<PosOption[]>([]);
+  const [listShift, setListShift] = useState<ShiftOption[]>([]);
   const [dataJadwal, setDataJadwal] = useState<Jadwal[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
+
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [page, setPage] = useState(1);
-  const rowsPerPage = 12;
+  const [totalPages, setTotalPages] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
 
-  const [formData, setFormData] = useState({
-    satpam_id: "",
-    pos_id: "",
-    tanggal: null as CalendarDate | null,
-    jam_mulai_shift: "",
-    jam_selesai_shift: "",
+  const [formData, setFormData] = useState<FormData>({
+    satpam_uuid: "",
+    pos_uuid: "",
+    shift_uuid: "",
+    tanggal: null,
   });
 
   const [generateData, setGenerateData] = useState<GenerateFormData>({
-    satpam_id: "",
-    pos_id: "",
+    satpam_uuid: "",
+    pos_uuid: "",
+    shift_uuid: "",
     start_date: null,
     end_date: null,
     days_of_week: [],
-    jam_mulai_shift: "",
-    jam_selesai_shift: "",
   });
 
-  const pages = Math.ceil(dataJadwal.length / rowsPerPage);
-  const items = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return dataJadwal.slice(start, end);
-  }, [page, dataJadwal]);
+  const [errors, setErrors] = useState<any>({});
 
   const getHari = (dateString: string) => {
     const days = [
@@ -134,161 +146,260 @@ const AdminManageShift = () => {
   const fetchJadwal = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_URL_API}/v1/jadwals/`, {
+      const response = await fetch(`${BASE_URL_API}/v1/jadwal/?pid=${page}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
-      setDataJadwal(result.data || []);
+
+      if (result.data && Array.isArray(result.data.data)) {
+        setDataJadwal(result.data.data);
+        if (result.data.pagination) {
+          setTotalPages(result.data.pagination.total_pages);
+          setRowsPerPage(result.data.pagination.items_per_page);
+        }
+      } else {
+        setDataJadwal([]);
+      }
     } catch (error) {
       console.error(error);
+      addToast({ title: "Gagal memuat jadwal", color: "danger" });
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, BASE_URL_API, page]);
 
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
         const headers = { Authorization: `Bearer ${token}` };
-        const [resSatpam, resPos] = await Promise.all([
-          fetch(`${BASE_URL_API}/v1/satpams/?mode=dropdown`, { headers }),
-          fetch(`${BASE_URL_API}/v1/poss/?tipe=utama`, { headers }),
+        const [resSatpam, resShift, resPos] = await Promise.all([
+          fetch(`${BASE_URL_API}/v1/satpam/options`, { headers }),
+          fetch(`${BASE_URL_API}/v1/shifts/options`, { headers }),
+          fetch(`${BASE_URL_API}/v1/pos/options/utama`, { headers }),
         ]);
-        const ds = await resSatpam.json();
-        const dp = await resPos.json();
-        setListSatpam(ds.satpams || []);
-        setListPos(dp.results || []);
+
+        const dSatpam = await resSatpam.json();
+        const dShift = await resShift.json();
+        const dPos = await resPos.json();
+
+        setListSatpam(dSatpam.data || []);
+        setListShift(dShift.data || []);
+        setListPos(dPos.data || []);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching options:", error);
       }
     };
-    fetchJadwal();
+
     if (isOpenForm || isOpenGenerate) fetchDropdowns();
-  }, [isOpenForm, isOpenGenerate, fetchJadwal, token]);
+  }, [isOpenForm, isOpenGenerate, token, BASE_URL_API]);
+
+  useEffect(() => {
+    fetchJadwal();
+  }, [fetchJadwal]);
 
   const handleOpenAdd = () => {
-    setSelectedId(null);
+    setSelectedUuid(null);
     setFormData({
-      satpam_id: "",
-      pos_id: "",
+      satpam_uuid: "",
+      pos_uuid: "",
+      shift_uuid: "",
       tanggal: null,
-      jam_mulai_shift: "",
-      jam_selesai_shift: "",
     });
+    setErrors({});
     onOpenForm();
   };
 
-  const handleOpenEdit = async (id: number) => {
-    setSelectedId(id);
+  const handleOpenEdit = async (uuid: string) => {
+    setSelectedUuid(uuid);
+    setErrors({});
+
+    const existingItem = dataJadwal.find((item) => item.uuid === uuid);
+    let initialData = {
+      satpam_uuid: "",
+      pos_uuid: "",
+      shift_uuid: "",
+      tanggal: null as CalendarDate | null,
+    };
+
+    if (existingItem) {
+      const foundSatpam = listSatpam.find(
+        (s) => s.nama === existingItem.satpam_name,
+      );
+      const foundPos = listPos.find((p) => p.nama === existingItem.nama_pos);
+      const foundShift = listShift.find(
+        (s) =>
+          s.nama === existingItem.shift_nama && s.mulai === existingItem.mulai,
+      );
+
+      initialData = {
+        satpam_uuid: foundSatpam ? foundSatpam.uuid : "",
+        pos_uuid: foundPos ? foundPos.uuid : "",
+        shift_uuid: foundShift ? foundShift.uuid : "",
+        tanggal: existingItem.tanggal ? parseDate(existingItem.tanggal) : null,
+      };
+    }
+
+    setFormData(initialData);
+    onOpenForm();
+
     try {
-      const res = await fetch(`${BASE_URL_API}/v1/jadwals/${id}`, {
+      const res = await fetch(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await res.json();
-      const item = result.data;
+      const item = result.data || result;
 
-      const foundSatpam = listSatpam.find((s) => s.nip === item.nip);
-      const recoveredSatpamId = foundSatpam ? String(foundSatpam.id) : "";
-
-      const foundPos = listPos.find((p) => p.nama_pos === item.nama_pos);
-      const recoveredPosId = foundPos ? String(foundPos.id) : "";
-
-      setFormData({
-        satpam_id: recoveredSatpamId,
-        pos_id: recoveredPosId,
-        tanggal: item.tanggal ? parseDate(item.tanggal.split("T")[0]) : null,
-        jam_mulai_shift: item.jam_mulai_shift || "",
-        jam_selesai_shift: item.jam_selesai_shift || "",
-      });
-      onOpenForm();
+      if (item && item.satpam_uuid && item.pos_uuid && item.shift_uuid) {
+        setFormData({
+          satpam_uuid: item.satpam_uuid,
+          pos_uuid: item.pos_uuid,
+          shift_uuid: item.shift_uuid,
+          tanggal: item.tanggal ? parseDate(item.tanggal.split("T")[0]) : null,
+        });
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching detail, using fallback data:", error);
     }
+  };
+
+  const validateForm = () => {
+    const newErrors: any = {};
+    if (!formData.satpam_uuid) newErrors.satpam_uuid = "Satpam wajib dipilih";
+    if (!formData.pos_uuid) newErrors.pos_uuid = "Pos wajib dipilih";
+    if (!formData.shift_uuid) newErrors.shift_uuid = "Shift wajib dipilih";
+    if (!formData.tanggal) newErrors.tanggal = "Tanggal wajib diisi";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmitShift = async () => {
-    if (!formData.tanggal) return;
-    const body = {
-      satpam_id: Number(formData.satpam_id),
-      pos_id: Number(formData.pos_id),
-      tanggal: formData.tanggal.toString(),
-      jam_mulai_shift:
-        formData.jam_mulai_shift.length === 5
-          ? `${formData.jam_mulai_shift}:00`
-          : formData.jam_mulai_shift,
-      jam_selesai_shift:
-        formData.jam_selesai_shift.length === 5
-          ? `${formData.jam_selesai_shift}:00`
-          : formData.jam_selesai_shift,
-    };
-    const url = selectedId
-      ? `${BASE_URL_API}/v1/jadwals/${selectedId}`
-      : `${BASE_URL_API}/v1/jadwals/`;
-    const res = await fetch(url, {
-      method: selectedId ? "PUT" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
+    if (!validateForm()) {
       addToast({
-        title: "Berhasil",
-        description: `Data berhasil ${selectedId ? "diubah" : "ditambahkan"}`,
-        color: "success",
+        title: "Validasi Gagal",
+        description: "Periksa kembali inputan anda",
+        color: "warning",
       });
-      onCloseForm();
-      fetchJadwal();
+      return;
     }
+
+    const body = {
+      satpam_uuid: formData.satpam_uuid,
+      pos_uuid: formData.pos_uuid,
+      shift_uuid: formData.shift_uuid,
+      tanggal: formData.tanggal!.toString(),
+    };
+
+    const url = selectedUuid
+      ? `${BASE_URL_API}/v1/jadwal/${selectedUuid}`
+      : `${BASE_URL_API}/v1/jadwal/`;
+
+    try {
+      const res = await fetch(url, {
+        method: selectedUuid ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        addToast({
+          title: "Berhasil",
+          description: `Data berhasil ${selectedUuid ? "diubah" : "ditambahkan"}`,
+          color: "success",
+        });
+        onCloseForm();
+        if (!selectedUuid) setPage(1);
+        fetchJadwal();
+      } else {
+        const err = await res.json();
+        throw new Error(err.message || "Gagal menyimpan");
+      }
+    } catch (error: any) {
+      addToast({ title: "Gagal", description: error.message, color: "danger" });
+    }
+  };
+
+  const validateGenerate = () => {
+    const newErrors: any = {};
+    if (!generateData.start_date)
+      newErrors.start_date = "Tanggal Mulai wajib diisi";
+    if (!generateData.end_date)
+      newErrors.end_date = "Tanggal Berakhir wajib diisi";
+    if (!generateData.satpam_uuid)
+      newErrors.satpam_uuid = "Satpam wajib dipilih";
+    if (!generateData.pos_uuid) newErrors.pos_uuid = "Pos wajib dipilih";
+    if (!generateData.shift_uuid) newErrors.shift_uuid = "Shift wajib dipilih";
+    if (generateData.days_of_week.length === 0)
+      newErrors.days_of_week = "Pilih minimal satu hari kerja";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleGenerateSubmit = async () => {
-    if (!generateData.start_date || !generateData.end_date) return;
-    const body = {
-      satpam_id: Number(generateData.satpam_id),
-      pos_id: Number(generateData.pos_id),
-      start_date: generateData.start_date.toString(),
-      end_date: generateData.end_date.toString(),
-      days_of_week: generateData.days_of_week.map(Number),
-      jam_mulai_shift:
-        generateData.jam_mulai_shift.length === 5
-          ? `${generateData.jam_mulai_shift}:00`
-          : generateData.jam_mulai_shift,
-      jam_selesai_shift:
-        generateData.jam_selesai_shift.length === 5
-          ? `${generateData.jam_selesai_shift}:00`
-          : generateData.jam_selesai_shift,
-    };
-    const res = await fetch(`${BASE_URL_API}/v1/jadwals/recurring`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
+    if (!validateGenerate()) {
       addToast({
-        title: "Berhasil",
-        description: "Jadwal rutin berhasil dibuat",
-        color: "success",
+        title: "Validasi Gagal",
+        description: "Lengkapi form generate",
+        color: "warning",
       });
-      onCloseGenerate();
-      fetchJadwal();
+      return;
+    }
+
+    const body = {
+      satpam_uuid: generateData.satpam_uuid,
+      pos_uuid: generateData.pos_uuid,
+      shift_uuid: generateData.shift_uuid,
+      start_date: generateData.start_date!.toString(),
+      end_date: generateData.end_date!.toString(),
+      days_of_week: generateData.days_of_week.map(Number),
+    };
+
+    try {
+      const res = await fetch(`${BASE_URL_API}/v1/jadwal/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        addToast({
+          title: "Berhasil",
+          description: "Jadwal rutin berhasil dibuat",
+          color: "success",
+        });
+        onCloseGenerate();
+        setPage(1);
+        fetchJadwal();
+      } else {
+        const err = await res.json();
+        throw new Error(err.message || "Gagal generate jadwal");
+      }
+    } catch (error: any) {
+      addToast({
+        title: "Gagal generate",
+        description: error.message,
+        color: "danger",
+      });
     }
   };
 
-  const openDeleteModal = (id: number) => {
-    setDeleteTargetId(id);
+  const openDeleteModal = (uuid: string) => {
+    setDeleteTargetUuid(uuid);
     setDeleteModalOpen(true);
   };
 
   const executeDelete = async () => {
-    if (!deleteTargetId) return;
+    if (!deleteTargetUuid) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`${BASE_URL_API}/v1/jadwals/${deleteTargetId}`, {
+      const res = await fetch(`${BASE_URL_API}/v1/jadwal/${deleteTargetUuid}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -296,13 +407,14 @@ const AdminManageShift = () => {
         addToast({
           title: "Berhasil",
           description: "Data shift berhasil dihapus",
-          color: "success",
+          color: "danger",
         });
         fetchJadwal();
         setDeleteModalOpen(false);
+      } else {
+        throw new Error("Gagal menghapus");
       }
     } catch (error) {
-      console.error(error);
       addToast({
         title: "Gagal",
         description: "Gagal menghapus data shift",
@@ -310,7 +422,7 @@ const AdminManageShift = () => {
       });
     } finally {
       setIsDeleting(false);
-      setDeleteTargetId(null);
+      setDeleteTargetUuid(null);
     }
   };
 
@@ -324,20 +436,19 @@ const AdminManageShift = () => {
           <div className="container-generate flex flex-row gap-5">
             <Button
               onPress={onOpenGenerate}
-              className="bg-[#122C93] text-white font-semibold h-12"
+              className="bg-[#122C93] text-white font-semibold h-10"
             >
               Generate Jadwal +
             </Button>
             <Button
               onPress={handleOpenAdd}
-              className="bg-[#122C93] text-white font-semibold h-12"
+              className="bg-[#122C93] text-white font-semibold h-10"
             >
               Tambah +
             </Button>
           </div>
         </div>
 
-        {/* MODAL GENERATE */}
         <Modal
           backdrop="opaque"
           isOpen={isOpenGenerate}
@@ -358,38 +469,55 @@ const AdminManageShift = () => {
                         label="Tanggal Mulai"
                         variant="underlined"
                         labelPlacement="outside"
-                        onChange={(d) =>
+                        isInvalid={!!errors.start_date}
+                        errorMessage={errors.start_date}
+                        onChange={(d) => {
                           setGenerateData({
                             ...generateData,
                             start_date: d as CalendarDate,
-                          })
-                        }
+                          });
+                          if (errors.start_date)
+                            setErrors({ ...errors, start_date: undefined });
+                        }}
                       />
                       <DatePicker
                         label="Tanggal Berakhir"
                         variant="underlined"
                         labelPlacement="outside"
-                        onChange={(d) =>
+                        isInvalid={!!errors.end_date}
+                        errorMessage={errors.end_date}
+                        onChange={(d) => {
                           setGenerateData({
                             ...generateData,
                             end_date: d as CalendarDate,
-                          })
-                        }
+                          });
+                          if (errors.end_date)
+                            setErrors({ ...errors, end_date: undefined });
+                        }}
                       />
                       <Select
                         label="Pos"
                         variant="underlined"
                         labelPlacement="outside"
                         placeholder="Pilih Pos"
-                        onSelectionChange={(k) =>
+                        isInvalid={!!errors.pos_uuid}
+                        errorMessage={errors.pos_uuid}
+                        selectedKeys={
+                          generateData.pos_uuid ? [generateData.pos_uuid] : []
+                        }
+                        onSelectionChange={(k) => {
                           setGenerateData({
                             ...generateData,
-                            pos_id: String(Array.from(k)[0]),
-                          })
-                        }
+                            pos_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.pos_uuid)
+                            setErrors({ ...errors, pos_uuid: undefined });
+                        }}
                       >
                         {listPos.map((p) => (
-                          <SelectItem key={p.id}>{p.nama_pos}</SelectItem>
+                          <SelectItem key={p.uuid} textValue={p.nama}>
+                            {p.nama}
+                          </SelectItem>
                         ))}
                       </Select>
                     </div>
@@ -399,59 +527,76 @@ const AdminManageShift = () => {
                         variant="underlined"
                         labelPlacement="outside"
                         placeholder="Pilih Personel"
-                        onSelectionChange={(k) =>
+                        isInvalid={!!errors.satpam_uuid}
+                        errorMessage={errors.satpam_uuid}
+                        selectedKeys={
+                          generateData.satpam_uuid
+                            ? [generateData.satpam_uuid]
+                            : []
+                        }
+                        onSelectionChange={(k) => {
                           setGenerateData({
                             ...generateData,
-                            satpam_id: String(Array.from(k)[0]),
-                          })
-                        }
+                            satpam_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.satpam_uuid)
+                            setErrors({ ...errors, satpam_uuid: undefined });
+                        }}
                       >
                         {listSatpam.map((s) => (
                           <SelectItem
-                            key={s.id}
+                            key={s.uuid}
                             textValue={`${s.nama} - ${s.nip}`}
                           >
                             {s.nama} - {s.nip}
                           </SelectItem>
                         ))}
                       </Select>
-                      <div className="flex gap-4">
-                        <Input
-                          label="Masuk"
-                          type="time"
-                          variant="underlined"
-                          labelPlacement="outside"
-                          step="1"
-                          onChange={(e) =>
-                            setGenerateData({
-                              ...generateData,
-                              jam_mulai_shift: e.target.value,
-                            })
-                          }
-                        />
-                        <Input
-                          label="Selesai"
-                          type="time"
-                          variant="underlined"
-                          labelPlacement="outside"
-                          step="1"
-                          onChange={(e) =>
-                            setGenerateData({
-                              ...generateData,
-                              jam_selesai_shift: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+
+                      <Select
+                        label="Shift"
+                        variant="underlined"
+                        labelPlacement="outside"
+                        placeholder="Pilih Shift Kerja"
+                        isInvalid={!!errors.shift_uuid}
+                        errorMessage={errors.shift_uuid}
+                        selectedKeys={
+                          generateData.shift_uuid
+                            ? [generateData.shift_uuid]
+                            : []
+                        }
+                        onSelectionChange={(k) => {
+                          setGenerateData({
+                            ...generateData,
+                            shift_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.shift_uuid)
+                            setErrors({ ...errors, shift_uuid: undefined });
+                        }}
+                      >
+                        {listShift.map((s) => (
+                          <SelectItem
+                            key={s.uuid}
+                            textValue={`${s.nama} (${s.mulai.slice(0, 5)} - ${s.selesai.slice(0, 5)})`}
+                          >
+                            {s.nama} ({s.mulai.slice(0, 5)} -{" "}
+                            {s.selesai.slice(0, 5)})
+                          </SelectItem>
+                        ))}
+                      </Select>
                     </div>
                     <div className="col-span-2">
                       <CheckboxGroup
                         label="Pilih Hari Kerja"
                         orientation="horizontal"
+                        isInvalid={!!errors.days_of_week}
+                        errorMessage={errors.days_of_week}
                         value={generateData.days_of_week}
-                        onValueChange={(v) =>
-                          setGenerateData({ ...generateData, days_of_week: v })
-                        }
+                        onValueChange={(v) => {
+                          setGenerateData({ ...generateData, days_of_week: v });
+                          if (errors.days_of_week)
+                            setErrors({ ...errors, days_of_week: undefined });
+                        }}
                       >
                         <Checkbox value="1">Senin</Checkbox>
                         <Checkbox value="2">Selasa</Checkbox>
@@ -480,7 +625,6 @@ const AdminManageShift = () => {
           </ModalContent>
         </Modal>
 
-        {/* MODAL ADD/EDIT */}
         <Modal
           backdrop="opaque"
           isOpen={isOpenForm}
@@ -491,7 +635,7 @@ const AdminManageShift = () => {
             {(onClose) => (
               <>
                 <ModalHeader className="text-[#122C93]">
-                  {selectedId ? "Edit Shift" : "Tambah Shift Manual"}
+                  {selectedUuid ? "Edit Shift" : "Tambah Shift Manual"}
                 </ModalHeader>
                 <ModalBody>
                   <div className="container-form flex flex-row justify-between gap-10 p-3">
@@ -501,29 +645,42 @@ const AdminManageShift = () => {
                         label="Tanggal"
                         variant="underlined"
                         labelPlacement="outside"
+                        isInvalid={!!errors.tanggal}
+                        errorMessage={errors.tanggal}
                         value={formData.tanggal}
-                        onChange={(d) =>
+                        onChange={(d) => {
                           setFormData({
                             ...formData,
                             tanggal: d as CalendarDate,
-                          })
-                        }
+                          });
+                          if (errors.tanggal)
+                            setErrors({ ...errors, tanggal: undefined });
+                        }}
                       />
                       <Select
                         className="w-full"
                         label="Pos"
                         variant="underlined"
                         labelPlacement="outside"
-                        selectedKeys={formData.pos_id ? [formData.pos_id] : []}
-                        onSelectionChange={(k) =>
+                        placeholder="Pilih Pos"
+                        isInvalid={!!errors.pos_uuid}
+                        errorMessage={errors.pos_uuid}
+                        selectedKeys={
+                          formData.pos_uuid ? [formData.pos_uuid] : []
+                        }
+                        onSelectionChange={(k) => {
                           setFormData({
                             ...formData,
-                            pos_id: String(Array.from(k)[0]),
-                          })
-                        }
+                            pos_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.pos_uuid)
+                            setErrors({ ...errors, pos_uuid: undefined });
+                        }}
                       >
                         {listPos.map((p) => (
-                          <SelectItem key={p.id}>{p.nama_pos}</SelectItem>
+                          <SelectItem key={p.uuid} textValue={p.nama}>
+                            {p.nama}
+                          </SelectItem>
                         ))}
                       </Select>
                     </div>
@@ -533,55 +690,60 @@ const AdminManageShift = () => {
                         label="Nama & NIP"
                         variant="underlined"
                         labelPlacement="outside"
+                        placeholder="Pilih Personel"
+                        isInvalid={!!errors.satpam_uuid}
+                        errorMessage={errors.satpam_uuid}
                         selectedKeys={
-                          formData.satpam_id ? [formData.satpam_id] : []
+                          formData.satpam_uuid ? [formData.satpam_uuid] : []
                         }
-                        onSelectionChange={(k) =>
+                        onSelectionChange={(k) => {
                           setFormData({
                             ...formData,
-                            satpam_id: String(Array.from(k)[0]),
-                          })
-                        }
+                            satpam_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.satpam_uuid)
+                            setErrors({ ...errors, satpam_uuid: undefined });
+                        }}
                       >
                         {listSatpam.map((s) => (
                           <SelectItem
-                            key={String(s.id)}
+                            key={s.uuid}
                             textValue={`${s.nama} - ${s.nip}`}
                           >
                             {s.nama} - {s.nip}
                           </SelectItem>
                         ))}
                       </Select>
-                      <div className="flex gap-4 w-full">
-                        <Input
-                          label="Masuk"
-                          type="time"
-                          variant="underlined"
-                          labelPlacement="outside"
-                          step="1"
-                          value={formData.jam_mulai_shift}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              jam_mulai_shift: e.target.value,
-                            })
-                          }
-                        />
-                        <Input
-                          label="Selesai"
-                          type="time"
-                          variant="underlined"
-                          labelPlacement="outside"
-                          step="1"
-                          value={formData.jam_selesai_shift}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              jam_selesai_shift: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+
+                      <Select
+                        label="Shift"
+                        variant="underlined"
+                        labelPlacement="outside"
+                        placeholder="Pilih Shift Kerja"
+                        isInvalid={!!errors.shift_uuid}
+                        errorMessage={errors.shift_uuid}
+                        selectedKeys={
+                          formData.shift_uuid ? [formData.shift_uuid] : []
+                        }
+                        onSelectionChange={(k) => {
+                          setFormData({
+                            ...formData,
+                            shift_uuid: String(Array.from(k)[0]),
+                          });
+                          if (errors.shift_uuid)
+                            setErrors({ ...errors, shift_uuid: undefined });
+                        }}
+                      >
+                        {listShift.map((s) => (
+                          <SelectItem
+                            key={s.uuid}
+                            textValue={`${s.nama} (${s.mulai.slice(0, 5)} - ${s.selesai.slice(0, 5)})`}
+                          >
+                            {s.nama} ({s.mulai.slice(0, 5)} -{" "}
+                            {s.selesai.slice(0, 5)})
+                          </SelectItem>
+                        ))}
+                      </Select>
                     </div>
                   </div>
                 </ModalBody>
@@ -593,7 +755,7 @@ const AdminManageShift = () => {
                     className="bg-[#122C93] text-white px-10"
                     onPress={handleSubmitShift}
                   >
-                    {selectedId ? "Update" : "Simpan"}
+                    {selectedUuid ? "Update" : "Simpan"}
                   </Button>
                 </ModalFooter>
               </>
@@ -611,8 +773,10 @@ const AdminManageShift = () => {
             {(onClose) => (
               <>
                 <ModalHeader className="flex flex-col gap-1 items-center text-danger">
-                  <FaExclamationTriangle size={40} />
-                  <span className="mt-2 text-lg">Konfirmasi Hapus</span>
+                  <FaExclamationTriangle size={40} className="text-[#A70202]" />
+                  <span className="mt-2 text-lg text-[#A70202]">
+                    Konfirmasi Hapus
+                  </span>
                 </ModalHeader>
                 <ModalBody className="text-center font-medium">
                   <p>Apakah Anda yakin ingin menghapus data shift ini?</p>
@@ -627,6 +791,7 @@ const AdminManageShift = () => {
                   </Button>
                   <Button
                     color="danger"
+                    className="bg-[#A70202]"
                     onPress={executeDelete}
                     isLoading={isDeleting}
                   >
@@ -638,21 +803,20 @@ const AdminManageShift = () => {
           </ModalContent>
         </Modal>
 
-        {/* TABLE SECTION */}
         <div className="table-section-container mt-6">
           <Table
             isStriped
             shadow="none"
             className="rounded-xl border border-gray-200"
             bottomContent={
-              pages > 0 ? (
+              totalPages > 0 ? (
                 <div className="flex w-full justify-center">
                   <Pagination
                     showControls
                     showShadow
                     color="primary"
                     page={page}
-                    total={pages}
+                    total={totalPages}
                     onChange={(p) => setPage(p)}
                   />
                 </div>
@@ -662,9 +826,10 @@ const AdminManageShift = () => {
             <TableHeader>
               <TableColumn>No</TableColumn>
               <TableColumn>Hari</TableColumn>
-              <TableColumn>Sesi</TableColumn>
-              <TableColumn>Nama</TableColumn>
-              <TableColumn>NIP</TableColumn>
+              <TableColumn>Tanggal</TableColumn>
+              <TableColumn>Sesi Shift</TableColumn>
+              <TableColumn>Nama Satpam</TableColumn>
+              <TableColumn>Shift</TableColumn>
               <TableColumn>Pos</TableColumn>
               <TableColumn className="text-center">Aksi</TableColumn>
             </TableHeader>
@@ -673,16 +838,14 @@ const AdminManageShift = () => {
               isLoading={isLoading}
               loadingContent={<Spinner />}
             >
-              {items.map((item, index) => (
-                <TableRow key={item.id}>
+              {dataJadwal.map((item, index) => (
+                <TableRow key={item.uuid}>
                   <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>{getHari(item.tanggal)}</TableCell>
-                  <TableCell>{`${item.jam_mulai_shift.slice(
-                    0,
-                    5,
-                  )} - ${item.jam_selesai_shift.slice(0, 5)}`}</TableCell>
-                  <TableCell>{item.nama_satpam}</TableCell>
-                  <TableCell>{item.nip}</TableCell>
+                  <TableCell>{item.tanggal}</TableCell>
+                  <TableCell>{`${item.mulai.slice(0, 5)} - ${item.selesai.slice(0, 5)}`}</TableCell>
+                  <TableCell>{item.satpam_name}</TableCell>
+                  <TableCell>{item.shift_nama}</TableCell>
                   <TableCell>{item.nama_pos}</TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-3">
@@ -690,7 +853,7 @@ const AdminManageShift = () => {
                         size="sm"
                         className="bg-[#02A758] text-white font-semibold"
                         startContent={<FaEdit />}
-                        onPress={() => handleOpenEdit(item.id)}
+                        onPress={() => handleOpenEdit(item.uuid)}
                       >
                         Ubah
                       </Button>
@@ -698,7 +861,7 @@ const AdminManageShift = () => {
                         size="sm"
                         className="bg-[#A70202] text-white font-semibold"
                         startContent={<FaTrash />}
-                        onPress={() => openDeleteModal(item.id)}
+                        onPress={() => openDeleteModal(item.uuid)}
                       >
                         Hapus
                       </Button>

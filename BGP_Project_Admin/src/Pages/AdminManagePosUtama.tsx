@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Button,
   Table,
@@ -14,12 +15,12 @@ import {
 import {
   Modal,
   ModalContent,
+  ModalHeader,
   ModalBody,
   ModalFooter,
   useDisclosure,
 } from "@heroui/react";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L, { LatLng } from "leaflet";
 
@@ -68,24 +69,30 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
 
 const AdminManagePosUtama = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
+
   const [selectedPosition, setSelectedPosition] = useState<LatLng | null>(null);
   const [dataPos, setDataPos] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
-    id: null,
-    nama_pos: "",
-    kode_pos: "",
-    latitude: "",
-    longitude: "",
+    uuid: null,
+    nama: "",
+    kode: "",
+    lat: "",
+    lng: "",
     created_at: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [loadingTable, setLoadingTable] = useState(false);
 
   const [page, setPage] = useState(1);
-  const rowsPerPage = 12;
+  const [totalPages, setTotalPages] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
 
   const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
-  const API_URL = `${BASE_API_URL}/v1/poss`;
+  const API_URL = `${BASE_API_URL}/v1/pos`;
 
   const getToken = () => {
     const token = document.cookie
@@ -98,16 +105,25 @@ const AdminManagePosUtama = () => {
   const fetchData = async () => {
     try {
       setLoadingTable(true);
-      const res = await fetch(`${API_URL}?tipe=utama`, {
+      const res = await fetch(`${API_URL}?tipe=Utama&pid=${page}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      const data = await res.json();
+      const responseData = await res.json();
 
+      if (
+        responseData &&
+        responseData.data &&
+        Array.isArray(responseData.data.data)
+      ) {
+        setDataPos(responseData.data.data);
 
-      if (data && Array.isArray(data.results)) {
-        setDataPos(data.results);
+        if (responseData.data.pagination) {
+          setTotalPages(responseData.data.pagination.total_pages);
+          setRowsPerPage(responseData.data.pagination.items_per_page);
+        }
       } else {
         setDataPos([]);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error("Gagal memuat data pos:", error);
@@ -117,33 +133,26 @@ const AdminManagePosUtama = () => {
     }
   };
 
-  const pages = Math.ceil(dataPos.length / rowsPerPage);
-
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const updateCoordinates = (latlng: LatLng) => {
     setSelectedPosition(latlng);
     setFormData((prev) => ({
       ...prev,
-      latitude: latlng.lat.toString(),
-      longitude: latlng.lng.toString(),
+      lat: latlng.lat.toString(),
+      lng: latlng.lng.toString(),
     }));
   };
 
-  const handleManualCoordChange = (
-    field: "latitude" | "longitude",
-    value: string
-  ) => {
+  const handleManualCoordChange = (field: "lat" | "lng", value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     const latVal =
-      field === "latitude" ? parseFloat(value) : parseFloat(formData.latitude);
+      field === "lat" ? parseFloat(value) : parseFloat(formData.lat);
     const lngVal =
-      field === "longitude"
-        ? parseFloat(value)
-        : parseFloat(formData.longitude);
+      field === "lng" ? parseFloat(value) : parseFloat(formData.lng);
 
     if (!isNaN(latVal) && !isNaN(lngVal)) {
       setSelectedPosition(new LatLng(latVal, lngVal));
@@ -165,7 +174,7 @@ const AdminManagePosUtama = () => {
             description: "Pastikan GPS aktif dan izin diberikan.",
             color: "warning",
           });
-        }
+        },
       );
     } else {
       console.error("Geolocation not supported");
@@ -174,11 +183,11 @@ const AdminManagePosUtama = () => {
 
   const handleOpenAdd = () => {
     setFormData({
-      id: null,
-      nama_pos: "",
-      kode_pos: "",
-      latitude: "",
-      longitude: "",
+      uuid: null,
+      nama: "",
+      kode: "",
+      lat: "",
+      lng: "",
       created_at: "",
     });
     setSelectedPosition(null);
@@ -186,37 +195,32 @@ const AdminManagePosUtama = () => {
     onOpen();
   };
 
-  const handleEdit = async (id: number) => {
+  const handleEdit = async (uuid: string) => {
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetch(`${API_URL}/${uuid}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      const data = await res.json();
+      const responseJson = await res.json();
 
-      const item = data.pos;
+      const item = responseJson.data || responseJson;
 
       if (item) {
         setFormData({
-          id: item.id,
-          nama_pos: item.nama_pos || "",
-          kode_pos: item.kode_pos || "",
-          latitude: item.latitude || "",
-          longitude: item.longitude || "",
+          uuid: item.uuid,
+          nama: item.nama || "",
+          kode: item.kode || "",
+          lat: item.lat || "",
+          lng: item.lng || "",
           created_at: item.created_at || "",
         });
 
-        const lat = parseFloat(item.latitude);
-        const lng = parseFloat(item.longitude);
+        const lat = parseFloat(item.lat);
+        const lng = parseFloat(item.lng);
 
         if (!isNaN(lat) && !isNaN(lng)) {
           setSelectedPosition(new LatLng(lat, lng));
         } else {
           setSelectedPosition(null);
-          console.error(
-            "Koordinat tidak valid:",
-            item.latitude,
-            item.longitude
-          );
         }
 
         onOpen();
@@ -231,22 +235,58 @@ const AdminManagePosUtama = () => {
     }
   };
 
+  const validateForm = () => {
+    if (
+      !formData.nama ||
+      formData.nama.length < 4 ||
+      formData.nama.length > 100
+    ) {
+      addToast({
+        title: "Validasi Gagal",
+        description: "Nama harus 4-100 karakter.",
+        color: "danger",
+      });
+      return false;
+    }
+    if (
+      !formData.kode ||
+      formData.kode.length < 1 ||
+      formData.kode.length > 20
+    ) {
+      addToast({
+        title: "Validasi Gagal",
+        description: "Kode harus 1-20 karakter.",
+        color: "danger",
+      });
+      return false;
+    }
+    if (!selectedPosition) {
+      addToast({
+        title: "Validasi Gagal",
+        description: "Lokasi (Lat/Lng) wajib diisi.",
+        color: "danger",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
-    if (!formData.kode_pos || !formData.nama_pos || !selectedPosition) return;
+    if (!validateForm()) return;
 
     const payload = {
-      kode_pos: formData.kode_pos,
-      nama_pos: formData.nama_pos,
-      tipe_pos: "utama", 
-      latitude: selectedPosition.lat,
-      longitude: selectedPosition.lng,
+      nama: formData.nama,
+      kode: formData.kode,
+      tipe: "Utama",
+      lat: selectedPosition!.lat,
+      lng: selectedPosition!.lng,
     };
 
     setLoading(true);
     try {
-      const isEdit = !!formData.id;
+      const isEdit = !!formData.uuid;
       const method = isEdit ? "PUT" : "POST";
-      const url = isEdit ? `${API_URL}/${formData.id}?tipe=utama` : API_URL;
+      const url = isEdit ? `${API_URL}/${formData.uuid}` : API_URL;
 
       const res = await fetch(url, {
         method,
@@ -259,6 +299,7 @@ const AdminManagePosUtama = () => {
 
       if (!res.ok) throw new Error("Gagal menyimpan!");
 
+      setPage(1);
       await fetchData();
       onClose();
       addToast({
@@ -268,35 +309,56 @@ const AdminManagePosUtama = () => {
       });
     } catch (error) {
       console.error(error);
+      addToast({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat menyimpan data.",
+        color: "danger",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Yakin ingin menghapus pos ini?")) return;
+  const confirmDelete = (uuid: string) => {
+    setDeleteTargetUuid(uuid);
+    setDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteTargetUuid) return;
+    setDeleteModalOpen(false);
+
     try {
-      await fetch(`${API_URL}/${id}?tipe=jaga`, {
+      const res = await fetch(`${API_URL}/${deleteTargetUuid}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
 
-      fetchData();
-
-      addToast({
-        title: "Data Dihapus",
-        description: "Data pos berhasil dihapus.",
-        color: "danger",
-      });
+      if (res.ok) {
+        await fetchData();
+        addToast({
+          title: "Berhasil",
+          description: "Data pos berhasil dihapus.",
+          color: "success",
+        });
+      } else {
+        throw new Error("Gagal menghapus");
+      }
     } catch (error) {
       console.error("Gagal menghapus pos:", error);
+      addToast({
+        title: "Gagal",
+        description: "Gagal menghapus data pos.",
+        color: "danger",
+      });
+    } finally {
+      setDeleteTargetUuid(null);
     }
   };
 
   return (
     <div className="flex flex-col p-5">
       <div className="container-content flex flex-col gap-4">
-        {/* Header */}
         <div className="header-container flex flex-row items-center justify-between mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
             Manage Pos Utama
@@ -310,7 +372,6 @@ const AdminManagePosUtama = () => {
           </Button>
         </div>
 
-        {/* Modal ADD / EDIT */}
         <Modal backdrop="opaque" isOpen={isOpen} onClose={onClose} size="4xl">
           <ModalContent>
             <>
@@ -323,9 +384,9 @@ const AdminManagePosUtama = () => {
                       size="lg"
                       label="Nama Pos"
                       placeholder="Masukan nama"
-                      value={formData.nama_pos}
+                      value={formData.nama}
                       onChange={(e) =>
-                        setFormData({ ...formData, nama_pos: e.target.value })
+                        setFormData({ ...formData, nama: e.target.value })
                       }
                     />
                     <Input
@@ -334,9 +395,9 @@ const AdminManagePosUtama = () => {
                       size="lg"
                       label="Kode Pos"
                       placeholder="Masukan Kode Pos"
-                      value={formData.kode_pos}
+                      value={formData.kode}
                       onChange={(e) =>
-                        setFormData({ ...formData, kode_pos: e.target.value })
+                        setFormData({ ...formData, kode: e.target.value })
                       }
                     />
                     <Input
@@ -345,9 +406,9 @@ const AdminManagePosUtama = () => {
                       size="lg"
                       label="Latitude"
                       placeholder="-6.xxxxx"
-                      value={formData.latitude}
+                      value={formData.lat}
                       onChange={(e) =>
-                        handleManualCoordChange("latitude", e.target.value)
+                        handleManualCoordChange("lat", e.target.value)
                       }
                     />
                     <Input
@@ -356,14 +417,13 @@ const AdminManagePosUtama = () => {
                       size="lg"
                       label="Longitude"
                       placeholder="107.xxxxx"
-                      value={formData.longitude}
+                      value={formData.lng}
                       onChange={(e) =>
-                        handleManualCoordChange("longitude", e.target.value)
+                        handleManualCoordChange("lng", e.target.value)
                       }
                     />
                   </div>
 
-                  {/* Map */}
                   <div className="flex flex-col items-start w-full gap-2">
                     <h2 className="text-lg font-semibold">
                       Titik Koordinat Maps
@@ -413,7 +473,6 @@ const AdminManagePosUtama = () => {
           </ModalContent>
         </Modal>
 
-        {/* Table */}
         <div className="mt-6">
           {loadingTable ? (
             <div className="flex justify-center py-10">
@@ -425,14 +484,14 @@ const AdminManagePosUtama = () => {
               shadow="none"
               isStriped
               bottomContent={
-                pages > 0 ? (
+                totalPages > 0 ? (
                   <div className="flex w-full justify-center">
                     <Pagination
                       showControls
                       showShadow
                       color="primary"
                       page={page}
-                      total={pages}
+                      total={totalPages}
                       onChange={(page) => setPage(page)}
                     />
                   </div>
@@ -450,18 +509,25 @@ const AdminManagePosUtama = () => {
               </TableHeader>
               <TableBody>
                 {dataPos.map((item, index) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{item.nama_pos}</TableCell>
-                    <TableCell>{item.kode_pos}</TableCell>
-                    <TableCell>{item.longitude}</TableCell>
-                    <TableCell>{item.latitude}</TableCell>
+                  <TableRow key={item.uuid}>
                     <TableCell>
-                      {new Date(item.created_at).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
+                      {(page - 1) * rowsPerPage + index + 1}
+                    </TableCell>
+                    <TableCell>{item.nama}</TableCell>
+                    <TableCell>{item.kode}</TableCell>
+                    <TableCell>{item.lng}</TableCell>
+                    <TableCell>{item.lat}</TableCell>
+                    <TableCell>
+                      {item.created_at
+                        ? new Date(item.created_at).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            },
+                          )
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-center gap-3">
@@ -469,7 +535,7 @@ const AdminManagePosUtama = () => {
                           size="sm"
                           className="bg-[#02A758] text-white font-semibold"
                           startContent={<FaEdit />}
-                          onPress={() => handleEdit(item.id)}
+                          onPress={() => handleEdit(item.uuid)}
                         >
                           Ubah
                         </Button>
@@ -477,7 +543,7 @@ const AdminManagePosUtama = () => {
                           size="sm"
                           className="bg-[#A70202] text-white font-semibold"
                           startContent={<FaTrash />}
-                          onPress={() => handleDelete(item.id)}
+                          onPress={() => confirmDelete(item.uuid)}
                         >
                           Hapus
                         </Button>
@@ -489,6 +555,38 @@ const AdminManagePosUtama = () => {
             </Table>
           )}
         </div>
+
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          size="sm"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1 items-center text-danger">
+                  <FaExclamationTriangle size={40} className="text-[#A70202]" />
+                  <span className="mt-2 text-[#A70202]">Konfirmasi Hapus</span>
+                </ModalHeader>
+                <ModalBody className="text-center font-medium">
+                  <p>Apakah anda yakin ingin menghapus data pos utama ini?</p>
+                </ModalBody>
+                <ModalFooter className="justify-center">
+                  <Button variant="light" onPress={onClose}>
+                    Batal
+                  </Button>
+                  <Button
+                    color="danger"
+                    className="bg-[#A70202]"
+                    onPress={executeDelete}
+                  >
+                    Ya, Hapus
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
       </div>
     </div>
   );

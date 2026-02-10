@@ -395,8 +395,8 @@ const AdminManagePlotting = () => {
               {(onClose) => (
                 <>
                   <ModalHeader className="flex flex-col gap-1 items-center text-danger">
-                    <FaExclamationTriangle size={40} />
-                    <span className="mt-2 text-lg">Konfirmasi Hapus</span>
+                    <FaExclamationTriangle size={40} className="text-[#A70202]" />
+                    <span className="mt-2 text-lg text-[#A70202]">Konfirmasi Hapus</span>
                   </ModalHeader>
                   <ModalBody className="text-center font-medium">
                     <p>Apakah Anda yakin ingin menghapus data plotting ini?</p>
@@ -411,6 +411,7 @@ const AdminManagePlotting = () => {
                     </Button>
                     <Button
                       color="danger"
+                      className="bg-[#A70202]"
                       onPress={executeDelete}
                       isLoading={isDeleting}
                     >

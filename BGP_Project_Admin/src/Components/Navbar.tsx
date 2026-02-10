@@ -48,10 +48,11 @@ const Navbar = () => {
             .atob(base64)
             .split("")
             .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
+            .join(""),
         );
         const payload = JSON.parse(jsonPayload);
-        setUsername(payload.sub || payload.username || "Admin");
+
+        setUsername(payload.nama || "Admin");
       } catch (error) {
         console.error("Gagal decode token:", error);
       }
@@ -66,7 +67,9 @@ const Navbar = () => {
         <div className="flex flex-col">
           <h1 className="text-xl font-bold text-[#122C93] tracking-tight">
             {getGreeting()},{" "}
-            <span className="text-gray-500 font-medium">{username}</span>
+            <span className="text-gray-500 font-medium capitalize">
+              {username}
+            </span>
           </h1>
           <p className="text-[11px] text-gray-400 font-medium mt-[2px]">
             Pantau aktivitas keamanan hari ini.
