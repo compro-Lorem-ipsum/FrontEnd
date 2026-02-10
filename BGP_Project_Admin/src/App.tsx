@@ -7,11 +7,14 @@ import AdminManageAdmin from "./Pages/AdminManageAdmin";
 import AdminManageShift from "./Pages/AdminManageShift";
 import AdminManagePos from "./Pages/AdminManagePos";
 import PrivateRoute from "./Pages/Utils/PrivateRoute";
-import AdminDownloadRekap from "./Pages/AdminDownloadRekap";
+// import AdminDownloadRekap from "./Pages/AdminDownloadRekap";
 import AdminManagePosUtama from "./Pages/AdminManagePosUtama";
-import AdminManagePatroli from "./Pages/AdminManagePatroli";
+// import AdminManagePatroli from "./Pages/AdminManagePatroli";
 import AdminManageRadius from "./Pages/AdminManageRadius";
 import AdminDashboard from "./Pages/AdminDashboard";
+import AdminManageWaktuJadwal from "./Pages/AdminManageWaktuJadwal";
+import AdminRekapAbsensi from "./Pages/AdminRekapAbsensi";
+import AdminRekapPatroli from "./Pages/AdminRekapPatroli";
 function App() {
   return (
     <Router>
@@ -26,20 +29,26 @@ function App() {
             <Route path="/AdminManageSatpam" element={<AdminManageSatpam />} />
             <Route path="/AdminManageAdmin" element={<AdminManageAdmin />} />
             <Route path="/AdminManageShift" element={<AdminManageShift />} />
-            <Route path="/AdminManagePos" element={<AdminManagePos />} />\
+            <Route path="/AdminManagePos" element={<AdminManagePos />} />
             <Route
               path="/AdminManagePosUtama"
               element={<AdminManagePosUtama />}
             />
-            <Route
+            {/* <Route
               path="/AdminManagePosPatroli"
               element={<AdminManagePatroli />}
-            />
-            <Route
+            /> */}
+            {/* <Route
               path="/AdminDownloadRekap"
               element={<AdminDownloadRekap />}
-            />
+            /> */}
+            <Route path="/AdminRekapAbsensi" element={<AdminRekapAbsensi />} />
+            <Route path="/AdminRekapPatroli" element={<AdminRekapPatroli />} />
             <Route path="/AdminManageRadius" element={<AdminManageRadius />} />
+            <Route
+              path="/AdminManageWaktu"
+              element={<AdminManageWaktuJadwal />}
+            />
             {/* Buat selanjutnya ya */}
           </Route>
           {/* ada side bar sama navbarnya */}

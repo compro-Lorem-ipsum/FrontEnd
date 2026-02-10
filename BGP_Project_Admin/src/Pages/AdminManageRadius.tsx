@@ -12,9 +12,13 @@ const AdminManageRadius = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // State untuk menyimpan nilai radius
   const [radiusUtama, setRadiusUtama] = useState("");
   const [radiusPatroli, setRadiusPatroli] = useState("");
+
+  const [errors, setErrors] = useState<{
+    radiusUtama?: string;
+    radiusPatroli?: string;
+  }>({});
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,12 +29,10 @@ const AdminManageRadius = () => {
       ?.split("=")[1];
   };
 
-  // --- FETCH DATA SAAT INI ---
   const fetchRadiusSettings = async () => {
     setLoadingData(true);
     try {
-      // Ganti endpoint ini sesuai dengan API backend Anda
-      const res = await fetch(`${API_BASE_URL}/v1/settings/radius`, {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/settings`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${getToken()}`,
@@ -38,12 +40,11 @@ const AdminManageRadius = () => {
       });
       const data = await res.json();
 
-      if (res.ok) {
-        // Asumsi response data memiliki field radius_utama dan radius_patroli
-        setRadiusUtama(data.radius_utama || "");
-        setRadiusPatroli(data.radius_patroli || "");
+      if (res.ok && data.userSetting) {
+        setRadiusUtama(data.userSetting.radius_utama || "");
+        setRadiusPatroli(data.userSetting.radius_jaga || "");
       } else {
-        console.log("Gagal mengambil data radius");
+        console.log("Gagal mengambil data radius atau data kosong");
       }
     } catch (error) {
       console.log("Error fetch radius:", error);
@@ -55,12 +56,51 @@ const AdminManageRadius = () => {
     fetchRadiusSettings();
   }, []);
 
-  // --- UPDATE DATA ---
+  const validateForm = () => {
+    const newErrors: { radiusUtama?: string; radiusPatroli?: string } = {};
+    let isValid = true;
+
+    // Validasi Radius Utama
+    const valUtama = parseInt(radiusUtama);
+    if (!radiusUtama) {
+      newErrors.radiusUtama = "Radius Utama wajib diisi.";
+      isValid = false;
+    } else if (isNaN(valUtama)) {
+      newErrors.radiusUtama = "Harus berupa angka valid.";
+      isValid = false;
+    } else if (valUtama < 20) {
+      newErrors.radiusUtama = "Minimal 20 meter.";
+      isValid = false;
+    } else if (valUtama > 1000) {
+      newErrors.radiusUtama = "Maksimal 1000 meter.";
+      isValid = false;
+    }
+
+    // Validasi Radius Patroli (Jaga)
+    const valPatroli = parseInt(radiusPatroli);
+    if (!radiusPatroli) {
+      newErrors.radiusPatroli = "Radius Patroli wajib diisi.";
+      isValid = false;
+    } else if (isNaN(valPatroli)) {
+      newErrors.radiusPatroli = "Harus berupa angka valid.";
+      isValid = false;
+    } else if (valPatroli < 20) {
+      newErrors.radiusPatroli = "Minimal 20 meter.";
+      isValid = false;
+    } else if (valPatroli > 1000) {
+      newErrors.radiusPatroli = "Maksimal 1000 meter.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleUpdate = async () => {
-    if (!radiusUtama || !radiusPatroli) {
+    if (!validateForm()) {
       addToast({
-        title: "Peringatan",
-        description: "Nilai radius tidak boleh kosong.",
+        title: "Validasi Gagal",
+        description: "Mohon periksa kembali inputan anda.",
         variant: "flat",
         color: "warning",
       });
@@ -69,16 +109,15 @@ const AdminManageRadius = () => {
 
     setSaving(true);
     try {
-      // Ganti endpoint ini sesuai dengan API backend Anda
-      const res = await fetch(`${API_BASE_URL}/v1/settings/radius`, {
-        method: "PUT", // Atau POST tergantung backend
+      const res = await fetch(`${API_BASE_URL}/v1/auth/settings`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({
           radius_utama: parseInt(radiusUtama),
-          radius_patroli: parseInt(radiusPatroli),
+          radius_jaga: parseInt(radiusPatroli),
         }),
       });
 
@@ -92,8 +131,10 @@ const AdminManageRadius = () => {
           timeout: 3000,
           color: "success",
         });
+        setErrors({});
+        fetchRadiusSettings();
       } else {
-        throw new Error(result.message);
+        throw new Error(result.message || "Gagal update");
       }
     } catch (error: any) {
       addToast({
@@ -109,18 +150,16 @@ const AdminManageRadius = () => {
   return (
     <div className="flex flex-col p-5">
       <div className="container-content flex flex-col gap-6">
-        {/* HEADER */}
         <div className="header-container mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
             Konfigurasi Radius Absensi & Patroli
           </h2>
           <p className="text-gray-500 text-sm mt-1">
-            Atur jarak maksimal yang diizinkan untuk melakukan absensi dan patroli (dalam
-            satuan meter).
+            Atur jarak maksimal yang diizinkan untuk melakukan absensi dan
+            patroli (dalam satuan meter).
           </p>
         </div>
 
-        {/* CONTENT CARD */}
         <Card className="max-w-2xl border border-gray-200 shadow-none rounded-xl">
           <CardBody className="p-8 gap-8">
             {loadingData ? (
@@ -129,7 +168,6 @@ const AdminManageRadius = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-6">
-                {/* Input Radius Pos Utama */}
                 <div className="flex flex-col gap-2">
                   <label className="font-semibold text-[#122C93]">
                     Radius Maksimum Pos Utama
@@ -139,8 +177,14 @@ const AdminManageRadius = () => {
                     variant="bordered"
                     size="lg"
                     placeholder="Contoh: 100"
-                    value={radiusUtama}
-                    onChange={(e) => setRadiusUtama(e.target.value)}
+                    value={String(radiusUtama)}
+                    isInvalid={!!errors.radiusUtama}
+                    errorMessage={errors.radiusUtama}
+                    onChange={(e) => {
+                      setRadiusUtama(e.target.value);
+                      if (errors.radiusUtama)
+                        setErrors({ ...errors, radiusUtama: undefined });
+                    }}
                     endContent={
                       <div className="pointer-events-none flex items-center">
                         <span className="text-default-400 text-small">
@@ -148,11 +192,10 @@ const AdminManageRadius = () => {
                         </span>
                       </div>
                     }
-                    description="Jarak toleransi GPS untuk absen di Pos Utama."
+                    description="Jarak toleransi GPS untuk absen di Pos Utama (Min 20m, Max 1000m)."
                   />
                 </div>
 
-                {/* Input Radius Pos Patroli */}
                 <div className="flex flex-col gap-2">
                   <label className="font-semibold text-[#122C93]">
                     Radius Maksimum Pos Patroli
@@ -162,8 +205,14 @@ const AdminManageRadius = () => {
                     variant="bordered"
                     size="lg"
                     placeholder="Contoh: 50"
-                    value={radiusPatroli}
-                    onChange={(e) => setRadiusPatroli(e.target.value)}
+                    value={String(radiusPatroli)}
+                    isInvalid={!!errors.radiusPatroli}
+                    errorMessage={errors.radiusPatroli}
+                    onChange={(e) => {
+                      setRadiusPatroli(e.target.value);
+                      if (errors.radiusPatroli)
+                        setErrors({ ...errors, radiusPatroli: undefined });
+                    }}
                     endContent={
                       <div className="pointer-events-none flex items-center">
                         <span className="text-default-400 text-small">
@@ -171,11 +220,10 @@ const AdminManageRadius = () => {
                         </span>
                       </div>
                     }
-                    description="Jarak toleransi GPS untuk absen keliling di Pos Patroli."
+                    description="Jarak toleransi GPS untuk absen keliling di Pos Patroli (Min 20m, Max 1000m)."
                   />
                 </div>
 
-                {/* Action Button */}
                 <div className="flex justify-end mt-4">
                   <Button
                     isLoading={saving}
