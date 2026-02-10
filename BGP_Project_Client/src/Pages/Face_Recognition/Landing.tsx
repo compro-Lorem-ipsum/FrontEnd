@@ -29,7 +29,7 @@ const Landing = () => {
           <Button
             variant="solid"
             className="bg-[#122C93] w-[350px] h-11 text-white font-semibold"
-            onClick={() => navigate("/Patroli")}
+            onClick={() => navigate("/ReportPatroli")}
           >
             Lakukan Patroli
           </Button>

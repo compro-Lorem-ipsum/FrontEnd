@@ -15,6 +15,8 @@ interface AttendanceData {
   kategori: string;
   distance: number;
   time: string;
+  nama_satpam: string;
+  nip: string;
 }
 
 interface AttendanceResponse {
@@ -86,6 +88,12 @@ const Verification = () => {
     });
   };
 
+  const formatStatus = (status?: string) => {
+    if (status === "CHECK_IN") return "Check In";
+    if (status === "CHECK_OUT") return "Check Out";
+    return status || "-";
+  };
+
   // Logic Variables
   const isSuccess = !!resultData?.data;
 
@@ -104,8 +112,6 @@ const Verification = () => {
   const isShiftCompleted =
     resultData?.message?.toLowerCase().includes("completed") ||
     resultData?.message?.toLowerCase().includes("selesai");
-
-  // NOTE: isServerError dihapus karena logika fallback di JSX sudah menanganinya.
 
   return (
     <>
@@ -178,15 +184,13 @@ const Verification = () => {
                 /* KONDISI 1: SUKSES */
                 <>
                   <ModalHeader className="flex flex-col items-center text-[#122C93] pt-8">
-                    <h2 className="text-[22px] font-bold">
-                      {resultData?.message || "Berhasil"}
-                    </h2>
+                    <h2 className="text-[22px] font-bold">Absensi Berhasil</h2>
                   </ModalHeader>
 
-                  <ModalBody className="flex flex-col items-center gap-4 py-6">
-                    <div className="text-center">
+                  <ModalBody className="flex flex-col items-center gap-4 py-6 w-full">
+                    <div className="text-center w-full">
                       <p className="text-[24px] font-bold text-[#122C93]">
-                        {resultData?.data?.status}
+                        {formatStatus(resultData?.data?.status)}
                       </p>
                     </div>
 
@@ -198,13 +202,6 @@ const Verification = () => {
                     </div>
 
                     <div className="flex flex-col items-center gap-1 w-full">
-                      <div className="flex justify-between w-full px-4 text-sm text-gray-600">
-                        <span>Jarak:</span>
-                        <span className="font-semibold">
-                          {resultData?.data?.distance} m
-                        </span>
-                      </div>
-                      <div className="w-full h-[1px] bg-gray-200 my-1"></div>
                       <p
                         className={`text-[18px] font-bold ${
                           resultData?.data?.kategori === "Tepat Waktu"
@@ -217,7 +214,7 @@ const Verification = () => {
                     </div>
                   </ModalBody>
 
-                  <ModalFooter className="flex justify-center pb-8">
+                  <ModalFooter className="flex justify-center pb-8 w-full">
                     <Button
                       color="primary"
                       className="bg-[#122C93] text-white rounded-lg w-full h-12 font-semibold"
@@ -270,7 +267,7 @@ const Verification = () => {
                       </p>
                     </div>
                   </ModalBody>
-                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                  <ModalFooter className="flex justify-center pb-8 gap-3 w-full">
                     <Button
                       variant="bordered"
                       className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
@@ -324,7 +321,7 @@ const Verification = () => {
                       </p>
                     </div>
                   </ModalBody>
-                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                  <ModalFooter className="flex justify-center pb-8 gap-3 w-full">
                     <Button
                       variant="bordered"
                       className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
@@ -370,7 +367,7 @@ const Verification = () => {
                   <ModalBody className="text-center py-4">
                     <p>Tidak ada jadwal aktif saat ini.</p>
                   </ModalBody>
-                  <ModalFooter className="flex justify-center pb-8">
+                  <ModalFooter className="flex justify-center pb-8 w-full">
                     <Button
                       className="bg-[#122C93] text-white w-full h-12 font-semibold"
                       onPress={() => {
@@ -409,7 +406,7 @@ const Verification = () => {
                   <ModalBody className="text-center py-4">
                     <p>Anda sudah menyelesaikan shift hari ini.</p>
                   </ModalBody>
-                  <ModalFooter className="flex justify-center pb-8">
+                  <ModalFooter className="flex justify-center pb-8 w-full">
                     <Button
                       className="bg-[#122C93] text-white w-full h-12 font-semibold"
                       onPress={() => {
@@ -455,7 +452,7 @@ const Verification = () => {
                     </div>
                   </ModalBody>
 
-                  <ModalFooter className="flex justify-center pb-8 gap-3">
+                  <ModalFooter className="flex justify-center pb-8 gap-3 w-full">
                     <Button
                       variant="bordered"
                       className="border-[#122C93] text-[#122C93] w-full h-12 font-semibold"
