@@ -98,7 +98,7 @@ export const PosTable = ({
                   startContent={<FaTrash />}
                   onPress={() => item.uuid && onDelete(item.uuid)}
                 >
-                  Delete
+                  Hapus
                 </Button>
               </div>
             </TableCell>
