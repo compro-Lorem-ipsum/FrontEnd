@@ -31,41 +31,48 @@ export const AttendanceEditModal = ({
         <ModalHeader className="text-[#122C93]">Edit Data Absensi</ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-6 p-2">
-            <Input
-              label="Waktu Check In"
-              type="datetime-local"
-              variant="underlined"
-              labelPlacement="inside"
-              value={formData.check_in}
-              onChange={(e) =>
-                setFormData({ ...formData, check_in: e.target.value })
-              }
-            />
-            <Input
-              label="Waktu Check Out"
-              type="datetime-local"
-              variant="underlined"
-              labelPlacement="inside"
-              value={formData.check_out}
-              onChange={(e) =>
-                setFormData({ ...formData, check_out: e.target.value })
-              }
-            />
-            <Select
-              label="Kategori Kehadiran"
-              variant="underlined"
-              labelPlacement="inside"
-              placeholder="Pilih Kategori"
-              selectedKeys={formData.kategori ? [formData.kategori] : []}
-              onChange={(e) =>
-                setFormData({ ...formData, kategori: e.target.value })
-              }
-            >
-              <SelectItem key="Tepat Waktu">Tepat Waktu</SelectItem>
-              <SelectItem key="Terlambat">Terlambat</SelectItem>
-              <SelectItem key="Izin">Izin</SelectItem>
-              <SelectItem key="Alpha">Alpha</SelectItem>
-            </Select>
+            <div className="container-input-date-custom flex flex-col">
+              <h2 className="font-light text-[12px]">Waktu Check In</h2>
+              <Input
+                type="datetime-local"
+                variant="underlined"
+                labelPlacement="inside"
+                value={formData.check_in}
+                onChange={(e) =>
+                  setFormData({ ...formData, check_in: e.target.value })
+                }
+              />
+            </div>
+            <div className="container-input-date-custom flex flex-col">
+              <h2 className="font-light text-[12px]">Waktu Check Out</h2>
+              <Input
+                type="datetime-local"
+                variant="underlined"
+                labelPlacement="inside"
+                value={formData.check_out}
+                onChange={(e) =>
+                  setFormData({ ...formData, check_out: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="container-input-date-custom flex flex-col">
+              <h2 className="font-light text-[12px]">Kategori Kehadiran</h2>
+              <Select
+                variant="underlined"
+                labelPlacement="inside"
+                placeholder="Pilih Kategori"
+                selectedKeys={formData.kategori ? [formData.kategori] : []}
+                onChange={(e) =>
+                  setFormData({ ...formData, kategori: e.target.value })
+                }
+              >
+                <SelectItem key="Tepat Waktu">Tepat Waktu</SelectItem>
+                <SelectItem key="Terlambat">Terlambat</SelectItem>
+                <SelectItem key="Izin">Izin</SelectItem>
+                <SelectItem key="Alpha">Alpha</SelectItem>
+              </Select>
+            </div>
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-center pb-8">
