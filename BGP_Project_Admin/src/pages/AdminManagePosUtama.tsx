@@ -73,7 +73,6 @@ const AdminManagePosUtama = () => {
           isOpen={deleteState.isOpen}
           onClose={() => deleteState.setIsOpen(false)}
           onConfirm={deleteState.execute}
-          message="Apakah anda yakin ingin menghapus data pos utama ini?"
         />
       </div>
     </div>
