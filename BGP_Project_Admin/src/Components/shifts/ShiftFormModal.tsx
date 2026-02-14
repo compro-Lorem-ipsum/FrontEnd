@@ -43,7 +43,7 @@ export const ShiftFormModal = ({
               variant="underlined"
               labelPlacement="inside"
               value={formData.nama}
-              maxLength={20}
+              maxLength={50}
               isInvalid={!!errors.nama}
               errorMessage={errors.nama}
               onChange={(e) =>

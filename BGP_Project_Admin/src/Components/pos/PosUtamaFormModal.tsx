@@ -36,6 +36,7 @@ export const PosUtamaFormModal = ({
                 placeholder="Masukan nama"
                 variant="underlined"
                 size="lg"
+                maxLength={60}
                 value={formData.nama}
                 onChange={(e) =>
                   setters.setFormData({ ...formData, nama: e.target.value })
@@ -45,6 +46,7 @@ export const PosUtamaFormModal = ({
                 label="Kode Pos"
                 placeholder="Masukan Kode Pos"
                 variant="underlined"
+                maxLength={60}
                 size="lg"
                 value={formData.kode}
                 onChange={(e) =>
