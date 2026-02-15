@@ -310,6 +310,7 @@ const ReportPatroli = () => {
           label="Keterangan"
           placeholder="Tambahkan catatan..."
           value={notes}
+          maxLength={500}
           onValueChange={setNotes}
         />
 
