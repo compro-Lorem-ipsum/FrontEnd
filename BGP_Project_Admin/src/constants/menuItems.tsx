@@ -80,7 +80,7 @@ export const DASHBOARD_MENU_ITEMS: MenuItem[] = [
     desc: "Tambah atau hapus akses administrator sistem.",
     icon: <FaUserShield size={24} className="text-white" />,
     color: "bg-red-600",
-    path: "/AdminManageAdmin",
+    path: "/AdminManageUsers",
     allowedRoles: ["Admin"],
   },
 ];
