@@ -15,6 +15,7 @@ import AdminRekapAbsensi from "./pages/AdminRekapAbsensi";
 import AdminRekapPatroli from "./pages/AdminRekapPatroli";
 import AdminManageRadius from "./pages/AdminManageRadius";
 import AdminManageWaktuJadwal from "./pages/AdminManageWaktuJadwal";
+import NotFoundPage from "./pages/NotFoundPage";
 function App() {
   return (
     <Router>
@@ -43,6 +44,8 @@ function App() {
             />
             {/* Buat selanjutnya ya */}
           </Route>
+          {/* Error Page Handler */}
+          <Route path="*" element={<NotFoundPage />} />
           {/* ada side bar sama navbarnya */}
         </Route>
       </Routes>
