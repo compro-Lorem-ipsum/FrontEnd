@@ -76,8 +76,8 @@ export const DASHBOARD_MENU_ITEMS: MenuItem[] = [
     allowedRoles: ["Client"],
   },
   {
-    title: "Manajemen Admin",
-    desc: "Tambah atau hapus akses administrator sistem.",
+    title: "Manajemen Client",
+    desc: "Tambah atau hapus akses administrator sistem client.",
     icon: <FaUserShield size={24} className="text-white" />,
     color: "bg-red-600",
     path: "/AdminManageUsers",
