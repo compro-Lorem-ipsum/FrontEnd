@@ -64,7 +64,7 @@ export const UserListTable = ({
       <TableHeader>
         <TableColumn>No</TableColumn>
         <TableColumn>Nama Mitra</TableColumn>
-        <TableColumn>Username</TableColumn>
+        <TableColumn>Email</TableColumn>
         <TableColumn>Pembuatan</TableColumn>
         <TableColumn className="text-center">Aksi</TableColumn>
       </TableHeader>
@@ -77,7 +77,7 @@ export const UserListTable = ({
             </TableCell>
             <TableCell>
               <div className="w-[150px] truncate"></div>
-              {item.username}
+              {item.email}
             </TableCell>
             <TableCell>{formatTanggal(item.created_at)}</TableCell>
             <TableCell>

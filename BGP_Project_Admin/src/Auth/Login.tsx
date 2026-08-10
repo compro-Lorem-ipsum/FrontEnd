@@ -1,38 +1,61 @@
-import { Button, Input, Spinner } from "@heroui/react";
+import { Button, Input, InputOtp, Spinner } from "@heroui/react";
+import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import cover from "../assets/images/cover.webp";
 import logo from "../assets/images/logo.png";
 import { useState } from "react";
 
+type AuthView = "login" | "forgot-email" | "forgot-otp" | "forgot-new-password";
+
 const Login = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  const [view, setView] = useState<AuthView>("login");
+
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [generalError, setGeneralError] = useState("");
   const [validationErrors, setValidationErrors] = useState<{
-    username?: string;
+    email?: string;
     password?: string;
   }>({});
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetEmailError, setResetEmailError] = useState("");
+  const [resetGeneralError, setResetGeneralError] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [otpGeneralError, setOtpGeneralError] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [newPasswordErrors, setNewPasswordErrors] = useState<{
+    newPassword?: string;
+    confirmNewPassword?: string;
+  }>({});
+  const [newPasswordGeneralError, setNewPasswordGeneralError] = useState("");
+  const [newPasswordSuccess, setNewPasswordSuccess] = useState("");
+  const [newPasswordLoading, setNewPasswordLoading] = useState(false);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const validateForm = () => {
-    const newErrors: { username?: string; password?: string } = {};
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    const newErrors: { email?: string; password?: string } = {};
     let isValid = true;
 
-    if (!username) {
-      newErrors.username = "Username wajib diisi.";
+    if (!email) {
+      newErrors.email = "Email wajib diisi.";
       isValid = false;
-    } else if (username.length < 5) {
-      newErrors.username = "Username minimal 5 karakter.";
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Format email tidak valid.";
       isValid = false;
-    } else if (username.length > 100) {
-      newErrors.username = "Username maksimal 100 karakter.";
-      isValid = false;
-    } else if (!usernameRegex.test(username)) {
-      newErrors.username = "Hanya huruf, angka, dan underscore (_).";
+    } else if (email.length > 100) {
+      newErrors.email = "Email maksimal 100 karakter.";
       isValid = false;
     }
 
@@ -64,7 +87,7 @@ const Login = () => {
       const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -112,9 +135,241 @@ const Login = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleLoginKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleLogin();
+    }
+  };
+
+  const handleGoToForgotPassword = () => {
+    setGeneralError("");
+    setValidationErrors({});
+    setResetEmail(email);
+    setResetEmailError("");
+    setResetGeneralError("");
+    setView("forgot-email");
+  };
+
+  const handleBackToLogin = () => {
+    setResetEmail("");
+    setResetEmailError("");
+    setResetGeneralError("");
+    setOtp("");
+    setOtpError("");
+    setOtpGeneralError("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setNewPasswordErrors({});
+    setNewPasswordGeneralError("");
+    setNewPasswordSuccess("");
+    setView("login");
+  };
+
+  const handleSendOtp = async () => {
+    setResetGeneralError("");
+
+    if (!resetEmail) {
+      setResetEmailError("Email wajib diisi.");
+      return;
+    } else if (!emailRegex.test(resetEmail)) {
+      setResetEmailError("Format email tidak valid.");
+      return;
+    } else {
+      setResetEmailError("");
+    }
+
+    setResetLoading(true);
+
+    setTimeout(() => {
+      setResetLoading(false);
+      setView("forgot-otp");
+    }, 600);
+
+    // try {
+    //   const response = await fetch(
+    //     `${API_BASE_URL}/v1/auth/forgot-password`,
+    //     {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({ email: resetEmail }),
+    //     },
+    //   );
+
+    //   const data = await response.json();
+
+    //   if (!response.ok) {
+    //     setResetGeneralError(
+    //       data.message || "Gagal mengirim kode OTP, periksa kembali email Anda!",
+    //     );
+    //     setResetLoading(false);
+    //     return;
+    //   }
+
+    //   setView("forgot-otp");
+    // } catch (err) {
+    //   console.error("Send OTP Error:", err);
+    //   setResetGeneralError("Terjadi kesalahan koneksi ke server.");
+    // } finally {
+    //   setResetLoading(false);
+    // }
+  };
+
+  const handleForgotEmailKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Enter") {
+      handleSendOtp();
+    }
+  };
+
+  const handleBackToForgotEmail = () => {
+    setOtp("");
+    setOtpError("");
+    setOtpGeneralError("");
+    setView("forgot-email");
+  };
+
+  const handleVerifyOtp = async () => {
+    setOtpGeneralError("");
+
+    if (!otp || otp.length < 4) {
+      setOtpError("Kode OTP wajib diisi 6 digit.");
+      return;
+    } else {
+      setOtpError("");
+    }
+
+    setOtpLoading(true);
+
+    setTimeout(() => {
+      setOtpLoading(false);
+      setView("forgot-new-password");
+    }, 600);
+
+    // try {
+    //   const response = await fetch(`${API_BASE_URL}/v1/auth/verify-otp`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ email: resetEmail, otp }),
+    //   });
+
+    //   const data = await response.json();
+
+    //   if (!response.ok) {
+    //     setOtpGeneralError(
+    //       data.message || "Kode OTP salah, periksa kembali kode Anda!",
+    //     );
+    //     setOtpLoading(false);
+    //     return;
+    //   }
+
+    //   setView("forgot-new-password");
+    // } catch (err) {
+    //   console.error("Verify OTP Error:", err);
+    //   setOtpGeneralError("Terjadi kesalahan koneksi ke server.");
+    // } finally {
+    //   setOtpLoading(false);
+    // }
+  };
+
+  const validateNewPasswordForm = () => {
+    const newErrors: {
+      newPassword?: string;
+      confirmNewPassword?: string;
+    } = {};
+    let isValid = true;
+
+    if (!newPassword) {
+      newErrors.newPassword = "Password baru wajib diisi.";
+      isValid = false;
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = "Password minimal 8 karakter.";
+      isValid = false;
+    } else if (newPassword.length > 16) {
+      newErrors.newPassword = "Password maksimal 16 karakter.";
+      isValid = false;
+    }
+
+    if (!confirmNewPassword) {
+      newErrors.confirmNewPassword = "Konfirmasi password wajib diisi.";
+      isValid = false;
+    } else if (confirmNewPassword !== newPassword) {
+      newErrors.confirmNewPassword = "Konfirmasi password tidak cocok.";
+      isValid = false;
+    }
+
+    setNewPasswordErrors(newErrors);
+    return isValid;
+  };
+
+  const handleResetPassword = async () => {
+    setNewPasswordGeneralError("");
+    setNewPasswordSuccess("");
+
+    if (!validateNewPasswordForm()) {
+      return;
+    }
+
+    setNewPasswordLoading(true);
+
+    setTimeout(() => {
+      setNewPasswordLoading(false);
+      setNewPasswordSuccess(
+        "Password berhasil direset. Silakan login kembali.",
+      );
+      setTimeout(() => {
+        handleBackToLogin();
+      }, 1500);
+    }, 600);
+
+    // try {
+    //   const response = await fetch(`${API_BASE_URL}/v1/auth/reset-password`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       email: resetEmail,
+    //       otp,
+    //       newPassword,
+    //     }),
+    //   });
+
+    //   const data = await response.json();
+
+    //   if (!response.ok) {
+    //     setNewPasswordGeneralError(
+    //       data.message || "Gagal mereset password, periksa kembali data Anda!",
+    //     );
+    //     setNewPasswordLoading(false);
+    //     return;
+    //   }
+
+    //   setNewPasswordSuccess("Password berhasil direset. Silakan login kembali.");
+    //   setTimeout(() => {
+    //     handleBackToLogin();
+    //   }, 1500);
+    // } catch (err) {
+    //   console.error("Reset Password Error:", err);
+    //   setNewPasswordGeneralError("Terjadi kesalahan koneksi ke server.");
+    // } finally {
+    //   setNewPasswordLoading(false);
+    // }
+  };
+
+  const handleNewPasswordKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Enter") {
+      handleResetPassword();
+    }
+  };
+
+  const handleBackArrowClick = () => {
+    if (view === "forgot-email") {
+      handleBackToLogin();
+    } else if (view === "forgot-otp") {
+      handleBackToForgotEmail();
+    } else if (view === "forgot-new-password") {
+      handleBackToLogin();
     }
   };
 
@@ -145,83 +400,319 @@ const Login = () => {
         </div>
       </div>
 
-      <div className="form-section w-1/2 flex flex-col items-start justify-center px-[100px] lg:px-[200px]">
-        <h2 className="font-bold text-[33px] text-[#122C93]">Login</h2>
-
-        <h2 className="font-semibold text-[20px] mt-20 text-[#122C93]">
-          Username
-        </h2>
-        <Input
-          variant="bordered"
-          type="text"
-          size="lg"
-          placeholder="Masukkan Username Anda"
-          className="mt-5"
-          minLength={5}
-          maxLength={101}
-          value={username}
-          isInvalid={!!validationErrors.username}
-          errorMessage={validationErrors.username}
-          onChange={(e) => {
-            setUsername(e.target.value);
-            if (validationErrors.username) {
-              setValidationErrors({ ...validationErrors, username: undefined });
-            }
-          }}
-          onKeyDown={handleKeyDown}
-        />
-
-        <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
-          Password
-        </h2>
-        <Input
-          type="password"
-          size="lg"
-          placeholder="Masukkan Password Anda"
-          variant="bordered"
-          maxLength={17}
-          minLength={8}
-          className="mt-5"
-          value={password}
-          isInvalid={!!validationErrors.password}
-          errorMessage={validationErrors.password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            if (validationErrors.password) {
-              setValidationErrors({ ...validationErrors, password: undefined });
-            }
-          }}
-          onKeyDown={handleKeyDown}
-        />
-
-        {generalError && (
-          <p className="text-red-500 mt-3 font-medium text-sm bg-red-50 p-2 rounded w-full">
-            {generalError}
-          </p>
+      <div className="form-section relative w-1/2 flex flex-col items-start justify-center px-[100px] lg:px-[200px]">
+        {view !== "login" && (
+          <button
+            type="button"
+            onClick={handleBackArrowClick}
+            className="absolute top-8 left-12 flex items-center justify-center w-10 h-10 text-[#122C93]"
+          >
+            <div className="button-section flex flex-row items-center gap-2">
+              {" "}
+              <FiArrowLeft size={24} />
+              <h2>Kembali</h2>
+            </div>
+          </button>
         )}
 
-        <h2 className="text-[#122C93] text-[15px] font-light mt-5">
-          Lupa Password ?{" "}
-          <span className="font-semibold">Silahkan Konfirmasi Admin</span>
-        </h2>
+        {view === "login" && (
+          <>
+            <h2 className="font-bold text-[33px] text-[#122C93]">Login</h2>
 
-        <Button
-          variant="solid"
-          color="primary"
-          size="lg"
-          className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
-          onClick={handleLogin}
-          isDisabled={loading}
-        >
-          {loading ? (
-            <>
-              <Spinner color="white" size="sm" />
-              <span className="ml-2">Memproses...</span>
-            </>
-          ) : (
-            "Login"
-          )}
-        </Button>
+            <h2 className="font-semibold text-[20px] mt-20 text-[#122C93]">
+              Email
+            </h2>
+            <Input
+              variant="bordered"
+              type="email"
+              size="lg"
+              placeholder="Masukkan Email Anda"
+              className="mt-5"
+              minLength={5}
+              maxLength={101}
+              value={email}
+              isInvalid={!!validationErrors.email}
+              errorMessage={validationErrors.email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (validationErrors.email) {
+                  setValidationErrors({
+                    ...validationErrors,
+                    email: undefined,
+                  });
+                }
+              }}
+              onKeyDown={handleLoginKeyDown}
+            />
+
+            <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
+              Password
+            </h2>
+            <Input
+              type="password"
+              size="lg"
+              placeholder="Masukkan Password Anda"
+              variant="bordered"
+              maxLength={17}
+              minLength={8}
+              className="mt-5"
+              value={password}
+              isInvalid={!!validationErrors.password}
+              errorMessage={validationErrors.password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (validationErrors.password) {
+                  setValidationErrors({
+                    ...validationErrors,
+                    password: undefined,
+                  });
+                }
+              }}
+              onKeyDown={handleLoginKeyDown}
+            />
+
+            {generalError && (
+              <p className="text-red-500 mt-3 font-medium text-sm bg-red-50 p-2 rounded w-full">
+                {generalError}
+              </p>
+            )}
+
+            <h2
+              className="text-[#122C93] text-[15px] cursor-pointer font-semibold mt-5"
+              onClick={handleGoToForgotPassword}
+            >
+              Lupa Password ?{" "}
+            </h2>
+
+            <Button
+              variant="solid"
+              color="primary"
+              size="lg"
+              className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
+              onClick={handleLogin}
+              isDisabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Spinner color="white" size="sm" />
+                  <span className="ml-2">Memproses...</span>
+                </>
+              ) : (
+                "Login"
+              )}
+            </Button>
+          </>
+        )}
+
+        {view === "forgot-email" && (
+          <>
+            <h2 className="font-bold text-[33px] text-[#122C93]">
+              Atur Ulang Kata Sandi
+            </h2>
+            <p className="text-sm text-gray-500 mt-3">
+              Masukkan email akun Anda. Kode OTP akan dikirim untuk reset
+              password
+            </p>
+
+            <h2 className="font-semibold text-[20px] mt-16 text-[#122C93]">
+              Email
+            </h2>
+            <Input
+              variant="bordered"
+              type="email"
+              size="lg"
+              placeholder="Masukkan Email Anda"
+              className="mt-5"
+              minLength={5}
+              maxLength={101}
+              value={resetEmail}
+              isInvalid={!!resetEmailError}
+              errorMessage={resetEmailError}
+              onChange={(e) => {
+                setResetEmail(e.target.value);
+                if (resetEmailError) {
+                  setResetEmailError("");
+                }
+              }}
+              onKeyDown={handleForgotEmailKeyDown}
+            />
+
+            {resetGeneralError && (
+              <p className="text-red-500 mt-3 font-medium text-sm bg-red-50 p-2 rounded w-full">
+                {resetGeneralError}
+              </p>
+            )}
+
+            <Button
+              variant="solid"
+              color="primary"
+              size="lg"
+              className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
+              onClick={handleSendOtp}
+              isDisabled={resetLoading}
+            >
+              {resetLoading ? (
+                <>
+                  <Spinner color="white" size="sm" />
+                  <span className="ml-2">Mengirim...</span>
+                </>
+              ) : (
+                "Kirim OTP"
+              )}
+            </Button>
+          </>
+        )}
+
+        {view === "forgot-otp" && (
+          <>
+            <h2 className="font-bold text-[33px] text-[#122C93]">
+              Verifikasi Akun
+            </h2>
+            <p className="text-sm text-gray-500 mt-3">
+              Masukkan kode verifikasi yang telah kami kirimkan ke {resetEmail}.
+            </p>
+
+            <div className="mt-16">
+              <h2 className="font-semibold text-md text-[#122C93]">Kode</h2>
+              <InputOtp
+                length={6}
+                variant="bordered"
+                size="lg"
+                value={otp}
+                onValueChange={(value) => {
+                  setOtp(value);
+                  if (otpError) {
+                    setOtpError("");
+                  }
+                }}
+                isInvalid={!!otpError}
+                errorMessage={otpError}
+              />
+            </div>
+
+            {otpGeneralError && (
+              <p className="text-red-500 mt-3 font-medium text-sm bg-red-50 p-2 rounded w-full">
+                {otpGeneralError}
+              </p>
+            )}
+
+            <h2 className="text-sm font-light mt-5">
+              Tidak menerima kode?{" "}
+              <span className="font-semibold text-[#122C93]">Kirim Ulang</span>
+            </h2>
+
+            <Button
+              variant="solid"
+              color="primary"
+              size="lg"
+              className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
+              onClick={handleVerifyOtp}
+              isDisabled={otpLoading}
+            >
+              {otpLoading ? (
+                <>
+                  <Spinner color="white" size="sm" />
+                  <span className="ml-2">Memverifikasi...</span>
+                </>
+              ) : (
+                "Verifikasi OTP"
+              )}
+            </Button>
+          </>
+        )}
+
+        {view === "forgot-new-password" && (
+          <>
+            <h2 className="font-bold text-[33px] text-[#122C93]">
+              Buat Kata Sandi Baru
+            </h2>
+            <p className="text-sm text-gray-500 mt-3">
+              Buat kata sandi yang kuat untuk mengamankan akses akun Anda.
+            </p>
+
+            <h2 className="font-semibold text-[20px] mt-16 text-[#122C93]">
+              Password Baru
+            </h2>
+            <Input
+              type="password"
+              size="lg"
+              placeholder="Masukkan Password Baru Anda"
+              variant="bordered"
+              maxLength={17}
+              minLength={8}
+              className="mt-5"
+              value={newPassword}
+              isInvalid={!!newPasswordErrors.newPassword}
+              errorMessage={newPasswordErrors.newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                if (newPasswordErrors.newPassword) {
+                  setNewPasswordErrors({
+                    ...newPasswordErrors,
+                    newPassword: undefined,
+                  });
+                }
+              }}
+              onKeyDown={handleNewPasswordKeyDown}
+            />
+
+            <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
+              Konfirmasi Password Baru
+            </h2>
+            <Input
+              type="password"
+              size="lg"
+              placeholder="Konfirmasi Password Baru Anda"
+              variant="bordered"
+              maxLength={17}
+              minLength={8}
+              className="mt-5"
+              value={confirmNewPassword}
+              isInvalid={!!newPasswordErrors.confirmNewPassword}
+              errorMessage={newPasswordErrors.confirmNewPassword}
+              onChange={(e) => {
+                setConfirmNewPassword(e.target.value);
+                if (newPasswordErrors.confirmNewPassword) {
+                  setNewPasswordErrors({
+                    ...newPasswordErrors,
+                    confirmNewPassword: undefined,
+                  });
+                }
+              }}
+              onKeyDown={handleNewPasswordKeyDown}
+            />
+
+            {newPasswordGeneralError && (
+              <p className="text-red-500 mt-3 font-medium text-sm bg-red-50 p-2 rounded w-full">
+                {newPasswordGeneralError}
+              </p>
+            )}
+
+            {newPasswordSuccess && (
+              <p className="text-green-600 mt-3 font-medium text-sm bg-green-50 p-2 rounded w-full">
+                {newPasswordSuccess}
+              </p>
+            )}
+
+            <Button
+              variant="solid"
+              color="primary"
+              size="lg"
+              className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
+              onClick={handleResetPassword}
+              isDisabled={newPasswordLoading}
+            >
+              {newPasswordLoading ? (
+                <>
+                  <Spinner color="white" size="sm" />
+                  <span className="ml-2">Memproses...</span>
+                </>
+              ) : (
+                "Reset Password"
+              )}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
