@@ -1,23 +1,35 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Divider } from "@heroui/react";
-import { IoMdSettings, IoMdPhotos } from "react-icons/io";
+import {
+  IoMdSettings,
+  IoMdPulse,
+  IoMdPhotos,
+  IoIosChatboxes,
+} from "react-icons/io";
 import { GiPoliceOfficerHead } from "react-icons/gi";
+import { MdFolderCopy } from "react-icons/md";
+import { FaFilePen } from "react-icons/fa6";
 import { GoClockFill } from "react-icons/go";
+import { GoAlertFill } from "react-icons/go";
+import { GrAnnounce } from "react-icons/gr";
 import {
   LuRadius,
   LuChevronLeft,
   LuChevronRight,
   LuScanFace,
 } from "react-icons/lu";
+import { BsPersonFillCheck } from "react-icons/bs";
 
 import { MdCoPresent, MdOutlineLockClock } from "react-icons/md";
 import {
   TbLogout,
   TbLayoutDashboardFilled,
   TbPhotoCheck,
+  TbGpsFilled,
 } from "react-icons/tb";
 import logo from "../assets/images/logo.png";
+import { HiMiniBellAlert } from "react-icons/hi2";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -42,6 +54,12 @@ const Sidebar = () => {
       name: "Manage Satpam",
       icon: <GiPoliceOfficerHead className="text-xl" />,
       path: "/AdminManageSatpam",
+    },
+    {
+      key: "approval-akun",
+      name: "Approval Akun",
+      icon: <BsPersonFillCheck className="text-xl" />,
+      path: "/AdminAprovalAkun",
     },
     {
       key: "manage-admin",
@@ -79,6 +97,12 @@ const Sidebar = () => {
       hidden: role !== "Client",
     },
     {
+      key: "penjadwalan-satpam",
+      name: "Penjadwalan Satpam",
+      icon: <GoClockFill className="text-xl" />,
+      path: "/ClientPenjadwalanSatpam",
+    },
+    {
       key: "manage-radius",
       name: "Manage Radius",
       icon: <LuRadius className="text-xl" />,
@@ -96,6 +120,54 @@ const Sidebar = () => {
       name: "Download Patroli",
       icon: <IoMdPhotos className="text-xl" />,
       path: "/AdminRekapPatroli",
+    },
+    {
+      key: "trackin-gps",
+      name: "GPS Tracking",
+      icon: <TbGpsFilled className="text-xl" />,
+      path: "/ClientGpsTracking",
+    },
+    {
+      key: "riwayat-pesan",
+      name: "Riwayat Pesan",
+      icon: <IoIosChatboxes className="text-xl" />,
+      path: "/ClientRiwayatPesan",
+    },
+    {
+      key: "laporan-kejadian",
+      name: "Laporan Kejadian",
+      icon: <GoAlertFill className="text-xl" />,
+      path: "/AdminLaporanKejadian",
+    },
+    {
+      key: "panic-alert",
+      name: "Panic Alert",
+      icon: <HiMiniBellAlert className="text-xl" />,
+      path: "/AdminPanicAlert",
+    },
+    {
+      key: "manage-pengajuan",
+      name: "Pengajuan",
+      icon: <FaFilePen className="text-xl" />,
+      path: "/AdminManagePengajuan",
+    },
+    {
+      key: "pengumuman",
+      name: "Pengumuman",
+      icon: <GrAnnounce className="text-xl" />,
+      path: "/AdminManagePengumuman",
+    },
+    {
+      key: "repositori-dokumen",
+      name: "Repositori Dokumen",
+      icon: <MdFolderCopy className="text-xl" />,
+      path: "/AdminRepositoriDokumen",
+    },
+    {
+      key: "acivity-log",
+      name: "Activity Log",
+      icon: <IoMdPulse className="text-xl" />,
+      path: "/ClientActivityLog",
     },
   ];
 

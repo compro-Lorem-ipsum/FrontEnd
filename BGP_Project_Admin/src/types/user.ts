@@ -1,14 +1,14 @@
 export interface User {
   uuid: string;
   nama: string;
-  username: string;
+  email: string;
   created_at: string;
   is_active?: number;
 }
 
 export interface CreateUserPayload {
   nama: string;
-  username: string;
+  email: string;
   password?: string;
 }
 
@@ -26,6 +26,6 @@ export interface UserResponse {
 
 export interface FormErrors {
   nama?: string;
-  username?: string;
+  email?: string;
   password?: string;
 }

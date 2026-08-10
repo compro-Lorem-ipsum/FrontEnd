@@ -10,7 +10,7 @@ interface UseUserFormProps {
 
 export const useUserForm = ({ onSuccess, onClose }: UseUserFormProps) => {
   const [nama, setNama] = useState("");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -26,18 +26,15 @@ export const useUserForm = ({ onSuccess, onClose }: UseUserFormProps) => {
       isValid = false;
     }
 
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
-    if (!username) {
-      newErrors.username = "Username wajib diisi.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      newErrors.email = "Email wajib diisi.";
       isValid = false;
-    } else if (username.length < 5) {
-      newErrors.username = "Username minimal 5 karakter.";
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Format email tidak valid.";
       isValid = false;
-    } else if (username.length > 100) {
-      newErrors.username = "Username maksimal 100 karakter.";
-      isValid = false;
-    } else if (!usernameRegex.test(username)) {
-      newErrors.username = "Hanya huruf, angka, dan underscore (_).";
+    } else if (email.length > 100) {
+      newErrors.email = "Email maksimal 100 karakter.";
       isValid = false;
     }
 
@@ -58,7 +55,7 @@ export const useUserForm = ({ onSuccess, onClose }: UseUserFormProps) => {
 
   const resetForm = () => {
     setNama("");
-    setUsername("");
+    setEmail("");
     setPassword("");
     setErrors({});
   };
@@ -75,7 +72,7 @@ export const useUserForm = ({ onSuccess, onClose }: UseUserFormProps) => {
     }
 
     try {
-      await userService.create({ nama, username, password });
+      await userService.create({ nama, email, password });
       addToast({
         title: "Berhasil",
         description: "User berhasil ditambahkan.",
@@ -97,8 +94,8 @@ export const useUserForm = ({ onSuccess, onClose }: UseUserFormProps) => {
   };
 
   return {
-    formState: { nama, username, password },
-    setters: { setNama, setUsername, setPassword },
+    formState: { nama, email, password },
+    setters: { setNama, setEmail, setPassword },
     errors,
     resetForm,
     handleSubmit,

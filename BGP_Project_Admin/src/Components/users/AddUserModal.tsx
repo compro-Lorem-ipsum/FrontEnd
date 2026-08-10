@@ -52,16 +52,16 @@ export const AddUserModal = ({
               type="text"
               variant="underlined"
               size="lg"
-              label="Username"
-              placeholder="Masukan Username"
+              label="Email"
+              placeholder="Masukan Email"
               labelPlacement="inside"
               description="Min 5 karakter, huruf, angka, dan underscore (_)"
-              value={formState.username}
+              value={formState.email}
               maxLength={101}
               minLength={50}
-              isInvalid={!!errors.username}
-              errorMessage={errors.username}
-              onValueChange={(val) => setters.setUsername(val)}
+              isInvalid={!!errors.email}
+              errorMessage={errors.email}
+              onValueChange={(val) => setters.setEmail(val)}
             />
             <Input
               type="text"

@@ -18,6 +18,8 @@ const INITIAL_COLUMNS = [
   { name: "No", uid: "no" },
   { name: "Nama", uid: "nama" },
   { name: "NIP", uid: "nip" },
+  { name: "Jabatan", uid: "jabatan" },
+  { name: "Status", uid: "status" },
   { name: "Asal Daerah", uid: "asal_daerah" },
   { name: "No Telp", uid: "no_telp" },
   { name: "Mitra", uid: "mitra" },
