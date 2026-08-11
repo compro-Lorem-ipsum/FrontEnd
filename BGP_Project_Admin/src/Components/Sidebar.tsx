@@ -21,7 +21,7 @@ import {
 } from "react-icons/lu";
 import { BsPersonFillCheck } from "react-icons/bs";
 
-import { MdCoPresent, MdOutlineLockClock } from "react-icons/md";
+import { MdCoPresent } from "react-icons/md";
 import {
   TbLogout,
   TbLayoutDashboardFilled,
@@ -83,20 +83,20 @@ const Sidebar = () => {
       path: "/AdminManagePosUtama",
       hidden: role !== "client",
     },
-    {
-      key: "manage-waktu",
-      name: "Manage Waktu",
-      icon: <MdOutlineLockClock className="text-xl" />,
-      path: "/AdminManageWaktu",
-      hidden: role !== "client",
-    },
-    {
-      key: "manage-shift",
-      name: "Manage Shift",
-      icon: <GoClockFill className="text-xl" />,
-      path: "/AdminManageShift",
-      hidden: role !== "client",
-    },
+    // {
+    //   key: "manage-waktu",
+    //   name: "Manage Waktu",
+    //   icon: <MdOutlineLockClock className="text-xl" />,
+    //   path: "/AdminManageWaktu",
+    //   hidden: role !== "client",
+    // },
+    // {
+    //   key: "manage-shift",
+    //   name: "Manage Shift",
+    //   icon: <GoClockFill className="text-xl" />,
+    //   path: "/AdminManageShift",
+    //   hidden: role !== "client",
+    // },
     {
       key: "penjadwalan-satpam",
       name: "Penjadwalan Satpam",
