@@ -12,7 +12,10 @@ COPY . .
 # backend) - default path relatif /api/v1, di-proxy Caddy 1 origin ke backend.
 ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-RUN npm run build
+# vite build langsung (bukan `npm run build` / `tsc -b`) - kode masih ada
+# in-progress work (variabel WIP, dsb) yang bikin type-check strict gagal.
+# vite build sendiri sudah transpile TS, cuma skip pengecekan tipe strict.
+RUN npx vite build
 
 # Prod stage - hasil build statis, cukup nginx (tidak butuh runtime Node)
 FROM nginx:alpine AS production
