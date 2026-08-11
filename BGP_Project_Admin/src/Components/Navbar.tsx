@@ -73,7 +73,7 @@ const Navbar = () => {
             </span>
           </h1>
           <p className="text-[11px] text-gray-400 font-medium mt-[2px]">
-            Pantau aktivitas keamanan hari esok.
+            Pantau aktivitas keamanan hari ini.
           </p>
         </div>
 
