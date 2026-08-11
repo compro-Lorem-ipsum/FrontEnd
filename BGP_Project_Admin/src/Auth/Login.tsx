@@ -3,7 +3,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import cover from "../assets/images/cover.webp";
 import logo from "../assets/images/logo.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type AuthView = "login" | "forgot-email" | "forgot-otp" | "forgot-new-password";
 
@@ -41,6 +41,21 @@ const Login = () => {
   const [newPasswordGeneralError, setNewPasswordGeneralError] = useState("");
   const [newPasswordSuccess, setNewPasswordSuccess] = useState("");
   const [newPasswordLoading, setNewPasswordLoading] = useState(false);
+  const [countdown, setCountdown] = useState(600);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (view === "forgot-otp" && countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown, view]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -84,48 +99,33 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier: email, password }),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
         setGeneralError(
-          data.message || "Login gagal, periksa kembali data Anda!",
+          responseData.message || "Login gagal, periksa kembali data Anda!",
         );
         setLoading(false);
         return;
       }
 
-      document.cookie = `token=${data.token}; path=/;`;
+      const { access_token, refresh_token, user } = responseData.data;
+      const userRole = user.role;
 
-      try {
-        const base64Url = data.token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          window
-            .atob(base64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join(""),
-        );
+      document.cookie = `token=${access_token}; path=/;`;
+      document.cookie = `refresh_token=${refresh_token}; path=/;`;
+      document.cookie = `role=${userRole}; path=/;`;
 
-        const decoded = JSON.parse(jsonPayload);
-        const userRole = decoded.role;
-
-        document.cookie = `role=${userRole}; path=/;`;
-
-        if (userRole === "Admin" || userRole === "SuperAdmin") {
-          navigate("/AdminDashboard");
-        } else {
-          navigate("/AdminDashboard");
-        }
-      } catch (decodeErr) {
-        console.error("Error decoding token:", decodeErr);
-        setGeneralError("Format token tidak dikenali.");
+      if (userRole?.toLowerCase() === "client") {
+        navigate("/ClientDashboard");
+      } else {
+        navigate("/AdminDashboard");
       }
     } catch (err) {
       console.error("Login Error:", err);
@@ -180,38 +180,31 @@ const Login = () => {
 
     setResetLoading(true);
 
-    setTimeout(() => {
-      setResetLoading(false);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        setResetGeneralError(
+          responseData.message || "Gagal mengirim kode OTP, periksa kembali email Anda!",
+        );
+        setResetLoading(false);
+        return;
+      }
+
       setView("forgot-otp");
-    }, 600);
-
-    // try {
-    //   const response = await fetch(
-    //     `${API_BASE_URL}/v1/auth/forgot-password`,
-    //     {
-    //       method: "POST",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({ email: resetEmail }),
-    //     },
-    //   );
-
-    //   const data = await response.json();
-
-    //   if (!response.ok) {
-    //     setResetGeneralError(
-    //       data.message || "Gagal mengirim kode OTP, periksa kembali email Anda!",
-    //     );
-    //     setResetLoading(false);
-    //     return;
-    //   }
-
-    //   setView("forgot-otp");
-    // } catch (err) {
-    //   console.error("Send OTP Error:", err);
-    //   setResetGeneralError("Terjadi kesalahan koneksi ke server.");
-    // } finally {
-    //   setResetLoading(false);
-    // }
+      setCountdown(600);
+    } catch (err) {
+      console.error("Send OTP Error:", err);
+      setResetGeneralError("Terjadi kesalahan koneksi ke server.");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const handleForgotEmailKeyDown = (
@@ -241,35 +234,11 @@ const Login = () => {
 
     setOtpLoading(true);
 
+    // OTP will be verified in the next step together with the new password
     setTimeout(() => {
       setOtpLoading(false);
       setView("forgot-new-password");
     }, 600);
-
-    // try {
-    //   const response = await fetch(`${API_BASE_URL}/v1/auth/verify-otp`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ email: resetEmail, otp }),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (!response.ok) {
-    //     setOtpGeneralError(
-    //       data.message || "Kode OTP salah, periksa kembali kode Anda!",
-    //     );
-    //     setOtpLoading(false);
-    //     return;
-    //   }
-
-    //   setView("forgot-new-password");
-    // } catch (err) {
-    //   console.error("Verify OTP Error:", err);
-    //   setOtpGeneralError("Terjadi kesalahan koneksi ke server.");
-    // } finally {
-    //   setOtpLoading(false);
-    // }
   };
 
   const validateNewPasswordForm = () => {
@@ -312,47 +281,37 @@ const Login = () => {
 
     setNewPasswordLoading(true);
 
-    setTimeout(() => {
-      setNewPasswordLoading(false);
-      setNewPasswordSuccess(
-        "Password berhasil direset. Silakan login kembali.",
-      );
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: resetEmail,
+          code: otp,
+          new_password: newPassword,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        setNewPasswordGeneralError(
+          responseData.message || "Gagal mereset password, periksa kembali data Anda!",
+        );
+        setNewPasswordLoading(false);
+        return;
+      }
+
+      setNewPasswordSuccess("Password berhasil direset. Silakan login kembali.");
       setTimeout(() => {
         handleBackToLogin();
       }, 1500);
-    }, 600);
-
-    // try {
-    //   const response = await fetch(`${API_BASE_URL}/v1/auth/reset-password`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       email: resetEmail,
-    //       otp,
-    //       newPassword,
-    //     }),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (!response.ok) {
-    //     setNewPasswordGeneralError(
-    //       data.message || "Gagal mereset password, periksa kembali data Anda!",
-    //     );
-    //     setNewPasswordLoading(false);
-    //     return;
-    //   }
-
-    //   setNewPasswordSuccess("Password berhasil direset. Silakan login kembali.");
-    //   setTimeout(() => {
-    //     handleBackToLogin();
-    //   }, 1500);
-    // } catch (err) {
-    //   console.error("Reset Password Error:", err);
-    //   setNewPasswordGeneralError("Terjadi kesalahan koneksi ke server.");
-    // } finally {
-    //   setNewPasswordLoading(false);
-    // }
+    } catch (err) {
+      console.error("Reset Password Error:", err);
+      setNewPasswordGeneralError("Terjadi kesalahan koneksi ke server.");
+    } finally {
+      setNewPasswordLoading(false);
+    }
   };
 
   const handleNewPasswordKeyDown = (
@@ -598,7 +557,18 @@ const Login = () => {
 
             <h2 className="text-sm font-light mt-5">
               Tidak menerima kode?{" "}
-              <span className="font-semibold text-[#122C93]">Kirim Ulang</span>
+              <span
+                className={`font-semibold cursor-pointer transition-colors duration-200 ${
+                  resetLoading ? "text-gray-400" : "text-[#122C93] hover:text-[#0d1f69]"
+                }`}
+                onClick={resetLoading ? undefined : handleSendOtp}
+              >
+                {resetLoading
+                  ? "Mengirim..."
+                  : countdown > 0
+                  ? `Kirim Ulang (${formatTime(countdown)})`
+                  : "Kirim Ulang"}
+              </span>
             </h2>
 
             <Button
