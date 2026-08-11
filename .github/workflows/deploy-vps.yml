@@ -1,0 +1,154 @@
+# Build image di GitHub Actions -> push ke GitHub Container Registry (ghcr.io)
+# -> VPS cuma menarik (pull) image jadi. Pola sama persis dengan bima-backend,
+# BEDA: tidak ada langkah migrate/seed/admin (itu spesifik database backend;
+# frontend cuma static file yang disajikan nginx).
+#
+# VITE_API_BASE_URL dibakar ke JS bundle SAAT BUILD di Actions (bukan runtime
+# seperti env backend) - path relatif /api/v1, 1 origin dengan backend lewat
+# Caddy jadi tidak perlu CORS.
+#
+# PENTING: semua command `docker compose` di server WAJIB pakai `-p bima-prod`
+# (nama project yang sama dipakai backend-prod dkk) - kalau tidak, container
+# frontend akan masuk network Docker yang berbeda dan Caddy tidak akan bisa
+# nemuin `frontend:80`.
+
+name: Deploy Frontend ke VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag image yang mau dipasang (kosongkan = build commit ini). Contoh rollback: sha-a1b2c3d"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-frontend-vps
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event.inputs.image_tag == '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tentukan nama image & tag
+        id: meta
+        run: |
+          REPO_LC="${GITHUB_REPOSITORY,,}"
+          TAG="sha-$(git rev-parse --short HEAD)"
+          echo "image=ghcr.io/${REPO_LC}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Image  : ghcr.io/${REPO_LC}"
+          echo "Tag    : ${TAG}"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./BGP_Project_Admin
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=/api/v1
+          tags: |
+            ${{ steps.meta.outputs.image }}:latest
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [build]
+    if: ${{ always() && (needs.build.result == 'success' || github.event.inputs.image_tag != '') }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - name: Cek VPS sudah dikonfigurasi
+        id: guard
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secret VPS_HOST kosong — deploy dilewati (build & push image tetap jalan)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tentukan image yang dipasang
+        id: target
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          REPO_LC="${GITHUB_REPOSITORY,,}"
+          TAG="${{ github.event.inputs.image_tag }}"
+          TAG="${TAG:-${{ needs.build.outputs.tag }}}"
+          echo "ref=ghcr.io/${REPO_LC}:${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Akan dipasang: ghcr.io/${REPO_LC}:${TAG}"
+
+      - name: Deploy via SSH (pull image, tanpa build di server)
+        if: steps.guard.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: IMAGE_REF,GHCR_USER,GHCR_TOKEN,OPS_PATH
+          script: |
+            set -e
+            COMPOSE_FILE="docker-compose.vps.yml"
+            COMPOSE_PROJECT="bima-prod"
+
+            echo "== login registry =="
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+            cd "$OPS_PATH"
+            export FRONTEND_IMAGE="$IMAGE_REF"
+
+            echo "== tarik image: $IMAGE_REF =="
+            docker compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" pull frontend
+
+            echo "== jalankan ulang container =="
+            docker compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d frontend
+
+            echo "== bersihkan image lama yang sudah tidak dipakai =="
+            docker image prune -f
+
+            docker logout ghcr.io
+            echo "== selesai. Cek: docker logs ${COMPOSE_PROJECT}-frontend-1 =="
+        env:
+          IMAGE_REF: ${{ steps.target.outputs.ref }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPS_PATH: ${{ secrets.VPS_OPS_PATH }}
+
+  # Bersihkan versi image lama di ghcr.io biar kuota GitHub Packages nggak penuh.
+  cleanup:
+    needs: [deploy]
+    if: ${{ always() && needs.deploy.result == 'success' && github.event.inputs.image_tag == '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-name: frontend
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false
