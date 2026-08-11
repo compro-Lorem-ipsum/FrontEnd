@@ -7,7 +7,6 @@ dist
 .gitignore
 Dockerfile
 .dockerignore
-nginx.conf
 README.md
 .vscode
 *.log
