@@ -37,6 +37,7 @@ export const AddUserModal = ({
             <Input
               type="text"
               variant="underlined"
+              isRequired
               size="lg"
               label="Nama"
               placeholder="Masukan nama"
@@ -50,6 +51,7 @@ export const AddUserModal = ({
             />
             <Input
               type="text"
+              isRequired
               variant="underlined"
               size="lg"
               label="Email"
@@ -65,6 +67,7 @@ export const AddUserModal = ({
             />
             <Input
               type="text"
+              isRequired
               variant="underlined"
               size="lg"
               label="Password"

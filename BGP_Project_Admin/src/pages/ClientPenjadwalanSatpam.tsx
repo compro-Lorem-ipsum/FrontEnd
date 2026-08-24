@@ -9,8 +9,6 @@ import {
   ModalFooter,
   Input,
   DatePicker,
-  CheckboxGroup,
-  Checkbox,
   useDisclosure,
 } from "@heroui/react";
 import { useState } from "react";
@@ -367,47 +365,20 @@ const ClientPenjadwalanSatpam = () => {
     console.log("hapus shift", uuid);
   };
 
-  // === Modal: Auto Generate Jadwal ===
-  const modalGenerate = useDisclosure();
-  const [generateData, setGenerateData] = useState<{
-    start_date?: CalendarDate;
-    end_date?: CalendarDate;
-    pos_uuid: string;
-    satpam_uuid: string;
-    shift_uuid: string;
-    days_of_week: string[];
-  }>({
-    start_date: undefined,
-    end_date: undefined,
-    pos_uuid: "",
-    satpam_uuid: "",
-    shift_uuid: "",
-    days_of_week: [],
-  });
-  const [generateErrors, setGenerateErrors] = useState<
-    Record<string, string | undefined>
-  >({});
-  const [isGenerateSubmitting, setIsGenerateSubmitting] = useState(false);
-
-  const handleGenerateSubmit = () => {
-    setIsGenerateSubmitting(true);
-    console.log("generate jadwal", generateData);
-    setIsGenerateSubmitting(false);
-    modalGenerate.onOpenChange();
-  };
-
   // === Modal: Tambah/Edit Jadwal Manual ===
   const modalManual = useDisclosure();
   const [selectedJadwalUuid, setSelectedJadwalUuid] = useState<string | null>(
     null,
   );
   const [manualData, setManualData] = useState<{
-    tanggal?: CalendarDate;
+    tanggalMulai?: CalendarDate;
+    tanggalAkhir?: CalendarDate;
     pos_uuid: string;
     satpam_uuid: string;
     shift_uuid: string;
   }>({
-    tanggal: undefined,
+    tanggalMulai: undefined,
+    tanggalAkhir: undefined,
     pos_uuid: "",
     satpam_uuid: "",
     shift_uuid: "",
@@ -419,7 +390,8 @@ const ClientPenjadwalanSatpam = () => {
 
   const resetManualForm = () => {
     setManualData({
-      tanggal: undefined,
+      tanggalMulai: undefined,
+      tanggalAkhir: undefined,
       pos_uuid: "",
       satpam_uuid: "",
       shift_uuid: "",
@@ -537,16 +509,16 @@ const ClientPenjadwalanSatpam = () => {
     hari: string,
     value: ShiftHarian,
   ) => {
-    setSatpamMingguanData((prev: any) =>
-      prev.map((satpam: any) =>
+    setSatpamMingguanData((prev: SatpamMingguan[]) =>
+      prev.map((satpam: SatpamMingguan) =>
         satpam.id === satpamId
           ? {
-              ...satpam,
-              jadwal: {
-                ...satpam.jadwal,
-                [hari]: value,
-              },
-            }
+            ...satpam,
+            jadwal: {
+              ...satpam.jadwal,
+              [hari]: value,
+            },
+          }
           : satpam,
       ),
     );
@@ -669,16 +641,14 @@ const ClientPenjadwalanSatpam = () => {
                         radius="full"
                         variant="bordered"
                         classNames={{
-                          trigger: `min-h-8 h-8 px-3 ${
-                            isFilled
-                              ? shiftBadgeColor[
-                                  shift as Exclude<ShiftHarian, null>
-                                ]
-                              : "border-dashed border-[#C4C4C4] bg-transparent data-[hover=true]:bg-[#F5F7FF]"
-                          }`,
-                          value: `text-xs font-medium ${
-                            isFilled ? "" : "text-[#9CA3AF] text-center"
-                          }`,
+                          trigger: `min-h-8 h-8 px-3 ${isFilled
+                            ? shiftBadgeColor[
+                            shift as Exclude<ShiftHarian, null>
+                            ]
+                            : "border-dashed border-[#C4C4C4] bg-transparent data-[hover=true]:bg-[#F5F7FF]"
+                            }`,
+                          value: `text-xs font-medium ${isFilled ? "" : "text-[#9CA3AF] text-center"
+                            }`,
                         }}
                       >
                         {shiftOptions.map((item) => (
@@ -706,21 +676,19 @@ const ClientPenjadwalanSatpam = () => {
                 <div className="container-switcher flex flex-row w-fit items-center gap-1 bg-[#F1F1F1] p-1 rounded-4xl">
                   <h2
                     onClick={() => setRangeMode("harian")}
-                    className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${
-                      rangeMode === "harian"
-                        ? "bg-white text-[#122C93]"
-                        : "text-[#6B6B6B]"
-                    }`}
+                    className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${rangeMode === "harian"
+                      ? "bg-white text-[#122C93]"
+                      : "text-[#6B6B6B]"
+                      }`}
                   >
                     Hari Ini
                   </h2>
                   <h2
                     onClick={() => setRangeMode("mingguan")}
-                    className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${
-                      rangeMode === "mingguan"
-                        ? "bg-white text-[#122C93]"
-                        : "text-[#6B6B6B]"
-                    }`}
+                    className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${rangeMode === "mingguan"
+                      ? "bg-white text-[#122C93]"
+                      : "text-[#6B6B6B]"
+                      }`}
                   >
                     7 Hari
                   </h2>
@@ -753,15 +721,9 @@ const ClientPenjadwalanSatpam = () => {
               <div className="right-side flex flex-row items-center gap-3">
                 <Button
                   className="bg-[#122C93] text-white font-semibold h-10"
-                  onPress={modalGenerate.onOpen}
-                >
-                  Generate Jadwal +
-                </Button>
-                <Button
-                  className="bg-[#122C93] text-white font-semibold h-10"
                   onPress={modalManual.onOpen}
                 >
-                  Tambah Manual +
+                  Tambah Jadwal +
                 </Button>
               </div>
             </div>
@@ -824,215 +786,25 @@ const ClientPenjadwalanSatpam = () => {
       <div className="container-switcher flex flex-row w-fit items-center gap-1 bg-[#F1F1F1] p-1 rounded-4xl">
         <h2
           onClick={() => setActiveSwitch("jadwal")}
-          className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${
-            activeSwitch === "jadwal"
-              ? "bg-white text-[#122C93]"
-              : "text-[#6B6B6B]"
-          }`}
+          className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${activeSwitch === "jadwal"
+            ? "bg-white text-[#122C93]"
+            : "text-[#6B6B6B]"
+            }`}
         >
           Jadwal Jaga
         </h2>
         <h2
           onClick={() => setActiveSwitch("shift")}
-          className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${
-            activeSwitch === "shift"
-              ? "bg-white text-[#122C93]"
-              : "text-[#6B6B6B]"
-          }`}
+          className={`text-sm px-4 py-2 rounded-2xl cursor-pointer font-medium transition-colors ${activeSwitch === "shift"
+            ? "bg-white text-[#122C93]"
+            : "text-[#6B6B6B]"
+            }`}
         >
           Atur Shift
         </h2>
       </div>
 
       {renderContent()}
-
-      {/* Modal Auto-Generate Jadwal Rutin */}
-      <Modal
-        backdrop="opaque"
-        isOpen={modalGenerate.isOpen}
-        onClose={modalGenerate.onOpenChange}
-        size="4xl"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader className="text-[#122C93]">
-            Auto-Generate Jadwal Rutin
-          </ModalHeader>
-          <ModalBody>
-            <div className="grid grid-cols-2 gap-10 p-3">
-              <div className="flex flex-col gap-6">
-                <DatePicker
-                  label="Tanggal Mulai"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  isInvalid={!!generateErrors.start_date}
-                  errorMessage={generateErrors.start_date}
-                  onChange={(d) => {
-                    setGenerateData({
-                      ...generateData,
-                      start_date: d as CalendarDate,
-                    });
-                    if (generateErrors.start_date)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        start_date: undefined,
-                      });
-                  }}
-                />
-                <DatePicker
-                  label="Tanggal Berakhir"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  isInvalid={!!generateErrors.end_date}
-                  errorMessage={generateErrors.end_date}
-                  onChange={(d) => {
-                    setGenerateData({
-                      ...generateData,
-                      end_date: d as CalendarDate,
-                    });
-                    if (generateErrors.end_date)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        end_date: undefined,
-                      });
-                  }}
-                />
-                <Select
-                  label="Pos"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Pos"
-                  isInvalid={!!generateErrors.pos_uuid}
-                  errorMessage={generateErrors.pos_uuid}
-                  selectedKeys={
-                    generateData.pos_uuid ? [generateData.pos_uuid] : []
-                  }
-                  onSelectionChange={(k) => {
-                    setGenerateData({
-                      ...generateData,
-                      pos_uuid: String(Array.from(k)[0]),
-                    });
-                    if (generateErrors.pos_uuid)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        pos_uuid: undefined,
-                      });
-                  }}
-                >
-                  {listPosDummy.map((p) => (
-                    <SelectItem key={p.uuid} textValue={p.nama}>
-                      {p.nama}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex flex-col gap-6">
-                <Select
-                  label="Satpam"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Personel"
-                  isInvalid={!!generateErrors.satpam_uuid}
-                  errorMessage={generateErrors.satpam_uuid}
-                  selectedKeys={
-                    generateData.satpam_uuid ? [generateData.satpam_uuid] : []
-                  }
-                  onSelectionChange={(k) => {
-                    setGenerateData({
-                      ...generateData,
-                      satpam_uuid: String(Array.from(k)[0]),
-                    });
-                    if (generateErrors.satpam_uuid)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        satpam_uuid: undefined,
-                      });
-                  }}
-                >
-                  {listSatpamDummy.map((s) => (
-                    <SelectItem key={s.uuid} textValue={`${s.nama} - ${s.nip}`}>
-                      {s.nama} - {s.nip}
-                    </SelectItem>
-                  ))}
-                </Select>
-
-                <Select
-                  label="Shift"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Shift Kerja"
-                  isInvalid={!!generateErrors.shift_uuid}
-                  errorMessage={generateErrors.shift_uuid}
-                  selectedKeys={
-                    generateData.shift_uuid ? [generateData.shift_uuid] : []
-                  }
-                  onSelectionChange={(k) => {
-                    setGenerateData({
-                      ...generateData,
-                      shift_uuid: String(Array.from(k)[0]),
-                    });
-                    if (generateErrors.shift_uuid)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        shift_uuid: undefined,
-                      });
-                  }}
-                >
-                  {listShiftDummy.map((s) => (
-                    <SelectItem
-                      key={s.uuid}
-                      textValue={`${s.nama} (${s.mulai.slice(0, 5)} - ${s.selesai.slice(0, 5)})`}
-                    >
-                      {s.nama} ({s.mulai.slice(0, 5)} - {s.selesai.slice(0, 5)})
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <CheckboxGroup
-                  label="Pilih Hari Kerja"
-                  orientation="horizontal"
-                  isInvalid={!!generateErrors.days_of_week}
-                  errorMessage={generateErrors.days_of_week}
-                  value={generateData.days_of_week}
-                  onValueChange={(v) => {
-                    setGenerateData({ ...generateData, days_of_week: v });
-                    if (generateErrors.days_of_week)
-                      setGenerateErrors({
-                        ...generateErrors,
-                        days_of_week: undefined,
-                      });
-                  }}
-                >
-                  <Checkbox value="1">Senin</Checkbox>
-                  <Checkbox value="2">Selasa</Checkbox>
-                  <Checkbox value="3">Rabu</Checkbox>
-                  <Checkbox value="4">Kamis</Checkbox>
-                  <Checkbox value="5">Jumat</Checkbox>
-                  <Checkbox value="6">Sabtu</Checkbox>
-                  <Checkbox value="0">Minggu</Checkbox>
-                </CheckboxGroup>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="flex justify-center pb-8">
-            <Button
-              variant="light"
-              color="danger"
-              onPress={modalGenerate.onOpenChange}
-            >
-              Batal
-            </Button>
-            <Button
-              className="bg-[#122C93] text-white px-10"
-              onPress={handleGenerateSubmit}
-              isLoading={isGenerateSubmitting}
-            >
-              Generate Sekarang
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Modal Tambah/Edit Jadwal Manual */}
       <Modal
@@ -1046,101 +818,111 @@ const ClientPenjadwalanSatpam = () => {
             {selectedJadwalUuid ? "Edit Shift" : "Tambah Shift Manual"}
           </ModalHeader>
           <ModalBody>
-            <div className="container-form flex flex-row justify-between gap-10 p-3">
-              <div className="flex flex-col gap-8 w-1/2">
-                <DatePicker
-                  className="w-full"
-                  label="Tanggal"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  isInvalid={!!manualErrors.tanggal}
-                  errorMessage={manualErrors.tanggal}
-                  value={manualData.tanggal}
-                  onChange={(d) =>
-                    setManualData({
-                      ...manualData,
-                      tanggal: d as CalendarDate,
-                    })
-                  }
-                />
-                <Select
-                  className="w-full"
-                  label="Pos"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Pos"
-                  isInvalid={!!manualErrors.pos_uuid}
-                  errorMessage={manualErrors.pos_uuid}
-                  selectedKeys={
-                    manualData.pos_uuid ? [manualData.pos_uuid] : []
-                  }
-                  onSelectionChange={(k) =>
-                    setManualData({
-                      ...manualData,
-                      pos_uuid: String(Array.from(k)[0]),
-                    })
-                  }
-                >
-                  {listPosDummy.map((p) => (
-                    <SelectItem key={p.uuid} textValue={p.nama}>
-                      {p.nama}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex flex-col gap-8 w-1/2">
-                <Select
-                  className="w-full"
-                  label="Nama & NIP"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Personel"
-                  isInvalid={!!manualErrors.satpam_uuid}
-                  errorMessage={manualErrors.satpam_uuid}
-                  selectedKeys={
-                    manualData.satpam_uuid ? [manualData.satpam_uuid] : []
-                  }
-                  onSelectionChange={(k) =>
-                    setManualData({
-                      ...manualData,
-                      satpam_uuid: String(Array.from(k)[0]),
-                    })
-                  }
-                >
-                  {listSatpamDummy.map((s) => (
-                    <SelectItem key={s.uuid} textValue={`${s.nama} - ${s.nip}`}>
-                      {s.nama} - {s.nip}
-                    </SelectItem>
-                  ))}
-                </Select>
+            <div className="grid grid-cols-2 gap-x-10 gap-y-6 p-3">
+              <Select
+                label="Nama & NIP"
+                variant="underlined"
+                labelPlacement="inside"
+                placeholder="Pilih Personel"
+                isInvalid={!!manualErrors.satpam_uuid}
+                errorMessage={manualErrors.satpam_uuid}
+                selectedKeys={
+                  manualData.satpam_uuid ? [manualData.satpam_uuid] : []
+                }
+                onSelectionChange={(k) =>
+                  setManualData({
+                    ...manualData,
+                    satpam_uuid: String(Array.from(k)[0]),
+                  })
+                }
+              >
+                {listSatpamDummy.map((s) => (
+                  <SelectItem key={s.uuid} textValue={`${s.nama} - ${s.nip}`}>
+                    {s.nama} - {s.nip}
+                  </SelectItem>
+                ))}
+              </Select>
 
-                <Select
-                  label="Shift"
-                  variant="underlined"
-                  labelPlacement="inside"
-                  placeholder="Pilih Shift Kerja"
-                  isInvalid={!!manualErrors.shift_uuid}
-                  errorMessage={manualErrors.shift_uuid}
-                  selectedKeys={
-                    manualData.shift_uuid ? [manualData.shift_uuid] : []
-                  }
-                  onSelectionChange={(k) =>
-                    setManualData({
-                      ...manualData,
-                      shift_uuid: String(Array.from(k)[0]),
-                    })
-                  }
-                >
-                  {listShiftDummy.map((s) => (
-                    <SelectItem
-                      key={s.uuid}
-                      textValue={`${s.nama} (${s.mulai.slice(0, 5)} - ${s.selesai.slice(0, 5)})`}
-                    >
-                      {s.nama} ({s.mulai.slice(0, 5)} - {s.selesai.slice(0, 5)})
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
+              <Select
+                label="Shift"
+                variant="underlined"
+                labelPlacement="inside"
+                placeholder="Pilih Shift Kerja"
+                isInvalid={!!manualErrors.shift_uuid}
+                errorMessage={manualErrors.shift_uuid}
+                selectedKeys={
+                  manualData.shift_uuid ? [manualData.shift_uuid] : []
+                }
+                onSelectionChange={(k) =>
+                  setManualData({
+                    ...manualData,
+                    shift_uuid: String(Array.from(k)[0]),
+                  })
+                }
+              >
+                {listShiftDummy.map((s) => (
+                  <SelectItem
+                    key={s.uuid}
+                    textValue={`${s.nama} (${s.mulai.slice(0, 5)} - ${s.selesai.slice(0, 5)})`}
+                  >
+                    {s.nama} ({s.mulai.slice(0, 5)} - {s.selesai.slice(0, 5)})
+                  </SelectItem>
+                ))}
+              </Select>
+
+              <DatePicker
+                label="Tanggal Mulai"
+                variant="underlined"
+                labelPlacement="inside"
+                isInvalid={!!manualErrors.tanggalMulai}
+                errorMessage={manualErrors.tanggalMulai}
+                value={manualData.tanggalMulai}
+                onChange={(d) =>
+                  setManualData({
+                    ...manualData,
+                    tanggalMulai: d as CalendarDate,
+                  })
+                }
+              />
+
+              <DatePicker
+                label="Tanggal Akhir (Opsional)"
+                variant="underlined"
+                labelPlacement="inside"
+                isInvalid={!!manualErrors.tanggalAkhir}
+                errorMessage={manualErrors.tanggalAkhir}
+                value={manualData.tanggalAkhir}
+                onChange={(d) =>
+                  setManualData({
+                    ...manualData,
+                    tanggalAkhir: d as CalendarDate,
+                  })
+                }
+              />
+
+              <Select
+                label="Pos"
+                variant="underlined"
+                labelPlacement="inside"
+                placeholder="Pilih Pos"
+                isInvalid={!!manualErrors.pos_uuid}
+                errorMessage={manualErrors.pos_uuid}
+                selectedKeys={
+                  manualData.pos_uuid ? [manualData.pos_uuid] : []
+                }
+                onSelectionChange={(k) =>
+                  setManualData({
+                    ...manualData,
+                    pos_uuid: String(Array.from(k)[0]),
+                  })
+                }
+              >
+                {listPosDummy.map((p) => (
+                  <SelectItem key={p.uuid} textValue={p.nama}>
+                    {p.nama}
+                  </SelectItem>
+                ))}
+              </Select>
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-center pb-8">

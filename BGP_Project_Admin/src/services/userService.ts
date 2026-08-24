@@ -9,8 +9,8 @@ const getHeaders = () => ({
 });
 
 export const userService = {
-  getAll: async (page: number): Promise<UserResponse> => {
-    const res = await fetch(`${API_BASE_URL}/v1/users/?pid=${page}`, {
+  getAll: async (page: number, limit: number = 2): Promise<UserResponse> => {
+    const res = await fetch(`${API_BASE_URL}/client?limit=${limit}&page=${page}`, {
       method: "GET",
       headers: getHeaders(),
     });
@@ -18,7 +18,7 @@ export const userService = {
   },
 
   create: async (payload: CreateUserPayload): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/v1/users/`, {
+    const res = await fetch(`${API_BASE_URL}/client`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
