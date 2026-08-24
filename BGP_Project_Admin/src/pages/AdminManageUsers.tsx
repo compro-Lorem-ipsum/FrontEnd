@@ -11,6 +11,7 @@ const AdminManageUsers = () => {
     loading,
     page,
     setPage,
+    limit,
     totalPages,
     refreshData,
     deleteState,
@@ -47,6 +48,7 @@ const AdminManageUsers = () => {
             loading={loading}
             page={page}
             totalPages={totalPages}
+            rowsPerPage={limit}
             onPageChange={setPage}
             onDeleteClick={deleteState.confirm}
           />

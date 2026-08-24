@@ -7,6 +7,7 @@ export const useUserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(4);
   const [totalPages, setTotalPages] = useState(1);
   const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -14,11 +15,11 @@ export const useUserManagement = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const responseData = await userService.getAll(page);
-      if (responseData.data && Array.isArray(responseData.data.data)) {
-        setUsers(responseData.data.data);
-        if (responseData.data.pagination) {
-          setTotalPages(responseData.data.pagination.total_pages);
+      const responseData = await userService.getAll(page, limit);
+      if (responseData.data && Array.isArray(responseData.data)) {
+        setUsers(responseData.data);
+        if (responseData.meta) {
+          setTotalPages(responseData.meta.total_pages);
         }
       } else {
         setUsers([]);
@@ -30,7 +31,7 @@ export const useUserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchUsers();
@@ -72,6 +73,8 @@ export const useUserManagement = () => {
     loading,
     page,
     setPage,
+    limit,
+    setLimit,
     totalPages,
     refreshData: fetchUsers,
     deleteState: {

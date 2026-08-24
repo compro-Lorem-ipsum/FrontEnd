@@ -76,8 +76,7 @@ export const UserListTable = ({
               <div className="w-[150px] truncate">{item.nama}</div>
             </TableCell>
             <TableCell>
-              <div className="w-[150px] truncate"></div>
-              {item.email}
+              <div className="w-[150px] truncate">{item.email}</div>
             </TableCell>
             <TableCell>{formatTanggal(item.created_at)}</TableCell>
             <TableCell>

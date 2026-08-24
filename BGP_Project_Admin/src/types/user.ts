@@ -1,9 +1,13 @@
 export interface User {
   uuid: string;
+  user_uuid: string;
   nama: string;
   email: string;
+  status: string;
+  radius_utama: number;
+  radius_jaga: number;
+  member_count: number;
   created_at: string;
-  is_active?: number;
 }
 
 export interface CreateUserPayload {
@@ -13,13 +17,12 @@ export interface CreateUserPayload {
 }
 
 export interface UserResponse {
-  data: {
-    data: User[];
-    pagination?: {
-      total_pages: number;
-      current_page: number;
-      total_items: number;
-    };
+  data: User[];
+  meta?: {
+    total_pages: number;
+    page: number;
+    limit: number;
+    total: number;
   };
   message?: string;
 }
