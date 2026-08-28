@@ -4,9 +4,15 @@ export interface Satpam {
   asal_daerah: string;
   nip: string;
   no_telp: string;
+  nomor_hp?: string;
   image_url?: string;
   created_at?: string;
-  nama_client?: string;
+  client?: string;
+  gender?: string;
+  status?: string;
+  jabatan?: string;
+  role?: string;
+  email?: string;
 }
 
 export interface MitraOption {
@@ -15,14 +21,11 @@ export interface MitraOption {
 }
 
 export interface SatpamResponse {
-  data: {
-    data: Satpam[];
-    pagination?: {
-      total_pages: number;
-      items_per_page: number;
-      current_page: number;
-      total_items: number;
-    };
+  data: Satpam[];
+  meta?: {
+    limit: number;
+    has_more: boolean;
+    next_cursor: string | null;
   };
   message?: string;
 }

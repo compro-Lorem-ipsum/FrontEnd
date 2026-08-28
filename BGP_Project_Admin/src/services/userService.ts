@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type { CreateUserPayload, UserResponse } from "../types/user";
 import { getToken } from "../Utils/helpers";
 
@@ -9,8 +10,10 @@ const getHeaders = () => ({
 });
 
 export const userService = {
-  getAll: async (page: number, limit: number = 2): Promise<UserResponse> => {
-    const res = await fetch(`${API_BASE_URL}/client?limit=${limit}&page=${page}`, {
+  getAll: async (limit: number = 5, cursor: string | null = null): Promise<UserResponse> => {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (cursor) params.append("cursor", cursor);
+    const res = await fetchWithAuth(`${API_BASE_URL}/client?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),
     });
@@ -18,7 +21,7 @@ export const userService = {
   },
 
   create: async (payload: CreateUserPayload): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/client`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/client`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -31,7 +34,7 @@ export const userService = {
   },
 
   delete: async (uuid: string): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/v1/users/${uuid}`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/client/${uuid}`, {
       method: "DELETE",
       headers: getHeaders(),
     });

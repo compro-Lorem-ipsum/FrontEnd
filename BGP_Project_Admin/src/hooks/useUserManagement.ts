@@ -6,32 +6,42 @@ import type { User } from "../types/user";
 export const useUserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(4);
-  const [totalPages, setTotalPages] = useState(1);
+
+  // Pagination State (Cursor Based)
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
   const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const responseData = await userService.getAll(page, limit);
+      const currentCursor = cursorHistory[currentIndex];
+      const responseData = await userService.getAll(limit, currentCursor);
       if (responseData.data && Array.isArray(responseData.data)) {
         setUsers(responseData.data);
         if (responseData.meta) {
-          setTotalPages(responseData.meta.total_pages);
+          setHasMore(responseData.meta.has_more);
+          setNextCursor(responseData.meta.next_cursor);
         }
       } else {
         setUsers([]);
-        setTotalPages(1);
+        setHasMore(false);
+        setNextCursor(null);
       }
     } catch (error) {
       console.error("Error fetch users:", error);
       setUsers([]);
+      setHasMore(false);
+      setNextCursor(null);
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [limit, currentIndex, cursorHistory]);
 
   useEffect(() => {
     fetchUsers();
@@ -68,14 +78,37 @@ export const useUserManagement = () => {
     }
   };
 
+  const handleNextPage = () => {
+    if (hasMore && nextCursor) {
+      // Jika kita berada di akhir riwayat kursor, tambahkan kursor baru ke riwayat
+      if (currentIndex === cursorHistory.length - 1) {
+        setCursorHistory((prev) => [...prev, nextCursor]);
+      }
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  const resetPagination = () => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  };
+
   return {
     users,
     loading,
-    page,
-    setPage,
     limit,
     setLimit,
-    totalPages,
+    hasMore,
+    currentPage: currentIndex + 1,
+    handleNextPage,
+    handlePrevPage,
+    resetPagination,
     refreshData: fetchUsers,
     deleteState: {
       isOpen: isDeleteModalOpen,

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type { Pos, PosResponse, CreatePosPayload } from "../types/pos";
 import { getToken } from "../Utils/helpers";
 
@@ -11,7 +12,7 @@ const getHeaders = () => ({
 
 export const posService = {
   getAll: async (page: number, tipe: string = "Jaga"): Promise<PosResponse> => {
-    const res = await fetch(`${API_URL}?tipe=${tipe}&pid=${page}`, {
+    const res = await fetchWithAuth(`${API_URL}?tipe=${tipe}&pid=${page}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat data pos");
@@ -19,7 +20,7 @@ export const posService = {
   },
 
   getById: async (uuid: string): Promise<{ data: Pos }> => {
-    const res = await fetch(`${API_URL}/${uuid}`, {
+    const res = await fetchWithAuth(`${API_URL}/${uuid}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat detail pos");
@@ -27,7 +28,7 @@ export const posService = {
   },
 
   create: async (payload: CreatePosPayload): Promise<void> => {
-    const res = await fetch(API_URL, {
+    const res = await fetchWithAuth(API_URL, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -36,7 +37,7 @@ export const posService = {
   },
 
   update: async (uuid: string, payload: CreatePosPayload): Promise<void> => {
-    const res = await fetch(`${API_URL}/${uuid}`, {
+    const res = await fetchWithAuth(`${API_URL}/${uuid}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -45,7 +46,7 @@ export const posService = {
   },
 
   delete: async (uuid: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/${uuid}`, {
+    const res = await fetchWithAuth(`${API_URL}/${uuid}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${getToken()}` },
     });

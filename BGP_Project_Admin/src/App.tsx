@@ -31,12 +31,14 @@ import AdminPanicAlert from "./pages/AdminPanicAlert";
 import ClientRiwayatPesan from "./pages/ClientRiwayatPesan";
 import ClientTrackingGps from "./pages/ClientTrackingGps";
 import ClientPenjadwalanSatpam from "./pages/ClientPenjadwalanSatpam";
+import LandingPage from "./pages/LandingPage";
 function App() {
   return (
     <Router>
       <Routes>
         {/* ga ada sidebar sama navbarnya */}
         <Route path="/" element={<Login />} />
+        <Route path="/landing" element={<LandingPage />} />
 
         <Route element={<PrivateRoute />}>
           {/* ada side bar sama navbarnya */}

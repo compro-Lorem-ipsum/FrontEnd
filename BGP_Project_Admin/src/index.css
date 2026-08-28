@@ -5,8 +5,7 @@
 
 @font-face {
   font-family: Poppins;
-  src: url("../src/assets/fonts/Poppins-Medium.ttf")
-    format("truetype");
+  src: url("./assets/Poppins-Medium.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
 }
@@ -14,4 +13,29 @@
 :root {
   font-family: Poppins, sans-serif;
   color: black;
+}
+
+.landing-grid-bg {
+  background-color: #f9fafb; /* light gray bg */
+  background-image: linear-gradient(#e5e7eb 1px, transparent 1px),
+    linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.hero-grid-bg {
+  background-color: #0B1330;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+@font-face {
+  font-family: 'Geist Local';
+  src: url("./assets/Geist-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+.font-geist {
+  font-family: 'Geist Local', sans-serif;
 }

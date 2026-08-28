@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type {
   AttendanceResponse,
   UpdateAttendancePayload,
@@ -13,7 +14,7 @@ const getHeaders = () => ({
 
 export const attendanceService = {
   getAll: async (page: number): Promise<AttendanceResponse> => {
-    const res = await fetch(`${BASE_URL}/v1/absensi/?pid=${page}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/?pid=${page}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat data absensi");
@@ -21,7 +22,7 @@ export const attendanceService = {
   },
 
   getById: async (uuid: string): Promise<{ data: any }> => {
-    const res = await fetch(`${BASE_URL}/v1/absensi/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/${uuid}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal mengambil detail data");
@@ -32,7 +33,7 @@ export const attendanceService = {
     uuid: string,
     payload: UpdateAttendancePayload,
   ): Promise<void> => {
-    const res = await fetch(`${BASE_URL}/v1/absensi/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/${uuid}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -44,7 +45,7 @@ export const attendanceService = {
   },
 
   export: async (): Promise<Blob> => {
-    const res = await fetch(`${BASE_URL}/v1/absensi/export`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/export`, {
       method: "GET",
       headers: { Authorization: `Bearer ${getToken()}` },
     });

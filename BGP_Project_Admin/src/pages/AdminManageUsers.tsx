@@ -9,10 +9,11 @@ const AdminManageUsers = () => {
   const {
     users,
     loading,
-    page,
-    setPage,
-    limit,
-    totalPages,
+    hasMore,
+    currentPage,
+    handleNextPage,
+    handlePrevPage,
+    resetPagination,
     refreshData,
     deleteState,
   } = useUserManagement();
@@ -37,7 +38,7 @@ const AdminManageUsers = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           onSuccess={() => {
-            setPage(1);
+            resetPagination();
             refreshData();
           }}
         />
@@ -46,10 +47,10 @@ const AdminManageUsers = () => {
           <UserListTable
             users={users}
             loading={loading}
-            page={page}
-            totalPages={totalPages}
-            rowsPerPage={limit}
-            onPageChange={setPage}
+            hasMore={hasMore}
+            currentPage={currentPage}
+            onNextPage={handleNextPage}
+            onPrevPage={handlePrevPage}
             onDeleteClick={deleteState.confirm}
           />
         </div>

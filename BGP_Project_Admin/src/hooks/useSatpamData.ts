@@ -1,15 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { satpamService } from "../services/satpamService";
 import type { Satpam } from "../types/satpam";
 import { getRole } from "../Utils/helpers";
 import { addToast } from "@heroui/react";
 
 export const useSatpamData = () => {
+  const navigate = useNavigate();
   const [dataSatpam, setDataSatpam] = useState<Satpam[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [limit, setLimit] = useState(7);
+
+  // Pagination State (Cursor Based)
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
   const [userRole, setUserRole] = useState<string>("");
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -22,24 +29,28 @@ export const useSatpamData = () => {
   const fetchSatpam = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await satpamService.getAll(page);
-      if (response && response.data && Array.isArray(response.data.data)) {
-        setDataSatpam(response.data.data);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.total_pages);
-          setRowsPerPage(response.data.pagination.items_per_page);
+      const currentCursor = cursorHistory[currentIndex];
+      const response = await satpamService.getAll(limit, currentCursor);
+      if (response && Array.isArray(response.data)) {
+        setDataSatpam(response.data);
+        if (response.meta) {
+          setHasMore(response.meta.has_more);
+          setNextCursor(response.meta.next_cursor);
         }
       } else {
         setDataSatpam([]);
-        setTotalPages(1);
+        setHasMore(false);
+        setNextCursor(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Fetch satpam error:", error);
       setDataSatpam([]);
+      setHasMore(false);
+      setNextCursor(null);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [limit, currentIndex, cursorHistory, navigate]);
 
   useEffect(() => {
     fetchSatpam();
@@ -63,10 +74,11 @@ export const useSatpamData = () => {
         color: "danger",
       });
       fetchSatpam();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       addToast({
         title: "Gagal",
-        description: error.message || "Gagal menghapus satpam.",
+        description: err.message || "Gagal menghapus satpam.",
         variant: "flat",
         color: "danger",
       });
@@ -75,14 +87,37 @@ export const useSatpamData = () => {
     }
   };
 
+  const handleNextPage = () => {
+    if (hasMore && nextCursor) {
+      if (currentIndex === cursorHistory.length - 1) {
+        setCursorHistory((prev) => [...prev, nextCursor]);
+      }
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  const resetPagination = () => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  };
+
   return {
     dataSatpam,
     loading,
-    page,
-    totalPages,
-    rowsPerPage,
+    limit,
+    setLimit,
+    hasMore,
+    currentPage: currentIndex + 1,
+    handleNextPage,
+    handlePrevPage,
+    resetPagination,
     userRole,
-    setPage,
     refreshData: fetchSatpam,
     deleteState: {
       isOpen: isDeleteModalOpen,

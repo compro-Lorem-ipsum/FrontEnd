@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import { getToken } from "../Utils/helpers";
 import type {
   ScheduleResponse,
@@ -15,14 +16,14 @@ const getHeaders = () => ({
 
 export const scheduleService = {
   getAll: async (page: number): Promise<ScheduleResponse> => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/?pid=${page}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/?pid=${page}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     return res.json();
   },
 
   getById: async (uuid: string) => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     return res.json();
@@ -35,9 +36,9 @@ export const scheduleService = {
   }> => {
     const headers = { Authorization: `Bearer ${getToken()}` };
     const [resSatpam, resShift, resPos] = await Promise.all([
-      fetch(`${BASE_URL_API}/v1/satpam/options`, { headers }),
-      fetch(`${BASE_URL_API}/v1/shifts/options`, { headers }),
-      fetch(`${BASE_URL_API}/v1/pos/options/utama`, { headers }),
+      fetchWithAuth(`${BASE_URL_API}/v1/satpam/options`, { headers }),
+      fetchWithAuth(`${BASE_URL_API}/v1/shifts/options`, { headers }),
+      fetchWithAuth(`${BASE_URL_API}/v1/pos/options/utama`, { headers }),
     ]);
 
     const dSatpam = await resSatpam.json();
@@ -52,7 +53,7 @@ export const scheduleService = {
   },
 
   create: async (payload: any) => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -65,7 +66,7 @@ export const scheduleService = {
   },
 
   update: async (uuid: string, payload: any) => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -78,7 +79,7 @@ export const scheduleService = {
   },
 
   delete: async (uuid: string) => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/${uuid}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${getToken()}` },
     });
@@ -87,7 +88,7 @@ export const scheduleService = {
   },
 
   generate: async (payload: any) => {
-    const res = await fetch(`${BASE_URL_API}/v1/jadwal/generate`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/jadwal/generate`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
