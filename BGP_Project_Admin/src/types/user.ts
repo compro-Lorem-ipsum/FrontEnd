@@ -19,10 +19,9 @@ export interface CreateUserPayload {
 export interface UserResponse {
   data: User[];
   meta?: {
-    total_pages: number;
-    page: number;
     limit: number;
-    total: number;
+    has_more: boolean;
+    next_cursor: string | null;
   };
   message?: string;
 }

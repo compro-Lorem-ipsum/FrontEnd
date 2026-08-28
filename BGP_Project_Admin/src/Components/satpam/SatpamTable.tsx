@@ -8,11 +8,13 @@ import {
   Pagination,
   Spinner,
   Button,
+  Tooltip,
 } from "@heroui/react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { MdAssignmentInd } from "react-icons/md";
 import type { Satpam } from "../../types/satpam";
 import { formatTanggal } from "../../Utils/helpers";
+import { IoMdEye } from "react-icons/io";
 
 const INITIAL_COLUMNS = [
   { name: "No", uid: "no" },
@@ -20,8 +22,9 @@ const INITIAL_COLUMNS = [
   { name: "NIP", uid: "nip" },
   { name: "Jabatan", uid: "jabatan" },
   { name: "Status", uid: "status" },
+  { name: "Jenis Kelamin", uid: "gender" },
   { name: "Asal Daerah", uid: "asal_daerah" },
-  { name: "No Telp", uid: "no_telp" },
+  { name: "No Telp", uid: "nomor_hp" },
   { name: "Mitra", uid: "mitra" },
   { name: "Pembuatan", uid: "created_at" },
   { name: "Aksi", uid: "aksi" },
@@ -30,33 +33,37 @@ const INITIAL_COLUMNS = [
 interface SatpamTableProps {
   data: Satpam[];
   loading: boolean;
-  page: number;
-  totalPages: number;
-  rowsPerPage: number;
+  hasMore: boolean;
+  currentPage: number;
   userRole: string;
-  onPageChange: (page: number) => void;
+  onNextPage: () => void;
+  onPrevPage: () => void;
   onEdit: (item: Satpam) => void;
   onDelete: (uuid: string) => void;
   onAssign: (item: Satpam) => void;
+  onDetail: (item: Satpam) => void;
+  limit: number;
 }
 
 export const SatpamTable = ({
   data,
   loading,
-  page,
-  totalPages,
-  rowsPerPage,
+  hasMore,
+  currentPage,
   userRole,
-  onPageChange,
+  onNextPage,
+  onPrevPage,
   onEdit,
   onDelete,
   onAssign,
+  onDetail,
+  limit,
 }: SatpamTableProps) => {
   const columns =
-    userRole === "Client"
+    userRole?.toLowerCase() === "client"
       ? INITIAL_COLUMNS.filter(
-          (col) => col.uid !== "aksi" && col.uid !== "mitra",
-        )
+        (col) => col.uid !== "mitra",
+      )
       : INITIAL_COLUMNS;
 
   return (
@@ -66,18 +73,20 @@ export const SatpamTable = ({
       isStriped
       className="rounded-xl border border-gray-200"
       bottomContent={
-        totalPages > 0 ? (
-          <div className="flex w-full justify-center">
-            <Pagination
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={totalPages}
-              onChange={onPageChange}
-            />
-          </div>
-        ) : null
+        <div className="flex w-full justify-center items-center px-4 py-2">
+          <Pagination
+            showControls
+            page={currentPage}
+            total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+            onChange={(page) => {
+              if (page > currentPage) onNextPage();
+              else if (page < currentPage) onPrevPage();
+            }}
+            classNames={{
+              item: "[&:not([data-active=true])]:hidden",
+            }}
+          />
+        </div>
       }
     >
       <TableHeader columns={columns}>
@@ -102,22 +111,43 @@ export const SatpamTable = ({
                 case "no":
                   return (
                     <TableCell>
-                      {(page - 1) * rowsPerPage + data.indexOf(item) + 1}
+                      {(currentPage - 1) * limit + data.indexOf(item) + 1}
                     </TableCell>
                   );
                 case "nama":
                   return (
                     <TableCell>
-                      <div className="w-[150px] truncate" title={String(val)}>
+                      <div className="max-w-[150px] truncate" title={String(val)}>
                         {val}
                       </div>
                     </TableCell>
                   );
 
+                case "status":
+                  return (
+                    <TableCell>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${val === "active"
+                          ? "bg-green-100 text-green-700"
+                          : val === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                          }`}
+                      >
+                        {val === "active" ? "Aktif" : val === "pending" ? "Tertunda" : "Tidak Aktif"}
+                      </span>
+                    </TableCell>
+                  );
+                case "gender":
+                  return (
+                    <TableCell>
+                      {val === "1" ? "Laki-laki" : val === "2" ? "Perempuan" : "-"}
+                    </TableCell>
+                  );
                 case "asal_daerah":
                   return (
                     <TableCell>
-                      <div className="w-[150px] truncate" title={String(val)}>
+                      <div className="max-w-[150px] truncate" title={String(val)}>
                         {val}
                       </div>
                     </TableCell>
@@ -125,7 +155,7 @@ export const SatpamTable = ({
                 case "nip":
                   return (
                     <TableCell>
-                      <div className="w-[150px] truncate" title={String(val)}>
+                      <div className="max-w-[150px] truncate" title={String(val)}>
                         {val}
                       </div>
                     </TableCell>
@@ -135,41 +165,63 @@ export const SatpamTable = ({
                     <TableCell>{formatTanggal(item.created_at)}</TableCell>
                   );
                 case "mitra":
+                  const isClient = userRole?.toLowerCase() === "client";
                   return (
                     <TableCell>
-                      <div className="w-[150px] truncate">
-                        {userRole === "Client" ? null : item.nama_client || "-"}
+                      <div className="max-w-[150px] truncate" title={isClient ? "" : (item.client && item.client !== "null" ? item.client : "")}>
+                        {isClient ? null : (item.client && item.client !== "null" ? item.client : "-")}
                       </div>
                     </TableCell>
                   );
                 case "aksi":
+                  const isClientAction = userRole?.toLowerCase() === "client";
                   return (
                     <TableCell>
-                      <div className="flex justify-center gap-3">
-                        <Button
-                          size="sm"
-                          className="bg-[#02A758] text-white font-semibold"
-                          startContent={<FaEdit />}
-                          onPress={() => onEdit(item)}
-                        >
-                          Ubah
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-[#A70202] text-white font-semibold"
-                          startContent={<FaTrash />}
-                          onPress={() => onDelete(item.uuid)}
-                        >
-                          Hapus
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-[#122C93] text-white font-semibold"
-                          startContent={<MdAssignmentInd />}
-                          onPress={() => onAssign(item)}
-                        >
-                          Mitra
-                        </Button>
+                      <div className="flex gap-2 w-max mx-auto justify-center">
+                        <Tooltip content="Detail">
+                          <Button
+                            size="sm"
+                            isIconOnly
+                            className="bg-[#DBEAFE] text-[#122C93]"
+                            onPress={() => onDetail(item)}
+                          >
+                            <IoMdEye size={18} />
+                          </Button>
+                        </Tooltip>
+                        {!isClientAction && (
+                          <>
+                            <Tooltip content="Ubah">
+                              <Button
+                                size="sm"
+                                isIconOnly
+                                className="bg-[#02A758] text-white"
+                                onPress={() => onEdit(item)}
+                              >
+                                <FaEdit size={16} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Hapus">
+                              <Button
+                                size="sm"
+                                isIconOnly
+                                className="bg-[#A70202] text-white"
+                                onPress={() => onDelete(item.uuid)}
+                              >
+                                <FaTrash size={16} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Assign Mitra">
+                              <Button
+                                size="sm"
+                                isIconOnly
+                                className="bg-[#122C93] text-white"
+                                onPress={() => onAssign(item)}
+                              >
+                                <MdAssignmentInd size={18} />
+                              </Button>
+                            </Tooltip>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   );

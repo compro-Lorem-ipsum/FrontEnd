@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { satpamService } from "../services/satpamService";
 import type { MitraOption, Satpam } from "../types/satpam";
 import { addToast, useDisclosure } from "@heroui/react";
@@ -10,42 +10,65 @@ export const useMitraAssignment = (onSuccess: () => void) => {
   const [formMitraId, setFormMitraId] = useState<string>("");
   const [loadingMitra, setLoadingMitra] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [hasMoreMitra, setHasMoreMitra] = useState<boolean>(false);
+  const [nextCursorMitra, setNextCursorMitra] = useState<string | null>(null);
+  const [loadingMoreMitra, setLoadingMoreMitra] = useState<boolean>(false);
 
-  const fetchMitraOptions = async () => {
+  const openAssignmentModal = async (item: Satpam) => {
+    setSelectedSatpam(item);
+    setFormMitraId("");
+    onOpen();
+
     setLoadingMitra(true);
     try {
-      const res = await satpamService.getMitraOptions();
-      if (res && Array.isArray(res.data)) {
-        setMitraOptions(res.data);
+      const [mitraRes, assignmentRes] = await Promise.all([
+        satpamService.getMitraOptions().catch(() => null),
+        satpamService.getAssignment(item.uuid).catch(() => null)
+      ]);
+
+      if (mitraRes && Array.isArray(mitraRes.data)) {
+        setMitraOptions(mitraRes.data);
+        if (mitraRes.meta) {
+          setHasMoreMitra(mitraRes.meta.has_more);
+          setNextCursorMitra(mitraRes.meta.next_cursor);
+        }
       } else {
         setMitraOptions([]);
+        setHasMoreMitra(false);
+        setNextCursorMitra(null);
+      }
+
+      if (assignmentRes && assignmentRes.data && assignmentRes.data.assigned && assignmentRes.data.client) {
+        setFormMitraId(assignmentRes.data.client.uuid);
+      } else {
+        setFormMitraId("unassign");
       }
     } catch (error) {
-      console.error("Fetch mitra options error:", error);
+      console.error("Fetch data for assignment error:", error);
       setMitraOptions([]);
+      setFormMitraId("unassign");
     } finally {
       setLoadingMitra(false);
     }
   };
 
-  useEffect(() => {
-    if (isOpen && selectedSatpam && mitraOptions.length > 0) {
-      if (selectedSatpam.nama_client) {
-        const matchedMitra = mitraOptions.find(
-          (m) => m.nama === selectedSatpam.nama_client,
-        );
-        setFormMitraId(matchedMitra ? matchedMitra.uuid : "unassign");
-      } else {
-        setFormMitraId("unassign");
+  const loadMoreMitra = async () => {
+    if (!hasMoreMitra || !nextCursorMitra || loadingMoreMitra) return;
+    setLoadingMoreMitra(true);
+    try {
+      const res = await satpamService.getMitraOptions(nextCursorMitra);
+      if (res && Array.isArray(res.data)) {
+        setMitraOptions((prev) => [...prev, ...res.data]);
+        if (res.meta) {
+          setHasMoreMitra(res.meta.has_more);
+          setNextCursorMitra(res.meta.next_cursor);
+        }
       }
+    } catch (error) {
+      console.error("Load more mitra error:", error);
+    } finally {
+      setLoadingMoreMitra(false);
     }
-  }, [isOpen, selectedSatpam, mitraOptions]);
-
-  const openAssignmentModal = (item: Satpam) => {
-    setSelectedSatpam(item);
-    setFormMitraId("");
-    fetchMitraOptions();
-    onOpen();
   };
 
   const handleAssignMitra = async () => {
@@ -80,7 +103,7 @@ export const useMitraAssignment = (onSuccess: () => void) => {
     isOpen,
     onClose,
     openAssignmentModal,
-    mitraData: { mitraOptions, formMitraId, loadingMitra, submitting },
+    mitraData: { mitraOptions, formMitraId, loadingMitra, submitting, hasMoreMitra, loadingMoreMitra, loadMoreMitra },
     setFormMitraId,
     handleAssignMitra,
   };

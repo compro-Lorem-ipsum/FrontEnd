@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type { PatroliResponse, UpdatePatroliPayload } from "../types/patroli";
 import { getToken } from "../Utils/helpers";
 
@@ -10,7 +11,7 @@ const getHeaders = () => ({
 
 export const patroliService = {
   getAll: async (page: number): Promise<PatroliResponse> => {
-    const res = await fetch(`${BASE_URL}/v1/patroli/?pid=${page}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/patroli/?pid=${page}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat data patroli");
@@ -21,7 +22,7 @@ export const patroliService = {
     uuid: string,
     payload: UpdatePatroliPayload,
   ): Promise<void> => {
-    const res = await fetch(`${BASE_URL}/v1/patroli/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/patroli/${uuid}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -30,7 +31,7 @@ export const patroliService = {
   },
 
   export: async (): Promise<Blob> => {
-    const res = await fetch(`${BASE_URL}/v1/patroli/export`, {
+    const res = await fetchWithAuth(`${BASE_URL}/v1/patroli/export`, {
       method: "GET",
       headers: { Authorization: `Bearer ${getToken()}` },
     });

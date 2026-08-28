@@ -5,9 +5,9 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Pagination,
   Spinner,
   Button,
+  Pagination,
 } from "@heroui/react";
 import { FaTrash } from "react-icons/fa";
 import type { User } from "../../types/user";
@@ -16,20 +16,20 @@ import { formatTanggal } from "../../Utils/helpers";
 interface UserListTableProps {
   users: User[];
   loading: boolean;
-  page: number;
-  totalPages: number;
-  rowsPerPage?: number;
-  onPageChange: (page: number) => void;
+  hasMore: boolean;
+  currentPage: number;
+  onNextPage: () => void;
+  onPrevPage: () => void;
   onDeleteClick: (uuid: string) => void;
 }
 
 export const UserListTable = ({
   users,
   loading,
-  page,
-  totalPages,
-  rowsPerPage = 12,
-  onPageChange,
+  hasMore,
+  currentPage,
+  onNextPage,
+  onPrevPage,
   onDeleteClick,
 }: UserListTableProps) => {
   if (loading) {
@@ -47,31 +47,31 @@ export const UserListTable = ({
       isStriped
       className="rounded-xl border border-gray-200"
       bottomContent={
-        totalPages > 0 ? (
-          <div className="flex w-full justify-center">
-            <Pagination
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={totalPages}
-              onChange={onPageChange}
-            />
-          </div>
-        ) : null
+        <div className="flex w-full justify-center items-center px-4 py-2">
+          <Pagination
+            showControls
+            page={currentPage}
+            total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+            onChange={(page) => {
+              if (page > currentPage) onNextPage();
+              else if (page < currentPage) onPrevPage();
+            }}
+            classNames={{
+              item: "[&:not([data-active=true])]:hidden",
+            }}
+          />
+        </div>
       }
     >
       <TableHeader>
-        <TableColumn>No</TableColumn>
         <TableColumn>Nama Mitra</TableColumn>
         <TableColumn>Email</TableColumn>
         <TableColumn>Pembuatan</TableColumn>
         <TableColumn className="text-center">Aksi</TableColumn>
       </TableHeader>
       <TableBody emptyContent={"Tidak ada data user"}>
-        {users.map((item, index) => (
+        {users.map((item) => (
           <TableRow key={item.uuid}>
-            <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
             <TableCell>
               <div className="w-[150px] truncate">{item.nama}</div>
             </TableCell>

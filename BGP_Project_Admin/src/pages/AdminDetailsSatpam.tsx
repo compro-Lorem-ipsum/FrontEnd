@@ -544,14 +544,14 @@ const AdminDetailsSatpam = () => {
         </div>
         <div className="bg-white w-full h-[88px] rounded-xl border border-[#E8EEFF] flex flex-col justify-center p-3">
           <h2 className="font-medium text-xs text-black">
-            Total Seluruh Jam Kerja
+            Total Jam Kerja Keseluruhan
           </h2>
           <h2 className="font-bold text-2xl text-[#122C93] leading-tight">
             2.080{" "}
             <span className="font-semibold text-[#8D8787] text-sm">Jam</span>
           </h2>
           <h2 className="font-light text-xs text-[#8D8787]">
-            Keseluruhan · Sumarecon Bandung
+            Sejak Penempatan · Januari 2025 - sekarang
           </h2>
           <h2 className="text-xs font-medium text-[#122C93]">di mitra x</h2>
         </div>

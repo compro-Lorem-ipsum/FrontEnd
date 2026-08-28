@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import { getToken } from "../Utils/helpers";
 import type { RadiusSettings } from "../types/radius";
 
@@ -10,7 +11,7 @@ const getHeaders = () => ({
 
 export const radiusService = {
   getSettings: async (): Promise<RadiusSettings> => {
-    const res = await fetch(`${API_BASE_URL}/v1/auth/settings`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/v1/auth/settings`, {
       method: "GET",
       headers: { Authorization: `Bearer ${getToken()}` },
     });
@@ -25,7 +26,7 @@ export const radiusService = {
     radius_utama: number;
     radius_jaga: number;
   }): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/v1/auth/settings`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/v1/auth/settings`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(settings),

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type { Shift, ShiftResponse, CreateShiftPayload } from "../types/shift";
 import { getToken } from "../Utils/helpers";
 
@@ -10,7 +11,7 @@ const getHeaders = () => ({
 
 export const shiftService = {
   getAll: async (page: number): Promise<ShiftResponse> => {
-    const res = await fetch(`${BASE_URL_API}/v1/shifts/?pid=${page}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/shifts/?pid=${page}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal mengambil data waktu");
@@ -18,7 +19,7 @@ export const shiftService = {
   },
 
   getById: async (uuid: string): Promise<{ data: Shift }> => {
-    const res = await fetch(`${BASE_URL_API}/v1/shifts/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/shifts/${uuid}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal mengambil detail data");
@@ -26,7 +27,7 @@ export const shiftService = {
   },
 
   create: async (payload: CreateShiftPayload): Promise<void> => {
-    const res = await fetch(`${BASE_URL_API}/v1/shifts/`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/shifts/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -38,7 +39,7 @@ export const shiftService = {
   },
 
   update: async (uuid: string, payload: CreateShiftPayload): Promise<void> => {
-    const res = await fetch(`${BASE_URL_API}/v1/shifts/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/shifts/${uuid}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -50,7 +51,7 @@ export const shiftService = {
   },
 
   delete: async (uuid: string): Promise<void> => {
-    const res = await fetch(`${BASE_URL_API}/v1/shifts/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL_API}/v1/shifts/${uuid}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${getToken()}` },
     });

@@ -10,6 +10,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import type { useMitraAssignment } from "../../hooks/useMitraAssignment";
+import { InfiniteScrollTrigger } from "../common/InfiniteScrollTrigger";
 
 interface MitraAssignmentModalProps {
   assignment: ReturnType<typeof useMitraAssignment>;
@@ -20,7 +21,7 @@ export const MitraAssignmentModal = ({
 }: MitraAssignmentModalProps) => {
   const { isOpen, onClose, mitraData, setFormMitraId, handleAssignMitra } =
     assignment;
-  const { mitraOptions, formMitraId, loadingMitra, submitting } = mitraData;
+  const { mitraOptions, formMitraId, loadingMitra, submitting, hasMoreMitra, loadingMoreMitra, loadMoreMitra } = mitraData;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
@@ -40,6 +41,15 @@ export const MitraAssignmentModal = ({
               size="lg"
               selectedKeys={formMitraId ? [formMitraId] : []}
               onChange={(e) => setFormMitraId(e.target.value)}
+              listboxProps={{
+                bottomContent: (
+                  <InfiniteScrollTrigger
+                    hasMore={hasMoreMitra}
+                    isLoading={loadingMoreMitra}
+                    onLoadMore={loadMoreMitra}
+                  />
+                ),
+              }}
             >
               {[
                 { uuid: "unassign", nama: "- Lepas Penugasan -" },

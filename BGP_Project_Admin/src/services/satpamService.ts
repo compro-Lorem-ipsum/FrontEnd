@@ -1,8 +1,9 @@
+import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type {
   SatpamResponse,
-  MitraOptionsResponse,
   Satpam,
 } from "../types/satpam";
+import type { UserResponse } from "../types/user";
 import { getToken } from "../Utils/helpers";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -18,8 +19,10 @@ const getHeaders = (isMultipart: boolean = false) => {
 };
 
 export const satpamService = {
-  getAll: async (page: number): Promise<SatpamResponse> => {
-    const res = await fetch(`${API_BASE}/v1/satpam/?pid=${page}`, {
+  getAll: async (limit: number = 7, cursor: string | null = null): Promise<SatpamResponse> => {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (cursor) params.append("cursor", cursor);
+    const res = await fetchWithAuth(`${API_BASE}/satpam/?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),
     });
@@ -28,25 +31,14 @@ export const satpamService = {
   },
 
   getById: async (uuid: string): Promise<{ data: Satpam }> => {
-    const res = await fetch(`${API_BASE}/v1/satpam/${uuid}`, {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}`, {
       headers: getHeaders(),
     });
     return res.json();
   },
 
-  create: async (formData: FormData): Promise<void> => {
-    const res = await fetch(`${API_BASE}/v1/satpam/`, {
-      method: "POST",
-      headers: getHeaders(true),
-      body: formData,
-    });
-    const result = await res.json().catch(() => ({}));
-    if (!res.ok)
-      throw new Error(result.message || "Gagal menambah data satpam");
-  },
-
   update: async (uuid: string, formData: FormData): Promise<void> => {
-    const res = await fetch(`${API_BASE}/v1/satpam/${uuid}`, {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}`, {
       method: "PUT",
       headers: getHeaders(true),
       body: formData,
@@ -57,7 +49,7 @@ export const satpamService = {
   },
 
   delete: async (uuid: string): Promise<void> => {
-    const res = await fetch(`${API_BASE}/v1/satpam/${uuid}`, {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}`, {
       method: "DELETE",
       headers: getHeaders(),
     });
@@ -65,24 +57,31 @@ export const satpamService = {
     if (!res.ok) throw new Error(result.message || "Gagal menghapus data");
   },
 
-  getMitraOptions: async (): Promise<MitraOptionsResponse> => {
-    const res = await fetch(`${API_BASE}/v1/users/options`, {
+  getMitraOptions: async (cursor: string | null = null): Promise<UserResponse> => {
+    const params = new URLSearchParams({ limit: "50" });
+    if (cursor) params.append("cursor", cursor);
+    const res = await fetchWithAuth(`${API_BASE}/client?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),
     });
     return res.json();
   },
 
-  assignMitra: async (satpamUuid: string, userUuid: string): Promise<void> => {
-    const url =
-      userUuid === "unassign"
-        ? `${API_BASE}/v1/satpam/${satpamUuid}/unassign`
-        : `${API_BASE}/v1/satpam/${satpamUuid}`;
+  getAssignment: async (satpamUuid: string): Promise<{ data: { assigned: boolean; client?: { uuid: string; nama: string } } }> => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${satpamUuid}/assignment`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error("Gagal mengambil data penugasan");
+    return res.json();
+  },
 
-    const body =
-      userUuid === "unassign" ? null : JSON.stringify({ user_uuid: userUuid });
+  assignMitra: async (satpamUuid: string, clientUuid: string): Promise<void> => {
+    const url = `${API_BASE}/satpam/${satpamUuid}/assignment`;
+    const payload = clientUuid === "unassign" ? { client_uuid: null } : { client_uuid: clientUuid };
+    const body = JSON.stringify(payload);
 
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       method: "PUT",
       headers: getHeaders(),
       body,
@@ -91,5 +90,23 @@ export const satpamService = {
     const result = await res.json().catch(() => ({}));
     if (!res.ok)
       throw new Error(result.message || "Gagal menyimpan perubahan penugasan");
+  },
+
+  approve: async (uuid: string): Promise<void> => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/approve`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || "Gagal menyetujui akun");
+  },
+
+  reject: async (uuid: string): Promise<void> => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/reject`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || "Gagal menolak akun");
   },
 };
