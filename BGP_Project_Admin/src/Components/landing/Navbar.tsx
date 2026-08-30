@@ -8,7 +8,7 @@ import { LuMoveRight } from "react-icons/lu";
 
 export const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -29,18 +29,17 @@ export const Navbar = () => {
       <motion.div
         layout
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`w-full bg-white/40 dark:bg-black/40 backdrop-blur-2xl backdrop-saturate-150 border-b sm:border border-zinc-200 dark:border-zinc-800 flex items-center justify-between transition-all duration-500 ease-in-out
-          ${
-            scrolled
-              ? "max-w-5xl px-6 py-3 rounded-full shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]"
-              : "max-w-full px-6 md:px-12 py-4 rounded-none shadow-none border-t-0 border-l-0 border-r-0 sm:border-t-0 sm:border-l-0 sm:border-r-0"
+        className={`w-full backdrop-blur-2xl backdrop-saturate-150 border-b sm:border flex items-center justify-between transition-all duration-500 ease-in-out
+          ${scrolled
+            ? "max-w-5xl px-6 py-3 rounded-full bg-white/70 dark:bg-slate-900/80 border-white/40 dark:border-slate-700/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]"
+            : "max-w-full px-6 md:px-12 py-6 rounded-none shadow-none bg-transparent border-transparent sm:border-transparent"
           }`}
       >
         <div className="container-company flex items-center gap-4">
           <img src={logo} className="w-12" alt="" />
           <a
             href="#"
-            className="font-bold text-2xl tracking-tighter text-[#122C93] dark:text-white"
+            className="hidden sm:block font-bold text-2xl tracking-tighter text-[#122C93] dark:text-white transition-colors"
           >
             Bima Global Security
           </a>
@@ -50,25 +49,25 @@ export const Navbar = () => {
           <li>
             <a
               href="#layanan"
-              className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+              className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              Layanan
+              {t('nav.services')}
             </a>
           </li>
           <li>
             <a
-              href="#teknologi"
-              className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+              href="#operasi-kami"
+              className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              Teknologi
+              {t('nav.operations')}
             </a>
           </li>
           <li>
             <a
               href="#kompetensi"
-              className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+              className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              Kompetensi
+              {t('nav.competency')}
             </a>
           </li>
         </ul>
@@ -76,7 +75,7 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-[#122C93] dark:hover:border-[#122C93] hover:text-[#122C93] dark:hover:text-[#122C93]"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? <FiSun size={20} /> : <FiMoon size={20} />}
@@ -84,11 +83,11 @@ export const Navbar = () => {
 
           <button
             onClick={toggleLanguage}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-colors relative group"
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-[#122C93] dark:hover:border-[#122C93] hover:text-[#122C93] dark:hover:text-[#122C93] relative group"
             aria-label="Toggle language"
           >
             <FiGlobe size={18} />
-            <span className="absolute -bottom-8 bg-black dark:bg-white text-white dark:text-black text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+            <span className="absolute -bottom-8 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold text-[10px] bg-slate-800 text-white dark:bg-white dark:text-black">
               {language === "en" ? "ID" : "EN"}
             </span>
           </button>
@@ -96,9 +95,9 @@ export const Navbar = () => {
           <motion.a
             href="#kontak"
             whileHover="hover"
-            className="px-5 py-2.5 rounded-full flex flex-row items-center gap-2 bg-[#1835AC] text-white font-semibold shadow-lg shadow-black/10 dark:shadow-white/10 text-sm"
+            className="px-5 py-2.5 rounded-full flex flex-row items-center gap-2 font-semibold shadow-lg text-sm transition-all bg-[#122C93] text-white shadow-[#122C93]/20 dark:bg-[#4b6bff] dark:shadow-[#4b6bff]/20 hover:scale-105"
           >
-            <span>Hubungi Kami</span>
+            <span>{t('nav.contact')}</span>
             <motion.span
               variants={{
                 hover: { x: 5 }

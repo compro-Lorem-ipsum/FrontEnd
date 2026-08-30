@@ -2,24 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 
 type Language = 'id' | 'en';
 
-const translations = {
-  en: {
-    'nav.home': 'Home',
-    'nav.about': 'About Us',
-    'nav.services': 'Services',
-    'nav.projects': 'Projects',
-    'nav.faq': 'FAQ',
-    'nav.contact': 'Contact Us'
-  },
-  id: {
-    'nav.home': 'Beranda',
-    'nav.about': 'Tentang Kami',
-    'nav.services': 'Layanan',
-    'nav.projects': 'Proyek',
-    'nav.faq': 'FAQ',
-    'nav.contact': 'Hubungi Kami'
-  }
-};
+import { translations } from '../constants/translations';
 
 interface LanguageContextType {
   language: Language;
