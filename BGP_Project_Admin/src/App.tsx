@@ -37,8 +37,8 @@ function App() {
     <Router>
       <Routes>
         {/* ga ada sidebar sama navbarnya */}
-        <Route path="/" element={<Login />} />
-        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoute />}>
           {/* ada side bar sama navbarnya */}

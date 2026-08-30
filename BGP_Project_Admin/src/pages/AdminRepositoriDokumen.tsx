@@ -1,4 +1,7 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import { formatDateTimeZone } from "../Utils/helpers";
+import { useSharedDocumentData } from "../hooks/useSharedDocumentData";
+import { useSharedDocumentForm } from "../hooks/useSharedDocumentForm";
 import {
   Button,
   Select,
@@ -16,11 +19,10 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure,
   Input,
   Textarea,
 } from "@heroui/react";
-import type { Selection } from "@heroui/react";
+
 import { FiSearch } from "react-icons/fi";
 import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 import { LuDownload } from "react-icons/lu";
@@ -42,53 +44,11 @@ export const jenisDokumen = [
   { key: "lainnya", label: "Lainnya" },
 ];
 
-export const satpamTargets = [
-  { key: "semua", label: "Semua Satpam" },
-  { key: "smb", label: "Sumarecon Bandung" },
-  { key: "mitra1", label: "Mitra Sejahtera" },
-  { key: "mitra2", label: "Graha Properti" },
-];
+
 
 const labelClass = "text-xs font-semibold text-[#122C93]";
 
-interface DokumenItem {
-  uuid: string;
-  judul: string;
-  deskripsi: string;
-  file_name: string;
-  tujuan: "semua" | "client";
-  nama_client?: string;
-  diunggah: string;
-}
 
-const dummyData: DokumenItem[] = [
-  {
-    uuid: "1",
-    judul: "Panduan Penggunaan APAR",
-    deskripsi:
-      "Tata cara penggunaan alat pemadam api ringan saat keadaan darurat.",
-    file_name: "Nama File",
-    tujuan: "semua",
-    diunggah: "05 Jun 2026, 16:00",
-  },
-  {
-    uuid: "2",
-    judul: "Judul Dokumen",
-    deskripsi: "Deskripsi",
-    file_name: "Nama File",
-    tujuan: "client",
-    nama_client: "Nama client",
-    diunggah: "dd/mm/yyyy, --:--",
-  },
-  {
-    uuid: "3",
-    judul: "Judul Dokumen",
-    deskripsi: "Deskripsi",
-    file_name: "Nama File",
-    tujuan: "semua",
-    diunggah: "dd/mm/yyyy, --:--",
-  },
-];
 
 const columns = [
   { name: "No", uid: "no" },
@@ -99,48 +59,56 @@ const columns = [
   { name: "Aksi", uid: "aksi" },
 ];
 
-const ALL_KEY = "semua";
-
 const AdminRepositoriDokumen = () => {
-  const loading = false;
-  const page = 1;
-  const totalPages = 1;
-  const rowsPerPage = 10;
+  const {
+    dataDocs,
+    loading,
+    limit,
+    hasMore,
+    currentPage,
+    handleNextPage,
+    handlePrevPage,
+    refreshData,
+  } = useSharedDocumentData();
 
-  const modalDokumen = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<DokumenItem | null>(null);
-  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
-
-  const handleSelectionChange = (keys: Selection) => {
-    setSelectedKeys(keys);
-  };
-  const clearAll = () => setSelectedKeys(new Set([]));
+  const formHook = useSharedDocumentForm(refreshData);
+  const {
+    isOpen,
+    onClose,
+    judul,
+    setJudul,
+    deskripsi,
+    setDeskripsi,
+    file,
+    setFile,
+    selectedKeys,
+    submitting,
+    targetOptions,
+    handleSelectionChange,
+    clearAll,
+    openCreateModal,
+    handleSubmit,
+    ALL_KEY
+  } = formHook;
 
   const selectedCount = useMemo(() => {
-    if (selectedKeys === "all") return satpamTargets.length;
+    if (selectedKeys as any === "all") return targetOptions.length;
     const keySet = selectedKeys as Set<string>;
-    return keySet.has(ALL_KEY) ? satpamTargets.length - 1 : keySet.size;
-  }, [selectedKeys]);
+    return keySet.has(ALL_KEY) ? targetOptions.length - 1 : keySet.size;
+  }, [selectedKeys, targetOptions, ALL_KEY]);
 
   const selectedLabels = useMemo(() => {
-    if (selectedKeys === "all") {
-      return satpamTargets.map((t) => t.label);
+    if (selectedKeys as any === "all") {
+      return targetOptions.map((t) => t.label);
     }
-    return satpamTargets
+    return targetOptions
       .filter((t) => (selectedKeys as Set<string>).has(t.key))
       .map((t) => t.label);
-  }, [selectedKeys]);
+  }, [selectedKeys, targetOptions]);
 
-  const handleTambah = () => {
-    setSelectedItem(null);
-    setSelectedKeys(new Set([]));
-    modalDokumen.onOpen();
-  };
-
-  const handleEdit = (item: DokumenItem) => {
-    setSelectedItem(item);
-    setSelectedKeys(new Set([]));
-    modalDokumen.onOpen();
+  const handleEdit = (item: any) => {
+    // Edit not implemented yet
+    console.log("Edit item:", item);
   };
 
   return (
@@ -158,7 +126,7 @@ const AdminRepositoriDokumen = () => {
         <Button
           className="text-white font-semibold bg-[#122C93]"
           size="md"
-          onPress={handleTambah}
+          onPress={openCreateModal}
         >
           + Upload Dokumen
         </Button>
@@ -195,17 +163,20 @@ const AdminRepositoriDokumen = () => {
           isStriped
           className="rounded-xl"
           bottomContent={
-            totalPages > 0 ? (
-              <div className="flex w-full justify-center">
-                <Pagination
-                  showControls
-                  showShadow
-                  color="primary"
-                  page={page}
-                  total={totalPages}
-                />
-              </div>
-            ) : null
+            <div className="flex w-full justify-center items-center px-4 py-2">
+              <Pagination
+                showControls
+                page={currentPage}
+                total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+                onChange={(page) => {
+                  if (page > currentPage) handleNextPage();
+                  else if (page < currentPage) handlePrevPage();
+                }}
+                classNames={{
+                  item: "[&:not([data-active=true])]:hidden",
+                }}
+              />
+            </div>
           }
         >
           <TableHeader columns={columns}>
@@ -219,7 +190,7 @@ const AdminRepositoriDokumen = () => {
             )}
           </TableHeader>
           <TableBody
-            items={dummyData}
+            items={dataDocs}
             emptyContent={loading ? <Spinner size="lg" /> : "Tidak ada data"}
           >
             {(item) => (
@@ -229,8 +200,8 @@ const AdminRepositoriDokumen = () => {
                     case "no":
                       return (
                         <TableCell>
-                          {(page - 1) * rowsPerPage +
-                            dummyData.indexOf(item) +
+                          {(currentPage - 1) * limit +
+                            dataDocs.indexOf(item) +
                             1}
                         </TableCell>
                       );
@@ -239,7 +210,7 @@ const AdminRepositoriDokumen = () => {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium text-black">
-                              {item.judul}
+                              {item.nama}
                             </span>
                             <span className="text-sm font-light text-[#8D8787] w-[280px] truncate">
                               {item.deskripsi}
@@ -252,28 +223,39 @@ const AdminRepositoriDokumen = () => {
                         <TableCell>
                           <div className="flex flex-row items-center gap-2">
                             <FaFilePdf className="text-[#E5493A] text-2xl" />
-                            <span className="text-sm text-black">
-                              {item.file_name}
-                            </span>
+                            {item.file?.view_url ? (
+                              <a
+                                href={item.file.view_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm text-[#122C93] hover:underline cursor-pointer"
+                              >
+                                Lihat Dokumen
+                              </a>
+                            ) : (
+                              <span className="text-sm text-black">
+                                Tidak ada file
+                              </span>
+                            )}
                           </div>
                         </TableCell>
                       );
                     case "tujuan":
                       return (
                         <TableCell>
-                          {item.tujuan === "semua" ? (
+                          {item.recipient_type === "all_client" ? (
                             <span className="bg-[#E8EEFF] text-[#122C93] text-xs font-medium px-3 py-1.5 rounded-full">
                               Semua satpam
                             </span>
                           ) : (
                             <span className="bg-[#E4F9EE] text-[#02A758] text-xs font-medium px-3 py-1.5 rounded-full">
-                              {item.nama_client}
+                              {item.recipient_count} Mitra
                             </span>
                           )}
                         </TableCell>
                       );
                     case "diunggah":
-                      return <TableCell>{item.diunggah}</TableCell>;
+                      return <TableCell>{formatDateTimeZone(item.created_at).replace(" pukul ", ", ").replace(".", ":")}</TableCell>;
                     case "aksi":
                       return (
                         <TableCell>
@@ -284,9 +266,19 @@ const AdminRepositoriDokumen = () => {
                             >
                               <FaRegEdit className="text-base" />
                             </button>
-                            <button className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF]">
-                              <LuDownload className="text-base" />
-                            </button>
+                            {item.file?.download_url ? (
+                              <a
+                                href={item.file.download_url}
+                                download
+                                className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] flex"
+                              >
+                                <LuDownload className="text-base" />
+                              </a>
+                            ) : (
+                              <button className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] opacity-50 cursor-not-allowed">
+                                <LuDownload className="text-base" />
+                              </button>
+                            )}
                             <button className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED]">
                               <FaRegTrashAlt className="text-base" />
                             </button>
@@ -305,19 +297,21 @@ const AdminRepositoriDokumen = () => {
 
       {/* Modal here */}
       <Modal
-        isOpen={modalDokumen.isOpen}
-        onOpenChange={modalDokumen.onOpenChange}
+        isOpen={isOpen}
+        onOpenChange={(open) => !open && onClose()}
         backdrop="blur"
       >
         <ModalContent>
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="text-[#122C93] font-semibold">
-                {selectedItem ? "Edit Dokumen" : "Tambah Dokumen"}
+                Tambah Dokumen
               </ModalHeader>
               <ModalBody className="gap-3">
                 <Input
                   label="Judul / Nama"
+                  value={judul}
+                  onValueChange={setJudul}
                   labelPlacement="outside-top"
                   placeholder="mis. SOP Kebakaran"
                   isRequired
@@ -326,6 +320,8 @@ const AdminRepositoriDokumen = () => {
                 />
                 <Textarea
                   label="Deskripsi (Opsional)"
+                  value={deskripsi}
+                  onValueChange={setDeskripsi}
                   labelPlacement="outside-top"
                   placeholder="Ringkasan isi dokumen"
                   variant="bordered"
@@ -343,9 +339,7 @@ const AdminRepositoriDokumen = () => {
                     <div className="flex flex-col items-center gap-1 text-[#9095A0]">
                       <AiOutlineCloudUpload className="text-2xl" />
                       <span className="text-xs font-medium text-[#6B7280]">
-                        {selectedItem
-                          ? selectedItem.file_name
-                          : "Unggah Dokumen"}
+                        {file ? file.name : "Unggah Dokumen"}
                       </span>
                       <span className="text-xs text-[#9CA3AF]">
                         PDF, PNG/JPG
@@ -356,6 +350,11 @@ const AdminRepositoriDokumen = () => {
                       type="file"
                       accept=".pdf,.png,.jpg,.jpeg"
                       className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          setFile(e.target.files[0]);
+                        }
+                      }}
                     />
                   </label>
                 </div>
@@ -404,7 +403,7 @@ const AdminRepositoriDokumen = () => {
                         label: "text-sm font-semibold text-[#122C93]",
                       }}
                     >
-                      {satpamTargets.map((t) => (
+                      {targetOptions.map((t) => (
                         <SelectItem key={t.key}>{t.label}</SelectItem>
                       ))}
                     </Select>
@@ -431,7 +430,8 @@ const AdminRepositoriDokumen = () => {
                 </Button>
                 <Button
                   className="bg-[#122C93] text-white font-medium"
-                  onPress={onClose}
+                  onPress={handleSubmit}
+                  isLoading={submitting}
                 >
                   Simpan
                 </Button>
