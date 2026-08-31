@@ -6,9 +6,9 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import logo from "../../assets/images/logo.webp";
 import { LuMoveRight } from "react-icons/lu";
 
-export const Navbar = () => {
+export const SystemNavbar = () => {
   const { theme, toggleTheme } = useTheme();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,9 +36,9 @@ export const Navbar = () => {
           }`}
       >
         <div className="container-company flex items-center gap-4">
-          <img src={logo} className="w-12" alt="" />
+          <img src={logo} className="w-12" alt="BGS Logo" />
           <a
-            href="#"
+            href="/"
             className="hidden sm:block font-bold text-2xl tracking-tighter text-[#122C93] dark:text-white transition-colors"
           >
             Bima Global Security
@@ -48,26 +48,26 @@ export const Navbar = () => {
         <ul className="hidden md:flex gap-6 lg:gap-8 items-center font-medium">
           <li>
             <a
-              href="#layanan"
+              href="/"
               className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              {t('nav.services')}
+              {language === 'id' ? 'Beranda' : 'Home'}
             </a>
           </li>
           <li>
             <a
-              href="#operasi-kami"
+              href="#shift"
               className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              {t('nav.operations')}
+              Web Dashboard
             </a>
           </li>
           <li>
             <a
-              href="#kompetensi"
+              href="#recognition"
               className="font-medium transition-colors text-slate-600 hover:text-[#122C93] dark:text-slate-300 dark:hover:text-[#122C93]"
             >
-              {t('nav.competency')}
+              Mobile App
             </a>
           </li>
         </ul>
@@ -97,7 +97,7 @@ export const Navbar = () => {
             whileHover="hover"
             className="px-5 py-2.5 rounded-full flex flex-row items-center gap-2 font-semibold shadow-lg text-sm transition-all bg-[#122C93] text-white shadow-[#122C93]/20 dark:bg-[#4b6bff] dark:shadow-[#4b6bff]/20 hover:scale-105"
           >
-            <span>{t('nav.contact')}</span>
+            <span>{language === 'id' ? 'Coba Demo' : 'Try Demo'}</span>
             <motion.span
               variants={{
                 hover: { x: 5 }

@@ -2,7 +2,7 @@ import { Button, Input, InputOtp, Spinner } from "@heroui/react";
 import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import cover from "../assets/images/cover.webp";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/logo.webp";
 import { useState, useEffect } from "react";
 
 type AuthView = "login" | "forgot-email" | "forgot-otp" | "forgot-new-password";
