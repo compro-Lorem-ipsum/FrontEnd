@@ -36,19 +36,20 @@ export const Hero = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <motion.button
+          <motion.a
+            href="#operasi-kami"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-[#122C93] text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-[#0c1f6b] hover:shadow-2xl transition-all text-lg w-full sm:w-auto"
+            className="bg-[#122C93] text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-[#0c1f6b] hover:shadow-2xl transition-all text-lg w-full sm:w-auto inline-block"
           >
             {t('hero.cta_explore')}
-          </motion.button>
+          </motion.a>
           
           <motion.a
-            href="#layanan"
+            href="/sistem"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-transparent border-2 border-[#122C93] text-[#122C93] dark:border-white dark:text-white px-10 py-4 rounded-full font-bold shadow-md hover:bg-[#122C93]/10 dark:hover:bg-white/10 transition-all text-lg w-full sm:w-auto"
+            className="bg-transparent border-2 border-[#122C93] text-[#122C93] dark:border-white dark:text-white px-10 py-4 rounded-full font-bold shadow-md hover:bg-[#122C93]/10 dark:hover:bg-white/10 transition-all text-lg w-full sm:w-auto inline-block"
           >
             {t('hero.cta_services')}
           </motion.a>

@@ -78,8 +78,8 @@ export const fetchWithAuth = async (input: RequestInfo | URL, init?: RequestInit
       document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       
       // Prevent infinite redirect loop if already on login
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (window.location.pathname !== "/auth-login") {
+        window.location.href = "/auth-login";
       }
     }
   }

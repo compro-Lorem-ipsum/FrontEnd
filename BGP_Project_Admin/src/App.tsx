@@ -4,6 +4,7 @@ import Mainlayouts from "./Layout/Mainlayouts";
 import Login from "./Auth/Login";
 
 import PrivateRoute from "./Utils/PrivateRoute";
+import ScrollToTop from "./Utils/ScrollToTop";
 
 import AdminManageUsers from "./pages/AdminManageUsers";
 import AdminManageSatpam from "./pages/AdminManageSatpam";
@@ -32,13 +33,16 @@ import ClientRiwayatPesan from "./pages/ClientRiwayatPesan";
 import ClientTrackingGps from "./pages/ClientTrackingGps";
 import ClientPenjadwalanSatpam from "./pages/ClientPenjadwalanSatpam";
 import LandingPage from "./pages/LandingPage";
+import SystemPage from "./pages/SystemPage";
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* ga ada sidebar sama navbarnya */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/sistem" element={<SystemPage />} />
+        <Route path="/auth-login" element={<Login />} />
 
         <Route element={<PrivateRoute />}>
           {/* ada side bar sama navbarnya */}

@@ -1,8 +1,9 @@
 import { FiArrowRight } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { motion } from "framer-motion";
-import mobileIlus from "../../assets/images/mobile-ilus.png";
-import webIlus from "../../assets/images/web-ilus.png";
+import mobileIlus from "../../assets/images/mobile-ilus.webp";
+import webIlus from "../../assets/images/web-ilus.webp";
 
 export const OperasiKami = () => {
   const { t } = useLanguage();
@@ -73,10 +74,10 @@ export const OperasiKami = () => {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <button className="inline-flex items-center justify-center bg-[#122C93] text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-[#122C93]/30 hover:bg-[#0c1f6b] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
+              <Link to="/sistem" className="inline-flex items-center justify-center bg-[#122C93] text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-[#122C93]/30 hover:bg-[#0c1f6b] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
                 <span className="mr-3">{t('operasi.cta')}</span>
                 <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </button>
+              </Link>
             </motion.div>
           </div>
 

@@ -28,7 +28,7 @@ import {
   TbPhotoCheck,
   TbGpsFilled,
 } from "react-icons/tb";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/logo.webp";
 import { HiMiniBellAlert } from "react-icons/hi2";
 
 const Sidebar = () => {
@@ -200,7 +200,7 @@ const Sidebar = () => {
       document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      window.location.href = "/login";
+      window.location.href = "/auth-login";
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/logo.webp";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { FaIdCardAlt, FaUser, FaUserEdit, FaIdCard } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
