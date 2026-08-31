@@ -1,111 +1,117 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import "leaflet/dist/leaflet.css";
 import Mainlayouts from "./Layout/Mainlayouts";
-import Login from "./Auth/Login";
 
 import PrivateRoute from "./Utils/PrivateRoute";
-
-import AdminManageUsers from "./pages/AdminManageUsers";
-import AdminManageSatpam from "./pages/AdminManageSatpam";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminManageShift from "./pages/AdminManageShift";
-import AdminManagePos from "./pages/AdminManagePos";
-import AdminManagePosUtama from "./pages/AdminManagePosUtama";
-import AdminRekapAbsensi from "./pages/AdminRekapAbsensi";
-import AdminRekapPatroli from "./pages/AdminRekapPatroli";
-import AdminManageRadius from "./pages/AdminManageRadius";
-import AdminManageWaktuJadwal from "./pages/AdminManageWaktuJadwal";
-import NotFoundPage from "./pages/NotFoundPage";
-import ClientDashboard from "./pages/ClientDashboard";
-import ClientDetailsSatpam from "./pages/ClientDetailsSatpam";
-import AdminDetailsSatpam from "./pages/AdminDetailsSatpam";
-import AdminEditDetailSatpam from "./pages/AdminEditDetailSatpam";
-import ClientActivityLog from "./pages/ClientActivityLog";
-import AdminManagePengumuman from "./pages/AdminManagePengumuman";
-import AdminRepositoriDokumen from "./pages/AdminRepositoriDokumen";
-import AdminLaporanKejadian from "./pages/AdminLaporanKejadian";
-import AdminManagePengajuan from "./pages/AdminManagePengajuan";
-import AdminAprovalAkun from "./pages/AdminAprovalAkun";
-import AdminActivityLog from "./pages/AdminActivityLog";
-import AdminPanicAlert from "./pages/AdminPanicAlert";
-import ClientRiwayatPesan from "./pages/ClientRiwayatPesan";
-import ClientTrackingGps from "./pages/ClientTrackingGps";
-import ClientPenjadwalanSatpam from "./pages/ClientPenjadwalanSatpam";
 import LandingPage from "./pages/LandingPage";
+
+// Semua halaman selain landing page (publik) di-lazy-load — halaman ini
+// hanya diakses lewat login, jadi tidak perlu ikut ditarik saat visitor
+// pertama kali buka "/" (dampak besar ke ukuran bundle awal & SEO speed).
+const Login = lazy(() => import("./Auth/Login"));
+const AdminManageUsers = lazy(() => import("./pages/AdminManageUsers"));
+const AdminManageSatpam = lazy(() => import("./pages/AdminManageSatpam"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminManageShift = lazy(() => import("./pages/AdminManageShift"));
+const AdminManagePos = lazy(() => import("./pages/AdminManagePos"));
+const AdminManagePosUtama = lazy(() => import("./pages/AdminManagePosUtama"));
+const AdminRekapAbsensi = lazy(() => import("./pages/AdminRekapAbsensi"));
+const AdminRekapPatroli = lazy(() => import("./pages/AdminRekapPatroli"));
+const AdminManageRadius = lazy(() => import("./pages/AdminManageRadius"));
+const AdminManageWaktuJadwal = lazy(() => import("./pages/AdminManageWaktuJadwal"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const ClientDetailsSatpam = lazy(() => import("./pages/ClientDetailsSatpam"));
+const AdminDetailsSatpam = lazy(() => import("./pages/AdminDetailsSatpam"));
+const AdminEditDetailSatpam = lazy(() => import("./pages/AdminEditDetailSatpam"));
+const ClientActivityLog = lazy(() => import("./pages/ClientActivityLog"));
+const AdminManagePengumuman = lazy(() => import("./pages/AdminManagePengumuman"));
+const AdminRepositoriDokumen = lazy(() => import("./pages/AdminRepositoriDokumen"));
+const AdminLaporanKejadian = lazy(() => import("./pages/AdminLaporanKejadian"));
+const AdminManagePengajuan = lazy(() => import("./pages/AdminManagePengajuan"));
+const AdminAprovalAkun = lazy(() => import("./pages/AdminAprovalAkun"));
+const AdminActivityLog = lazy(() => import("./pages/AdminActivityLog"));
+const AdminPanicAlert = lazy(() => import("./pages/AdminPanicAlert"));
+const ClientRiwayatPesan = lazy(() => import("./pages/ClientRiwayatPesan"));
+const ClientTrackingGps = lazy(() => import("./pages/ClientTrackingGps"));
+const ClientPenjadwalanSatpam = lazy(() => import("./pages/ClientPenjadwalanSatpam"));
+
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* ga ada sidebar sama navbarnya */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={null}>
+        <Routes>
+          {/* ga ada sidebar sama navbarnya */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route element={<PrivateRoute />}>
-          {/* ada side bar sama navbarnya */}
-          <Route element={<Mainlayouts />}>
-            <Route path="/AdminDashboard" element={<AdminDashboard />} />
-            <Route path="/ClientDashboard" element={<ClientDashboard />} />
-            <Route path="/AdminManageSatpam" element={<AdminManageSatpam />} />
-            <Route
-              path="/AdminEditDetailSatpam"
-              element={<AdminEditDetailSatpam />}
-            />
-            <Route
-              path="/ClientDetailSatpam"
-              element={<ClientDetailsSatpam />}
-            />
-            <Route
-              path="/ClientPenjadwalanSatpam"
-              element={<ClientPenjadwalanSatpam />}
-            />
-            <Route path="/ClientActivityLog" element={<ClientActivityLog />} />
-            <Route
-              path="/ClientRiwayatPesan"
-              element={<ClientRiwayatPesan />}
-            />
-            <Route path="/ClientGpsTracking" element={<ClientTrackingGps />} />
-            <Route path="/AdminActivityLog" element={<AdminActivityLog />} />
-            <Route path="/AdminPanicAlert" element={<AdminPanicAlert />} />
+          <Route element={<PrivateRoute />}>
+            {/* ada side bar sama navbarnya */}
+            <Route element={<Mainlayouts />}>
+              <Route path="/AdminDashboard" element={<AdminDashboard />} />
+              <Route path="/ClientDashboard" element={<ClientDashboard />} />
+              <Route path="/AdminManageSatpam" element={<AdminManageSatpam />} />
+              <Route
+                path="/AdminEditDetailSatpam"
+                element={<AdminEditDetailSatpam />}
+              />
+              <Route
+                path="/ClientDetailSatpam"
+                element={<ClientDetailsSatpam />}
+              />
+              <Route
+                path="/ClientPenjadwalanSatpam"
+                element={<ClientPenjadwalanSatpam />}
+              />
+              <Route path="/ClientActivityLog" element={<ClientActivityLog />} />
+              <Route
+                path="/ClientRiwayatPesan"
+                element={<ClientRiwayatPesan />}
+              />
+              <Route path="/ClientGpsTracking" element={<ClientTrackingGps />} />
+              <Route path="/AdminActivityLog" element={<AdminActivityLog />} />
+              <Route path="/AdminPanicAlert" element={<AdminPanicAlert />} />
 
-            <Route path="/AdminDetailSatpam" element={<AdminDetailsSatpam />} />
-            <Route
-              path="/AdminRepositoriDokumen"
-              element={<AdminRepositoriDokumen />}
-            />
-            <Route
-              path="/AdminLaporanKejadian"
-              element={<AdminLaporanKejadian />}
-            />
-            <Route
-              path="/AdminManagePengumuman"
-              element={<AdminManagePengumuman />}
-            />
-            <Route
-              path="/AdminManagePengajuan"
-              element={<AdminManagePengajuan />}
-            />
-            <Route path="/AdminAprovalAkun" element={<AdminAprovalAkun />} />
-            <Route path="/AdminManageUsers" element={<AdminManageUsers />} />
-            <Route path="/AdminManageShift" element={<AdminManageShift />} />
-            <Route path="/AdminManagePos" element={<AdminManagePos />} />
-            <Route
-              path="/AdminManagePosUtama"
-              element={<AdminManagePosUtama />}
-            />
-            <Route path="/AdminRekapAbsensi" element={<AdminRekapAbsensi />} />
-            <Route path="/AdminRekapPatroli" element={<AdminRekapPatroli />} />
-            <Route path="/AdminManageRadius" element={<AdminManageRadius />} />
-            <Route
-              path="/AdminManageWaktu"
-              element={<AdminManageWaktuJadwal />}
-            />
-            {/* Buat selanjutnya ya */}
+              <Route path="/AdminDetailSatpam" element={<AdminDetailsSatpam />} />
+              <Route
+                path="/AdminRepositoriDokumen"
+                element={<AdminRepositoriDokumen />}
+              />
+              <Route
+                path="/AdminLaporanKejadian"
+                element={<AdminLaporanKejadian />}
+              />
+              <Route
+                path="/AdminManagePengumuman"
+                element={<AdminManagePengumuman />}
+              />
+              <Route
+                path="/AdminManagePengajuan"
+                element={<AdminManagePengajuan />}
+              />
+              <Route path="/AdminAprovalAkun" element={<AdminAprovalAkun />} />
+              <Route path="/AdminManageUsers" element={<AdminManageUsers />} />
+              <Route path="/AdminManageShift" element={<AdminManageShift />} />
+              <Route path="/AdminManagePos" element={<AdminManagePos />} />
+              <Route
+                path="/AdminManagePosUtama"
+                element={<AdminManagePosUtama />}
+              />
+              <Route path="/AdminRekapAbsensi" element={<AdminRekapAbsensi />} />
+              <Route path="/AdminRekapPatroli" element={<AdminRekapPatroli />} />
+              <Route path="/AdminManageRadius" element={<AdminManageRadius />} />
+              <Route
+                path="/AdminManageWaktu"
+                element={<AdminManageWaktuJadwal />}
+              />
+              {/* Buat selanjutnya ya */}
+            </Route>
+            {/* Error Page Handler */}
+            <Route path="*" element={<NotFoundPage />} />
+            {/* ada side bar sama navbarnya */}
           </Route>
-          {/* Error Page Handler */}
-          <Route path="*" element={<NotFoundPage />} />
-          {/* ada side bar sama navbarnya */}
-        </Route>
-      </Routes>
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

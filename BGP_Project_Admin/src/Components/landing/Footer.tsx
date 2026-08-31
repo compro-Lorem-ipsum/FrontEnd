@@ -54,9 +54,9 @@ export const Footer = ({
             <div className="md:col-span-3 lg:pl-10">
               <h3 className="text-base font-bold uppercase tracking-wider mb-8 text-gray-900 dark:text-white">{t('footer.quick_links')}</h3>
               <ul className="flex flex-col gap-4 text-base text-gray-600 dark:text-gray-400">
-                <li><a href="#" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.home')}</a></li>
-                <li><a href="#tentang" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.about')}</a></li>
-                <li><a href="#layanan-kami" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.services')}</a></li>
+                <li><a href="/" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.home')}</a></li>
+                <li><a href="#standar-layanan" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.about')}</a></li>
+                <li><a href="#layanan" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.services')}</a></li>
                 <li><a href="#operasi-kami" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.operations')}</a></li>
                 <li><a href="#mitra" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.partners')}</a></li>
                 <li><a href="#kontak" className="hover:text-[#122C93] dark:hover:text-white transition-colors">{t('footer.contact')}</a></li>

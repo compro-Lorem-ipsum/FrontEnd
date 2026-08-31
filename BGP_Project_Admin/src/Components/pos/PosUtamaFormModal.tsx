@@ -8,6 +8,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { MapContainer, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { LocationMarker } from "./LocationMarker";
 import type { usePosForm } from "../../hooks/usePosForm";
 
