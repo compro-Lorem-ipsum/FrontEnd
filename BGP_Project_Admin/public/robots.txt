@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /AdminDashboard
+Disallow: /ClientDashboard
+Disallow: /login
+
+# TODO: ganti PLACEHOLDER-DOMAIN.com begitu domain production sudah aktif
+# (per Agustus 2026 VPS masih diakses via IP polos, belum ada domain).
+Sitemap: https://PLACEHOLDER-DOMAIN.com/sitemap.xml

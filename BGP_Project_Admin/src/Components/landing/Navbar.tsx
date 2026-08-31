@@ -36,7 +36,7 @@ export const Navbar = () => {
           }`}
       >
         <div className="container-company flex items-center gap-4">
-          <img src={logo} className="w-12" alt="" />
+          <img src={logo} className="w-12" alt="Bima Global Security" />
           <a
             href="#"
             className="hidden sm:block font-bold text-2xl tracking-tighter text-[#122C93] dark:text-white transition-colors"
