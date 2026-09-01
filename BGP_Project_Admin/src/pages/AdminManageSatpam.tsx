@@ -19,7 +19,7 @@ const AdminManageSatpam = () => {
     userRole,
     refreshData,
     deleteState,
-  } = useSatpamData();
+  } = useSatpamData({ status: "active" });
 
   const assignmentHook = useMitraAssignment(refreshData);
 
@@ -50,7 +50,7 @@ const AdminManageSatpam = () => {
             onEdit={handleOpenEdit}
             onDelete={deleteState.confirm}
             onAssign={assignmentHook.openAssignmentModal}
-            onDetail={() => navigate(userRole?.toLowerCase() === "client" ? "/ClientDetailSatpam" : "/AdminDetailSatpam")}
+            onDetail={(item) => navigate(userRole?.toLowerCase() === "client" ? "/ClientDetailSatpam" : "/AdminDetailSatpam", { state: { uuid: item.uuid } })}
           />
         </div>
 

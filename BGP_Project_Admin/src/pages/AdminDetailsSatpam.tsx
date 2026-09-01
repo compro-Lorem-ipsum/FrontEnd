@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { satpamService } from "../services/satpamService";
+import type { Satpam, CardData } from "../types/satpam";
 import { createPortal } from "react-dom";
 import logo from "../assets/images/logo.webp";
 import { FaArrowLeftLong } from "react-icons/fa6";
@@ -26,6 +29,7 @@ import {
   Select,
   SelectItem,
   Input,
+  Spinner,
 } from "@heroui/react";
 
 interface KartuAnggotaProps {
@@ -35,10 +39,12 @@ interface KartuAnggotaProps {
   nrg?: string;
   mitra?: string;
   disahkanOleh?: string;
+  avatar_url?: string;
 }
 
-const Barcode = ({ value }: { value: string }) => {
-  const bars = value.split("").map((char, i) => {
+const Barcode = ({ value }: { value?: string | null }) => {
+  const safeValue = value || "0000000000";
+  const bars = safeValue.split("").map((char, i) => {
     const width = (char.charCodeAt(0) % 3) + 1;
     return (
       <div
@@ -53,7 +59,7 @@ const Barcode = ({ value }: { value: string }) => {
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-row items-end">{bars}</div>
       <span className="text-[10px] font-mono tracking-widest text-black">
-        {value}
+        {safeValue}
       </span>
     </div>
   );
@@ -66,6 +72,7 @@ export const KartuAnggotaDepan = ({
   nrg = "00103062026000007",
   mitra = "Nama Mitra",
   disahkanOleh = "Direktur Utama",
+  avatar_url,
 }: KartuAnggotaProps) => {
   return (
     <div className="w-[420px] h-[264px] rounded-2xl overflow-hidden flex flex-row bg-[#F5F3EE] shadow-md">
@@ -80,8 +87,12 @@ export const KartuAnggotaDepan = ({
             SECURITY SERVICES
           </span>
         </div>
-        <div className="w-24 h-28 bg-[#E7E9F5] rounded-md flex items-center justify-center mt-2">
-          <span className="text-[#9096B8] text-[9px]">PAS FOTO</span>
+        <div className="w-24 h-28 bg-[#E7E9F5] rounded-md flex items-center justify-center mt-2 overflow-hidden">
+          {avatar_url ? (
+            <img src={avatar_url} className="w-full h-full object-cover" alt="Pas Foto" />
+          ) : (
+            <span className="text-[#9096B8] text-[9px]">PAS FOTO</span>
+          )}
         </div>
       </div>
 
@@ -137,7 +148,7 @@ export const KartuAnggotaDepan = ({
 };
 
 export const KartuAnggotaBelakang = ({
-  nrg = "00103062026000007",
+  nip = "123xxx",
 }: KartuAnggotaProps) => {
   return (
     <div className="w-[420px] h-[264px] rounded-2xl overflow-hidden bg-[#F5F3EE] shadow-md flex flex-col">
@@ -173,7 +184,7 @@ export const KartuAnggotaBelakang = ({
             NOMOR INDUK PEGAWAI (NIP)
           </span>
           <div className="mt-2">
-            <Barcode value={nrg} />
+            <Barcode value={nip} />
           </div>
         </div>
       </div>
@@ -282,6 +293,14 @@ export const kategoriPenghargaan = [
 ];
 
 const AdminDetailsSatpam = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const uuid = location.state?.uuid;
+
+  const [satpam, setSatpam] = useState<Satpam | null>(null);
+  const [cardData, setCardData] = useState<CardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("absensi");
   const [pelanggaranPage, setPelanggaranPage] = useState(1);
@@ -294,7 +313,15 @@ const AdminDetailsSatpam = () => {
   const modalTambahPelanggaran = useDisclosure();
   const modalGenerateKartu = useDisclosure();
 
-  const dataKartu = {
+  const dataKartu = cardData ? {
+    nama: cardData.nama,
+    jabatan: cardData.jabatan,
+    nip: cardData.nip,
+    nrg: cardData.nrg,
+    mitra: cardData.client,
+    disahkanOleh: "Direktur Utama",
+    avatar_url: cardData.avatar_url,
+  } : {
     nama: "Nama Anggota",
     jabatan: "Jabatan",
     nip: "123xxx",
@@ -302,6 +329,27 @@ const AdminDetailsSatpam = () => {
     mitra: "Nama Mitra",
     disahkanOleh: "Direktur Utama",
   };
+
+  const fetchDetail = useCallback(async () => {
+    if (!uuid) return;
+    try {
+      setIsLoading(true);
+      const [detailRes, cardRes] = await Promise.all([
+        satpamService.getById(uuid),
+        satpamService.getCardData(uuid)
+      ]);
+      setSatpam(detailRes.data);
+      setCardData(cardRes.data);
+    } catch (error) {
+      console.error("Error fetching detail:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [uuid]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   const absensiData = [
     {
@@ -504,7 +552,7 @@ const AdminDetailsSatpam = () => {
       {/* Header */}
       <div className="flex flex-row justify-between items-center bg-white p-3 rounded-xl border border-[#E8EEFF]">
         <div className="flex flex-row gap-2.5 items-start">
-          <div className="bg-[#DBEAFE] p-2 rounded-lg">
+          <div className="bg-[#DBEAFE] p-2 rounded-lg cursor-pointer" onClick={() => navigate(-1)}>
             <FaArrowLeftLong className="text-base" />
           </div>
           <div className="flex flex-col items-start">
@@ -558,38 +606,44 @@ const AdminDetailsSatpam = () => {
       </div>
 
       {/* Informasi Personal */}
+      {isLoading ? (
+        <div className="flex justify-center p-10"><Spinner /></div>
+      ) : satpam ? (
       <div className="flex flex-row items-center gap-5 bg-white rounded-xl px-3 py-2 border border-[#E8EEFF]">
-        <div className="w-40 h-40 bg-slate-200 rounded-2xl flex-shrink-0"></div>
+        <div className="w-52 h-60 bg-slate-200 rounded-2xl flex-shrink-0 overflow-hidden">
+          {satpam.avatar?.view_url ? (
+            <img src={satpam.avatar.view_url} className="w-full h-full object-cover" alt="Profile" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+          )}
+        </div>
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col items-start">
             <div className="flex flex-row items-center gap-2">
-              <h2 className="font-semibold text-lg">Nama Satpam</h2>
-              <h2 className="bg-[#DCFCE7] text-xs px-3 py-0.5 rounded-2xl text-[#008236]">
-                Aktif
+              <h2 className="font-semibold text-2xl">{satpam.nama}</h2>
+              <h2 className={`text-sm px-3 py-0.5 rounded-2xl ${satpam.status === 'active' ? 'bg-[#DCFCE7] text-[#008236]' : 'bg-red-100 text-red-700'}`}>
+                {satpam.status === 'active' ? 'Aktif' : satpam.status}
               </h2>
             </div>
-            <h2 className="text-xs font-light text-[#8D8787]">
-              Jabatan · Pos Utama
+            <h2 className="text-sm font-light text-[#8D8787]">
+              {satpam.jabatan || "-"} · Pos Utama
             </h2>
           </div>
-          <div className="flex flex-col flex-wrap gap-x-4 gap-y-5 w-full h-[120px]">
+          <div className="flex flex-col flex-wrap gap-x-4 gap-y-5 w-full h-[160px]">
             {[
-              [
-                "ASAL DAERAH",
-                "Jalan Basuki Rahmad, Kelurahan Margomulyo, Kabupaten Ngawi, Jawa Timur",
-              ],
-              ["NO. HP UTAMA", "0812 - 3456 - 7890"],
-              ["NO. HP ORTU/WALI", "0812 - 3456 - 7890"],
-              ["JENIS KELAMIN", "Laki-Laki"],
-              ["NIP", "123xx"],
-              ["EMAIL", "Prasetyoteguh@gmail.com"],
-              ["NRGG", "33xxx"],
+              ["ASAL DAERAH", satpam.asal_daerah || "-"],
+              ["NO. HP UTAMA", satpam.nomor_hp || satpam.no_telp || "-"],
+              ["NO. HP ORTU/WALI", satpam.kontak_sekunder || "-"],
+              ["JENIS KELAMIN", satpam.gender === "1" ? "Laki-Laki" : satpam.gender === "2" ? "Perempuan" : "-"],
+              ["NIP", satpam.nip || "-"],
+              ["EMAIL", satpam.email || "-"],
+              ["NRG", satpam.nrg || "-"],
             ].map(([label, value], i) => (
               <div key={i} className="flex flex-col">
-                <h2 className="font-light text-[10px] leading-tight">
+                <h2 className="font-light text-xs leading-tight">
                   {label}
                 </h2>
-                <h2 className="font-light text-[10px] leading-tight text-[#8D8787]">
+                <h2 className="font-light text-sm leading-tight text-[#8D8787] max-w-[200px] truncate" title={String(value)}>
                   {value}
                 </h2>
               </div>
@@ -597,6 +651,9 @@ const AdminDetailsSatpam = () => {
           </div>
         </div>
       </div>
+      ) : (
+        <div className="flex justify-center p-10">Data tidak ditemukan</div>
+      )}
 
       {/* Tab Section */}
       <div className="flex flex-col items-start bg-white p-3 gap-1 rounded-xl border border-[#E8EEFF]">

@@ -2,6 +2,7 @@ import { fetchWithAuth } from "../Utils/fetchWithAuth";
 import type {
   SatpamResponse,
   Satpam,
+  CardDataResponse,
 } from "../types/satpam";
 import type { UserResponse } from "../types/user";
 import { getToken } from "../Utils/helpers";
@@ -19,9 +20,10 @@ const getHeaders = (isMultipart: boolean = false) => {
 };
 
 export const satpamService = {
-  getAll: async (limit: number = 7, cursor: string | null = null): Promise<SatpamResponse> => {
+  getAll: async (limit: number = 7, cursor: string | null = null, status?: string): Promise<SatpamResponse> => {
     const params = new URLSearchParams({ limit: limit.toString() });
     if (cursor) params.append("cursor", cursor);
+    if (status) params.append("status", status);
     const res = await fetchWithAuth(`${API_BASE}/satpam/?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),
@@ -32,6 +34,13 @@ export const satpamService = {
 
   getById: async (uuid: string): Promise<{ data: Satpam }> => {
     const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  getCardData: async (uuid: string): Promise<CardDataResponse> => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/card-data`, {
       headers: getHeaders(),
     });
     return res.json();

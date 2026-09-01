@@ -5,7 +5,11 @@ import type { Satpam } from "../types/satpam";
 import { getRole } from "../Utils/helpers";
 import { addToast } from "@heroui/react";
 
-export const useSatpamData = () => {
+interface UseSatpamDataOptions {
+  status?: string;
+}
+
+export const useSatpamData = (options?: UseSatpamDataOptions) => {
   const navigate = useNavigate();
   const [dataSatpam, setDataSatpam] = useState<Satpam[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,7 +34,7 @@ export const useSatpamData = () => {
     setLoading(true);
     try {
       const currentCursor = cursorHistory[currentIndex];
-      const response = await satpamService.getAll(limit, currentCursor);
+      const response = await satpamService.getAll(limit, currentCursor, options?.status);
       if (response && Array.isArray(response.data)) {
         setDataSatpam(response.data);
         if (response.meta) {

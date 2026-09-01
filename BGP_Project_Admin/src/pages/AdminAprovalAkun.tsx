@@ -17,6 +17,19 @@ const AdminAprovalAkun = () => {
   
   const { modalState, approvalState, actions } = useApprovalAkun(refreshData);
 
+  const filteredData = dataSatpam.filter(item => {
+    if (item.status === 'pending') return true;
+    if (item.status === 'active' || item.status === 'rejected') {
+      if (!item.status_updated_at) return false;
+      const updatedDate = new Date(item.status_updated_at);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - updatedDate.getTime());
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      return diffDays <= 7;
+    }
+    return false;
+  });
+
   return (
     <div className="flex flex-col p-5">
       <div className="container-content flex flex-col gap-4">
@@ -28,7 +41,7 @@ const AdminAprovalAkun = () => {
 
         <div className="table-section-container mt-6">
           <ApprovalAkunTable
-            data={dataSatpam}
+            data={filteredData}
             loading={loading}
             hasMore={hasMore}
             limit={limit}

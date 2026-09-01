@@ -23,7 +23,7 @@ export const Kontak = () => {
     const body = encodeURIComponent(
       `Nama: ${formData.nama}\nEmail: ${formData.email}\n\nPesan:\n${formData.pesan}`
     );
-    window.location.href = `mailto:fariemuhammad04@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:marketing@bimasecurity.co.id?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -57,7 +57,7 @@ export const Kontak = () => {
             <AnimatedContent distance={20} direction="vertical" delay={0.3} duration={0.6} ease="easeOut">
               <div className="flex flex-wrap gap-4">
                 <a
-                  href="https://wa.me/6281234567890" // Placeholder number
+                  href="https://wa.me/6285797219631"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-300"
@@ -66,7 +66,7 @@ export const Kontak = () => {
                   <span className="font-medium">WhatsApp</span>
                 </a>
                 <a
-                  href="https://instagram.com"
+                  href="https://instagram.com/ptbimaglobal"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-300"

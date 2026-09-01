@@ -93,11 +93,13 @@ export const SystemNavbar = () => {
           </button>
 
           <motion.a
-            href="#kontak"
+            href="https://wa.me/6285797219631"
+            target="_blank"
+            rel="noreferrer"
             whileHover="hover"
             className="px-5 py-2.5 rounded-full flex flex-row items-center gap-2 font-semibold shadow-lg text-sm transition-all bg-[#122C93] text-white shadow-[#122C93]/20 dark:bg-[#4b6bff] dark:shadow-[#4b6bff]/20 hover:scale-105"
           >
-            <span>{language === 'id' ? 'Coba Demo' : 'Try Demo'}</span>
+            <span>{language === 'id' ? 'Hubungi Kami' : 'Contact Us'}</span>
             <motion.span
               variants={{
                 hover: { x: 5 }
