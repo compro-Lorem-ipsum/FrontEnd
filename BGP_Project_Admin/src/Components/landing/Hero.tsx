@@ -46,7 +46,7 @@ export const Hero = () => {
           </motion.a>
           
           <motion.a
-            href="/sistem"
+            href="#layanan"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-transparent border-2 border-[#122C93] text-[#122C93] dark:border-white dark:text-white px-10 py-4 rounded-full font-bold shadow-md hover:bg-[#122C93]/10 dark:hover:bg-white/10 transition-all text-lg w-full sm:w-auto inline-block"

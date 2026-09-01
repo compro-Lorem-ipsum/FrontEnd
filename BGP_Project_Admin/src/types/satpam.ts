@@ -13,6 +13,31 @@ export interface Satpam {
   jabatan?: string;
   role?: string;
   email?: string;
+  status_updated_at?: string;
+  user_uuid?: string;
+  kontak_sekunder?: string | null;
+  nrg?: string;
+  avatar?: {
+    uuid: string;
+    status: string;
+    view_url: string;
+    download_url: string;
+  };
+  enrolled?: boolean;
+  updated_at?: string;
+}
+
+export interface CardData {
+  nama: string;
+  jabatan: string;
+  nip: string;
+  nrg: string;
+  client: string;
+  avatar_url: string;
+}
+
+export interface CardDataResponse {
+  data: CardData;
 }
 
 export interface MitraOption {

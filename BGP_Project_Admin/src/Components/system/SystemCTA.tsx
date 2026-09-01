@@ -79,7 +79,9 @@ export const SystemCTA = () => {
           
           {/* Button */}
           <motion.a
-            href="mailto:demo@bimaglobalsecurity.com"
+            href="https://wa.me/6285797219631"
+            target="_blank"
+            rel="noreferrer"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center bg-[#122C93] text-white dark:bg-white dark:text-gray-900 px-8 py-3.5 rounded-xl font-bold shadow-xl hover:bg-[#0c1f6b] dark:hover:bg-gray-100 hover:shadow-2xl transition-all text-base md:text-lg"

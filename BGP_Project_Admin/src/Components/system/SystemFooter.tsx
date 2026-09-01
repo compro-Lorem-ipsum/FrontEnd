@@ -38,10 +38,10 @@ export const SystemFooter = ({
                 {t('footer.desc')}
               </p>
               <div className="flex items-center gap-4 mt-4">
-                <a href="#" className="h-9 w-9 rounded-full bg-gray-100 dark:bg-[#121828] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-[#122C93] dark:hover:bg-[#4b6bff] hover:text-white transition-all duration-300">
+                <a href="https://www.facebook.com/bimaglobal" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full bg-gray-100 dark:bg-[#121828] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-[#122C93] dark:hover:bg-[#4b6bff] hover:text-white transition-all duration-300">
                   <FaFacebookF className="text-sm" />
                 </a>
-                <a href="#" className="h-9 w-9 rounded-full bg-gray-100 dark:bg-[#121828] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-[#122C93] dark:hover:bg-[#4b6bff] hover:text-white transition-all duration-300">
+                <a href="https://instagram.com/ptbimaglobal" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full bg-gray-100 dark:bg-[#121828] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-[#122C93] dark:hover:bg-[#4b6bff] hover:text-white transition-all duration-300">
                   <FaInstagram className="text-sm" />
                 </a>
                 <a href="#" className="h-9 w-9 rounded-full bg-gray-100 dark:bg-[#121828] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-[#122C93] dark:hover:bg-[#4b6bff] hover:text-white transition-all duration-300">
@@ -73,11 +73,11 @@ export const SystemFooter = ({
                 </li>
                 <li className="flex items-center gap-4">
                   <FaPhoneAlt className="text-[#122C93] dark:text-[#4b6bff] shrink-0 text-base" />
-                  <span>+62 812 3456 7890</span>
+                  <span>+62 857 9721 9631</span>
                 </li>
                 <li className="flex items-center gap-4">
                   <FaEnvelope className="text-[#122C93] dark:text-[#4b6bff] shrink-0 text-base" />
-                  <span>info@bimaglobalsecurity.com</span>
+                  <span>marketing@bimasecurity.co.id</span>
                 </li>
               </ul>
             </div>
