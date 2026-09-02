@@ -20,6 +20,16 @@ export const useSharedDocumentData = () => {
   const [dataDocs, setDataDocs] = useState<SharedDocumentItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [limit, setLimit] = useState(20);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterClient, setFilterClient] = useState("all");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   // Pagination State (Cursor Based)
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -31,7 +41,7 @@ export const useSharedDocumentData = () => {
     setLoading(true);
     try {
       const currentCursor = cursorHistory[currentIndex];
-      const response = await sharedDocumentService.getAll(limit, currentCursor);
+      const response = await sharedDocumentService.getAll(limit, currentCursor, debouncedSearch, filterClient);
       if (response && Array.isArray(response.data)) {
         setDataDocs(response.data);
         if (response.meta) {
@@ -51,7 +61,13 @@ export const useSharedDocumentData = () => {
     } finally {
       setLoading(false);
     }
-  }, [limit, currentIndex, cursorHistory]);
+  }, [limit, currentIndex, cursorHistory, debouncedSearch, filterClient]);
+
+  // Reset pagination if search or filter changes
+  useEffect(() => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  }, [debouncedSearch, filterClient]);
 
   useEffect(() => {
     fetchDocs();
@@ -88,5 +104,9 @@ export const useSharedDocumentData = () => {
     handlePrevPage,
     resetPagination,
     refreshData: fetchDocs,
+    search,
+    setSearch,
+    filterClient,
+    setFilterClient,
   };
 };
