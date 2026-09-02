@@ -108,7 +108,7 @@ const Sidebar = () => {
       key: "manage-radius",
       name: "Manage Radius",
       icon: <LuRadius className="text-xl" />,
-      path: "/AdminManageRadius",
+      path: "/ClientManageRadius",
       hidden: role !== "client",
     },
     {

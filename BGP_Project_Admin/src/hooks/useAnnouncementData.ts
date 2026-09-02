@@ -22,6 +22,8 @@ export const useAnnouncementData = () => {
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
+  const [filterClient, setFilterClient] = useState("all");
+
   const [userRole, setUserRole] = useState<string>("");
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -53,7 +55,9 @@ export const useAnnouncementData = () => {
     setLoading(true);
     try {
       const currentCursor = cursorHistory[currentIndex];
-      const response = await announcementService.getAll(limit, currentCursor, searchQuery);
+      const recipientType = filterClient === "all" ? undefined : "client";
+      const recipient = filterClient === "all" ? undefined : filterClient;
+      const response = await announcementService.getAll(limit, currentCursor, searchQuery, recipientType, recipient);
       if (response && Array.isArray(response.data)) {
         setDataAnnouncement(response.data);
         if (response.meta) {
@@ -78,6 +82,12 @@ export const useAnnouncementData = () => {
   useEffect(() => {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
+
+  // Reset pagination when filter or search changes
+  useEffect(() => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  }, [searchQuery, filterClient]);
 
   const confirmDelete = (uuid: string) => {
     setDeleteTargetId(uuid);
@@ -158,5 +168,7 @@ export const useAnnouncementData = () => {
       confirm: confirmDelete,
       execute: executeDelete,
     },
+    filterClient,
+    setFilterClient,
   };
 };

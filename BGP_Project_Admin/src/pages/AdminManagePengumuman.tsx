@@ -31,6 +31,8 @@ const AdminManagePengumuman = () => {
     userRole,
     refreshData,
     deleteState,
+    filterClient,
+    setFilterClient,
   } = useAnnouncementData();
 
   const targetOptions = [
@@ -86,13 +88,15 @@ const AdminManagePengumuman = () => {
           <Select
             className="w-48"
             placeholder="Semua Client"
+            selectedKeys={[filterClient]}
+            onChange={(e) => setFilterClient(e.target.value || "all")}
             classNames={{
               trigger:
                 "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
               value: "text-[#8D8787] text-sm",
             }}
           >
-            {clients.map((c) => (
+            {targetOptions.map((c) => (
               <SelectItem key={c.key}>{c.label}</SelectItem>
             ))}
           </Select>

@@ -60,6 +60,8 @@ const AdminEditDetailSatpam = () => {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [existingAvatarUrl, setExistingAvatarUrl] = useState<string | null>(null);
+  const [uploadedObjectUuid, setUploadedObjectUuid] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
 
@@ -119,8 +121,6 @@ const AdminEditDetailSatpam = () => {
 
   const handleRemoveContact = (index: number) => {
     const updated = [...emergencyContacts];
-    // If it has no id, it's not saved yet, just remove it from array.
-    // If it has id, we'll just clear the fields so our save logic deletes it.
     if (!updated[index].id) {
       updated.splice(index, 1);
     } else {
@@ -135,14 +135,18 @@ const AdminEditDetailSatpam = () => {
     if (!uuid) return;
     setIsSaving(true);
     try {
-      let payload: any = { ...satpamData, kontak_utama: kontakUtama };
-
-      if (avatarFile) {
-        const ext = avatarFile.name.split('.').pop()?.toLowerCase() || "jpg";
-        const uploadData = await satpamService.getAvatarUploadUrl(ext);
-        await satpamService.uploadToGcs(uploadData.upload_url, uploadData.fields, avatarFile);
-        payload.object_uuid = uploadData.object_uuid;
-
+      let payload: any = {
+        nama: satpamData.nama,
+        nip: satpamData.nip,
+        gender: satpamData.gender,
+        asal_daerah: satpamData.asal_daerah,
+        jabatan: satpamData.jabatan,
+        email: satpamData.email,
+        status: satpamData.status,
+        kontak_utama: kontakUtama
+      };
+      if (uploadedObjectUuid) {
+        payload.object_uuid = uploadedObjectUuid;
         let success = false;
         for (let i = 0; i < 15; i++) {
           try {
@@ -217,7 +221,7 @@ const AdminEditDetailSatpam = () => {
             className="border-[#122C93] text-[#122C93] font-semibold text-xs px-4"
             size="sm"
             onPress={() => navigate(-1)}
-            isDisabled={isSaving}
+            isDisabled={isSaving || isUploadingAvatar}
           >
             Batal
           </Button>
@@ -226,6 +230,7 @@ const AdminEditDetailSatpam = () => {
             size="sm"
             onPress={handleSave}
             isLoading={isSaving}
+            isDisabled={isUploadingAvatar}
           >
             Simpan Data Satpam
           </Button>
@@ -255,7 +260,7 @@ const AdminEditDetailSatpam = () => {
           />
           <Input
             size="sm"
-            label="Alamat"
+            label="Asal Daerah"
             labelPlacement="outside-top"
             placeholder="mis. Ngawi, Jawa Timur"
             variant="bordered"
@@ -361,6 +366,11 @@ const AdminEditDetailSatpam = () => {
                   ) : (
                     <img src={existingAvatarUrl!} className="h-full object-contain" alt="Current avatar" />
                   )}
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                      <Spinner color="white" />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-row items-center gap-2 text-[#9095A0]">
@@ -376,9 +386,24 @@ const AdminEditDetailSatpam = () => {
                 type="file"
                 accept=".png,.jpg,.jpeg"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.files && e.target.files[0]) {
-                    setAvatarFile(e.target.files[0]);
+                    const file = e.target.files[0];
+                    setAvatarFile(file);
+                    setIsUploadingAvatar(true);
+                    try {
+                      const ext = file.name.split('.').pop()?.toLowerCase() || "jpg";
+                      const uploadData = await satpamService.getAvatarUploadUrl(ext);
+                      await satpamService.uploadToGcs(uploadData.upload_url, uploadData.fields, file);
+                      setUploadedObjectUuid(uploadData.object_uuid);
+                      addToast({ title: "Berhasil", description: "Foto berhasil diunggah", color: "success", variant: "flat" });
+                    } catch (err: any) {
+                      addToast({ title: "Gagal", description: "Gagal mengunggah foto", color: "danger", variant: "flat" });
+                      setAvatarFile(null);
+                      setUploadedObjectUuid(null);
+                    } finally {
+                      setIsUploadingAvatar(false);
+                    }
                   }
                 }}
               />

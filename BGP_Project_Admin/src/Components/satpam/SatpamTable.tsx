@@ -117,8 +117,8 @@ export const SatpamTable = ({
                 case "nama":
                   return (
                     <TableCell>
-                      <div className="max-w-[150px] truncate" title={String(val)}>
-                        {val}
+                      <div className="max-w-[150px] truncate" title={String(item.nama)}>
+                        {item.nama}
                       </div>
                     </TableCell>
                   );
@@ -148,7 +148,7 @@ export const SatpamTable = ({
                   return (
                     <TableCell>
                       <div className="max-w-[150px] truncate" title={String(val)}>
-                        {val}
+                        {val as string}
                       </div>
                     </TableCell>
                   );
@@ -156,7 +156,7 @@ export const SatpamTable = ({
                   return (
                     <TableCell>
                       <div className="max-w-[150px] truncate" title={String(val)}>
-                        {val}
+                        {val as string}
                       </div>
                     </TableCell>
                   );
@@ -226,7 +226,7 @@ export const SatpamTable = ({
                     </TableCell>
                   );
                 default:
-                  return <TableCell>{val}</TableCell>;
+                  return <TableCell>{val as React.ReactNode}</TableCell>;
               }
             }}
           </TableRow>

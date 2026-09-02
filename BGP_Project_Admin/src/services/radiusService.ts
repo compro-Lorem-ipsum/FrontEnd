@@ -11,13 +11,13 @@ const getHeaders = () => ({
 
 export const radiusService = {
   getSettings: async (): Promise<RadiusSettings> => {
-    const res = await fetchWithAuth(`${API_BASE_URL}/v1/auth/settings`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/client/settings`, {
       method: "GET",
       headers: { Authorization: `Bearer ${getToken()}` },
     });
-    const data = await res.json();
-    if (res.ok && data.userSetting) {
-      return data.userSetting;
+    const result = await res.json();
+    if (res.ok && result.data) {
+      return result.data;
     }
     throw new Error("Gagal mengambil data pengaturan");
   },
@@ -26,10 +26,13 @@ export const radiusService = {
     radius_utama: number;
     radius_jaga: number;
   }): Promise<void> => {
-    const res = await fetchWithAuth(`${API_BASE_URL}/v1/auth/settings`, {
-      method: "PUT",
+    const res = await fetchWithAuth(`${API_BASE_URL}/client/settings`, {
+      method: "PATCH",
       headers: getHeaders(),
-      body: JSON.stringify(settings),
+      body: JSON.stringify({
+        radius_utama: settings.radius_utama.toString(),
+        radius_jaga: settings.radius_jaga.toString(),
+      }),
     });
     const result = await res.json();
     if (!res.ok) {

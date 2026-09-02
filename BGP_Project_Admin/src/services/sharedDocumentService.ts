@@ -47,19 +47,27 @@ export const sharedDocumentService = {
     return json.data || json;
   },
 
-  uploadToGcs: async (uploadUrl: string, fields: Record<string, string>, file: File) => {
-    const formData = new FormData();
-    Object.entries(fields).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    formData.append("file", file);
+  uploadToGcs: async (uploadUrl: string, fields: Record<string, string>, file: File, maxAttempts: number = 3) => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const formData = new FormData();
+        Object.entries(fields).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+        formData.append("file", file);
 
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      body: formData,
-    });
-    if (!res.ok && res.status !== 204) {
-      throw new Error("Gagal mengunggah file ke bucket");
+        const res = await fetch(uploadUrl, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok && res.status !== 204) {
+          throw new Error("Gagal mengunggah file ke bucket");
+        }
+        return;
+      } catch (err) {
+        if (attempt === maxAttempts) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     }
   },
 

@@ -1,7 +1,5 @@
 import type { Announcement } from "../../types/announcement";
-import { Button } from "@heroui/react";
-import { RiEditFill } from "react-icons/ri";
-import { MdDelete } from "react-icons/md";
+import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 import { GoClock } from "react-icons/go";
 import { IoIosCalendar } from "react-icons/io";
@@ -59,23 +57,19 @@ export const PengumumanCard = ({
         </div>
       </div>
       {!hideActions && (
-        <div className="flex flex-row items-center">
-          <Button
-            size="sm"
-            variant="bordered"
-            className="bg-[#F5F7FF] border w-4 rounded-r-none"
-            onPress={() => onPressEdit && onPressEdit(item)}
+        <div className="flex justify-center gap-2">
+          <button
+            className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
+            onClick={() => onPressEdit && onPressEdit(item)}
           >
-            <RiEditFill className="text-[#122C93] text-lg" />
-          </Button>
-          <Button
-            size="sm"
-            variant="bordered"
-            className="bg-[#F5F7FF] border w-4 rounded-l-none"
-            onPress={() => onPressDelete && onPressDelete(item)}
+            <FaRegEdit className="text-base" />
+          </button>
+          <button
+            className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer"
+            onClick={() => onPressDelete && onPressDelete(item)}
           >
-            <MdDelete className="text-[#A70202] text-lg" />
-          </Button>
+            <FaRegTrashAlt className="text-base" />
+          </button>
         </div>
       )}
     </div>

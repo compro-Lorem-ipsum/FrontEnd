@@ -64,7 +64,7 @@ export const DASHBOARD_MENU_ITEMS: MenuItem[] = [
     desc: "Setting batas jarak toleransi GPS (geofencing).",
     icon: <FaCogs size={24} className="text-white" />,
     color: "bg-gray-600",
-    path: "/AdminManageRadius",
+    path: "/ClientManageRadius",
     allowedRoles: ["Client"],
   },
   {

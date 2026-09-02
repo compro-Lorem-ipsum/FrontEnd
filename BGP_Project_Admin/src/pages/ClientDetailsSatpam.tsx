@@ -1,30 +1,24 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import logo from "../assets/images/logo.webp";
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { FaIdCardAlt, FaUser, FaUserEdit, FaIdCard } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
+import { FaIdCardAlt, FaUser, FaUserEdit, FaIdCard, FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 import { LuOctagonAlert } from "react-icons/lu";
 import { GoTrophy } from "react-icons/go";
 import { GiGraduateCap } from "react-icons/gi";
-import { RiEditBoxFill } from "react-icons/ri";
 import { IoIosAlert } from "react-icons/io";
 import {
-  DatePicker,
   Pagination,
   Tab,
   Tabs,
-  Textarea,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
-  useDisclosure,
-  Select,
-  SelectItem,
+  Spinner,
 } from "@heroui/react";
+
+import { useAdminSatpamDetails } from "../hooks/useAdminSatpamDetails";
+import { SatpamDetailModals } from "../Components/satpam/Modals/SatpamDetailModals";
+import { kategoriPelanggaran } from "../Components/satpam/constants";
 
 interface KartuAnggotaProps {
   nama?: string;
@@ -249,21 +243,35 @@ export const animals = [
 ];
 
 const ClientDetailsSatpam = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const uuid = location.state?.uuid;
+
+  const { state, setters, handlers, modals } = useAdminSatpamDetails(uuid);
+
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("absensi");
-  const [pelanggaranPage, setPelanggaranPage] = useState(1);
   const totalPages = 10;
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const modalGenerateKartu = useDisclosure();
 
-  const dataKartu = {
-    nama: "Prasetyo Teguh",
+  const dataKartu = state.cardData ? {
+    nama: state.cardData.nama,
+    jabatan: state.cardData.jabatan,
+    nip: state.cardData.nip,
+    nrg: state.cardData.nrg,
+    mitra: state.cardData.client,
+    disahkanOleh: "Direktur Utama",
+    avatar_url: state.cardData.avatar_url,
+  } : {
+    nama: "Nama Anggota",
     jabatan: "Jabatan",
-    nip: "12345",
+    nip: "123xxx",
     nrg: "00103062026000007",
-    mitra: "Sumarecon Bandung",
+    mitra: "Nama Mitra",
     disahkanOleh: "Direktur Utama",
   };
+
+  const kerabat1 = state.emergencyContacts && state.emergencyContacts.length > 0 ? state.emergencyContacts[0] : null;
+  const kerabat2 = state.emergencyContacts && state.emergencyContacts.length > 1 ? state.emergencyContacts[1] : null;
 
   const absensiData = [
     {
@@ -295,28 +303,7 @@ const ClientDetailsSatpam = () => {
     },
   ];
 
-  const pelanggaranData = [
-    {
-      id: 1,
-      judul: "Teguran 1",
-      tanggal: "23 Juni 2026",
-      keterangan: "Keterangan pelanggaran pertama",
-    },
-    {
-      id: 2,
-      judul: "Teguran 2",
-      tanggal: "10 Juli 2026",
-      keterangan: "Keterangan pelanggaran kedua",
-    },
-    {
-      id: 3,
-      judul: "SP 1",
-      tanggal: "01 Agustus 2026",
-      keterangan: "Keterangan pelanggaran ketiga",
-    },
-  ];
-
-  const currentPelanggaran = pelanggaranData[pelanggaranPage - 1];
+  const currentPelanggaran = state.violations.length > 0 ? state.violations[0] : null;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -385,18 +372,22 @@ const ClientDetailsSatpam = () => {
       case "pendukung":
         return (
           <div className="flex flex-col gap-2 p-2">
-            {["KTP", "Kartu BPJS"].map((nama) => (
+            {state.documents.length === 0 && (
+              <div className="text-center text-sm text-gray-500 py-4">Belum ada dokumen pendukung</div>
+            )}
+            {state.documents.map((doc: any) => (
               <div
-                key={nama}
-                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl"
+                key={doc.uuid}
+                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl cursor-pointer"
+                onClick={() => handlers.openPreviewModal(doc)}
               >
-                <div className="border rounded-xl p-2.5">
-                  <FaIdCard className="text-xl" />
+                <div className="border rounded-xl p-2.5 bg-white">
+                  <FaIdCard className="text-xl text-[#122C93]" />
                 </div>
-                <div className="flex flex-col items-start">
-                  <h2 className="font-semibold text-sm">{nama}</h2>
+                <div className="flex flex-col items-start flex-1">
+                  <h2 className="font-semibold text-sm text-black">{doc.type ? doc.type.toUpperCase() : "Dokumen"}</h2>
                   <h2 className="font-light text-xs text-[#8D8787]">
-                    dd/mm/yyyy
+                    {new Date(doc.created_at).toLocaleDateString("id-ID")}
                   </h2>
                 </div>
               </div>
@@ -407,20 +398,26 @@ const ClientDetailsSatpam = () => {
       case "pendidikan":
         return (
           <div className="flex flex-col gap-2 p-2">
-            {[1, 2].map((i) => (
+            {state.educations.length === 0 && (
+              <div className="text-center text-sm text-gray-500 py-4">Belum ada riwayat pendidikan</div>
+            )}
+            {state.educations.map((edu: any) => (
               <div
-                key={i}
-                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl"
+                key={edu.uuid}
+                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl cursor-pointer"
+                onClick={() => edu.file && handlers.openPreviewModal(edu)}
               >
-                <div className="border rounded-xl p-2.5">
-                  <GiGraduateCap className="text-xl" />
+                <div className="border rounded-xl p-2.5 bg-white">
+                  <GiGraduateCap className="text-xl text-[#122C93]" />
                 </div>
-                <div className="flex flex-col items-start">
-                  <h2 className="font-semibold text-sm">Judul/Nama Diklat</h2>
-                  <h2 className="font-semibold text-xs">Tahun</h2>
-                  <h2 className="font-light text-xs text-[#8D8787]">
-                    Keterangan
-                  </h2>
+                <div className="flex flex-col items-start flex-1">
+                  <h2 className="font-semibold text-sm text-black">{edu.title}</h2>
+                  <h2 className="font-semibold text-xs text-[#122C93]">{edu.issued_year}</h2>
+                  {edu.description && (
+                    <h2 className="font-light text-xs text-[#8D8787]">
+                      {edu.description}
+                    </h2>
+                  )}
                 </div>
               </div>
             ))}
@@ -430,22 +427,26 @@ const ClientDetailsSatpam = () => {
       case "penghargaan":
         return (
           <div className="flex flex-col gap-2 p-2">
-            {[1, 2].map((i) => (
+            {state.recognitions.length === 0 && (
+              <div className="text-center text-sm text-gray-500 py-4">Belum ada riwayat penghargaan</div>
+            )}
+            {state.recognitions.map((rec: any) => (
               <div
-                key={i}
-                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl"
+                key={rec.uuid}
+                className="border border-[#E8EEFF] flex flex-row items-center w-full bg-[#F5F7FF] py-2.5 px-4 gap-3 rounded-xl cursor-pointer"
+                onClick={() => rec.file && handlers.openPreviewModal(rec)}
               >
-                <div className="border rounded-xl p-2.5">
-                  <GoTrophy className="text-xl" />
+                <div className="border rounded-xl p-2.5 bg-white">
+                  <GoTrophy className="text-xl text-[#122C93]" />
                 </div>
-                <div className="flex flex-col items-start">
-                  <h2 className="font-semibold text-sm">
-                    Judul/Nama Penghargaan
-                  </h2>
-                  <h2 className="font-semibold text-xs">Tahun</h2>
-                  <h2 className="font-light text-xs text-[#8D8787]">
-                    Keterangan
-                  </h2>
+                <div className="flex flex-col items-start flex-1">
+                  <h2 className="font-semibold text-sm text-black">{rec.title}</h2>
+                  <h2 className="font-semibold text-xs text-[#122C93]">{rec.issued_year}</h2>
+                  {rec.description && (
+                    <h2 className="font-light text-xs text-[#8D8787]">
+                      {rec.description}
+                    </h2>
+                  )}
                 </div>
               </div>
             ))}
@@ -462,29 +463,29 @@ const ClientDetailsSatpam = () => {
       {/* Header */}
       <div className="flex flex-row justify-between items-center bg-white p-3 rounded-xl border border-[#E8EEFF]">
         <div className="flex flex-row gap-2.5 items-start">
-          <div className="bg-[#DBEAFE] p-2 rounded-lg">
+          <div className="bg-[#DBEAFE] p-2 rounded-lg cursor-pointer" onClick={() => navigate(-1)}>
             <FaArrowLeftLong className="text-base" />
           </div>
           <div className="flex flex-col items-start">
             <h2 className="font-semibold text-sm text-[#122C93]">
-              Prasetyo Teguh
+              {state.satpam?.nama || "Prasetyo Teguh"}
             </h2>
             <h2 className="text-xs font-light text-[#8D8787]">
-              NIP 12345 · Pos Utama SMB
+              NIP {state.satpam?.nip || "-"} · Pos Utama
             </h2>
           </div>
           <div className="flex flex-row items-center gap-1.5">
-            <h2 className="bg-[#DCFCE7] text-xs px-3 py-0.5 rounded-2xl text-[#008236]">
-              Aktif
+            <h2 className={`text-xs px-3 py-0.5 rounded-2xl ${state.satpam?.status === 'active' ? 'bg-[#DCFCE7] text-[#008236]' : 'bg-red-100 text-red-700'}`}>
+              {state.satpam?.status === 'active' ? 'Aktif' : state.satpam?.status || "Aktif"}
             </h2>
             <h2 className="bg-[#D9D9D9] text-xs px-3 py-0.5 rounded-2xl text-black">
-              Anggota
+              {state.satpam?.jabatan || "Anggota"}
             </h2>
           </div>
         </div>
         <div
           className="flex flex-row items-center gap-2 bg-[#122C93] px-3 py-2 rounded-xl cursor-pointer"
-          onClick={modalGenerateKartu.onOpen}
+          onClick={modals.modalGenerateKartu.onOpen}
         >
           <FaIdCardAlt className="text-white text-base" />
           <h2 className="text-white font-medium text-xs">
@@ -495,79 +496,95 @@ const ClientDetailsSatpam = () => {
 
       {/* Stats Cards */}
       <div className="flex flex-row items-center justify-between gap-2.5">
-        <div className="bg-white w-full h-[84px] rounded-xl border border-[#E8EEFF] flex flex-row items-center gap-3 p-3">
-          <div className="bg-[#D9D9D9] p-3 rounded-full flex-shrink-0">
-            <FaUser className="text-xl" />
+        <div className="bg-white w-full h-[120px] rounded-xl border border-[#E8EEFF] flex flex-row items-center gap-4 p-4">
+          <div className="bg-[#D9D9D9] w-[70px] h-[70px] rounded-full flex-shrink-0">
+            {state.satpam?.avatar?.view_url ? (
+              <img src={state.satpam.avatar.view_url} className="w-full h-full rounded-full object-cover" alt="Profile" />
+            ) : (
+              <FaUser className="text-xl" />
+            )}
           </div>
           <div className="flex flex-col gap-1">
             <div>
-              <h2 className="font-semibold text-xs">Prasetyo Teguh</h2>
+              <h2 className="font-bold text-md">{state.satpam?.nama || "Prasetyo Teguh"}</h2>
               <h2 className="font-light text-xs">
-                Bergabung sejak 6 Juni 2026
+                Bergabung sejak {state.satpam?.created_at ? new Date(state.satpam.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
               </h2>
             </div>
             <div>
-              <h2 className="font-semibold text-xs">Tempat Tugas</h2>
-              <h2 className="font-light text-xs">Sumarecon Bandung</h2>
+              <h2 className="font-bold text-md">Tempat Tugas</h2>
+              <h2 className="font-light text-xs">{state.satpam?.client || "-"}</h2>
             </div>
           </div>
         </div>
-        <div className="bg-white w-full h-[84px] rounded-xl border border-[#E8EEFF] flex flex-col justify-center p-3">
-          <h2 className="font-medium text-xs text-black">
+        <div className="bg-white w-full h-[120px] rounded-xl border border-[#E8EEFF] flex flex-col justify-center p-4">
+          <h2 className="font-medium text-md text-black">
             Total Jam Kerja Bulan ini
           </h2>
           <h2 className="font-bold text-2xl text-[#122C93] leading-tight">
-            178{" "}
+            {state.workingHours?.this_month?.hours?.toLocaleString("id-ID") || 0}{" "}
             <span className="font-semibold text-[#8D8787] text-sm">Jam</span>
           </h2>
           <h2 className="font-light text-xs text-[#8D8787]">
-            Jun 2026 · Sumarecon Bandung
+            Periode {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })} · {state.workingHours?.this_month?.shifts || 0} hari kerja
+          </h2>
+          <h2 className="font-light text-xs text-[#8D8787]">
+            {state.satpam?.client ? `di ${state.satpam.client}` : "-"}
           </h2>
         </div>
-        <div className="bg-white w-full h-[84px] rounded-xl border border-[#E8EEFF] flex flex-col justify-center p-3">
-          <h2 className="font-medium text-xs text-black">
+        <div className="bg-white w-full h-[120px] rounded-xl border border-[#E8EEFF] flex flex-col justify-center p-4">
+          <h2 className="font-medium text-md text-black">
             Total Seluruh Jam Kerja
           </h2>
           <h2 className="font-bold text-2xl text-[#122C93] leading-tight">
-            2.080{" "}
+            {state.workingHours?.all_time?.hours?.toLocaleString("id-ID") || 0}{" "}
             <span className="font-semibold text-[#8D8787] text-sm">Jam</span>
           </h2>
           <h2 className="font-light text-xs text-[#8D8787]">
-            Keseluruhan · Sumarecon Bandung
+            Sejak Penempatan · {(state.satpam?.date_assigned || state.workingHours?.all_time?.since || state.workingHours?.since) ? new Date(state.satpam?.date_assigned || state.workingHours?.all_time?.since || state.workingHours?.since).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : "-"}
+          </h2>
+          <h2 className="font-light text-xs text-[#8D8787]">
+            {state.satpam?.client ? `di ${state.satpam.client}` : "-"}
           </h2>
         </div>
       </div>
 
       {/* Informasi Personal */}
-      <div className="flex flex-col bg-white p-3 gap-2 rounded-xl border border-[#E8EEFF]">
-        <div className="flex flex-row items-center gap-2">
-          <FaUserEdit className="text-[#122C93] text-xl" />
-          <h2 className="font-semibold text-[#122C93] text-sm">
-            Informasi Personal
-          </h2>
+      {state.isLoading ? (
+        <div className="flex justify-center p-10"><Spinner /></div>
+      ) : state.satpam ? (
+        <div className="flex flex-col bg-white p-3 gap-2 rounded-xl border border-[#E8EEFF]">
+          <div className="flex flex-row items-center gap-2">
+            <FaUserEdit className="text-[#122C93] text-2xl" />
+            <h2 className="font-semibold text-[#122C93] text-md">
+              Informasi Personal
+            </h2>
+          </div>
+          <div className="flex flex-col flex-wrap gap-x-6 gap-y-4 w-full h-[180px]">
+            {[
+              ["ASAL DAERAH", state.satpam.asal_daerah || "-"],
+              ["NO. HP UTAMA", state.satpam.nomor_hp || state.satpam.no_telp || "-"],
+              ["NO. HP KERABAT 1", kerabat1 ? `${kerabat1.kontak} (${kerabat1.nama})` : "-"],
+              ["STATUS HUBUNGAN 1", kerabat1 ? (kerabat1.hubungan?.toUpperCase() || "-") : "-"],
+              ["NO. HP KERABAT 2", kerabat2 ? `${kerabat2.kontak} (${kerabat2.nama})` : "-"],
+              ["STATUS HUBUNGAN 2", kerabat2 ? (kerabat2.hubungan?.toUpperCase() || "-") : "-"],
+              ["JENIS KELAMIN", state.satpam.gender === "1" ? "Laki-Laki" : state.satpam.gender === "2" ? "Perempuan" : "-"],
+              ["NIP", state.satpam.nip || "-"],
+              ["EMAIL", state.satpam.email || "-"],
+              ["NRG", state.satpam.nrg || "-"],
+            ].map(([label, value], i) => (
+              <div key={i} className="flex flex-col">
+                <h2 className="font-light text-xs leading-tight">{label}</h2>
+                <h2 className="font-light text-sm leading-tight text-[#8D8787] max-w-[200px] truncate" title={String(value)}>
+                  {value}
+                </h2>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col flex-wrap gap-x-4 gap-y-1.5 w-full h-[120px]">
-          {[
-            ["ASAL DAERAH", "Ngawi, Jawa Timur"],
-            ["NO. HP UTAMA", "0812 - 3456 - 7890"],
-            ["NO. HP ORTU/WALI", "0812 - 3456 - 7890"],
-            ["NO. HP ORTU/WALI", "0812 - 3456 - 7890"],
-            ["NO. HP KEDUA", "OPSIONAL"],
-            ["NIP", "123xx"],
-            ["STATUS HUBUNGAN", "ANAK"],
-            ["STATUS HUBUNGAN", "ISTRI"],
-            ["EMAIL", "Prasetyoteguh@gmail.com"],
-            ["NRGG", "33xxx"],
-          ].map(([label, value], i) => (
-            <div key={i} className="flex flex-col">
-              <h2 className="font-light text-[10px] leading-tight">{label}</h2>
-              <h2 className="font-light text-[10px] leading-tight text-[#8D8787]">
-                {value}
-              </h2>
-            </div>
-          ))}
-        </div>
-      </div>
+      ) : (
+        <div className="flex justify-center p-10">Data tidak ditemukan</div>
+      )}
 
       {/* Tab Section */}
       <div className="flex flex-col items-start bg-white p-3 gap-1 rounded-xl border border-[#E8EEFF]">
@@ -586,41 +603,6 @@ const ClientDetailsSatpam = () => {
         <div className="w-full flex flex-col gap-1">{renderTabContent()}</div>
       </div>
 
-      {/* Modal Generate Kartu Anggota */}
-      <Modal
-        isOpen={modalGenerateKartu.isOpen}
-        onOpenChange={modalGenerateKartu.onOpenChange}
-        backdrop="blur"
-        size="lg"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="text-[#122C93] font-semibold">
-                Pratinjau KTA
-              </ModalHeader>
-              <ModalBody className="gap-3 flex items-center py-4">
-                <KartuAnggotaPreview {...dataKartu} />
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="bordered" onPress={onClose}>
-                  Batal
-                </Button>
-                <Button
-                  className="bg-[#122C93] text-white font-medium"
-                  onPress={() => window.print()}
-                >
-                  Unduh KTA
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-
-      {/* Inject Portal secara paralel jika modal kartu terbuka */}
-      {modalGenerateKartu.isOpen && <KartuAnggotaPrintPortal {...dataKartu} />}
-
       {/* Riwayat Pelanggaran */}
       <div className="flex flex-col gap-2 bg-white p-3 rounded-xl border border-[#E8EEFF]">
         <div className="flex flex-row items-center justify-between">
@@ -633,105 +615,68 @@ const ClientDetailsSatpam = () => {
 
           <Button
             className="font-semibold text-white text-xs bg-[#122C93] px-3 py-1.5 rounded-lg"
-            onPress={onOpen}
+            onPress={handlers.handleTambahPelanggaran}
           >
             + Tambah Pelanggaran
           </Button>
         </div>
 
-        {/* Modal tambah pelanggaran */}
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
-          <ModalContent>
-            {(onClose) => (
-              <>
-                <ModalHeader className="flex flex-col gap-1 text-[#122C93] font-semibold">
-                  Tambah Dokumen
-                </ModalHeader>
-                <ModalBody className="gap-2">
-                  <Select
-                    className="max-w-full"
-                    label="Kategori Pelanggaran"
-                    labelPlacement={"outside-top"}
-                    placeholder="Pilih Kategori"
-                    variant="bordered"
-                    classNames={{
-                      label: "text-sm font-semibold text-[#122C93]",
-                    }}
-                  >
-                    {animals.map((animal) => (
-                      <SelectItem key={animal.key}>{animal.label}</SelectItem>
-                    ))}
-                  </Select>
-                  <DatePicker
-                    className="max-w-full"
-                    variant="bordered"
-                    label={"Tanggal"}
-                    labelPlacement={"outside-top"}
-                    classNames={{
-                      label: "text-sm font-semibold text-[#122C93]",
-                    }}
-                  />
-                  <Textarea
-                    className="col-span-12 md:col-span-6 mb-6 md:mb-0"
-                    label="Keterangan"
-                    labelPlacement="outside"
-                    placeholder="Detail Pelanggaran"
-                    variant="bordered"
-                    classNames={{
-                      label: "!text-sm !font-semibold !text-[#122C93]",
-                    }}
-                  />
-                </ModalBody>
+        {state.isLoadingViolations ? (
+          <div className="flex justify-center py-4"><Spinner size="sm" /></div>
+        ) : currentPelanggaran ? (
 
-                <ModalFooter>
-                  <Button variant="bordered" onPress={onClose}>
-                    Batal
-                  </Button>
-                  <Button className="bg-[#122C93] text-white font-medium">
-                    Simpan
-                  </Button>
-                </ModalFooter>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
-        {/* end of modal tambah pelanggaran */}
-
-        <div className="flex flex-row items-center justify-between bg-[#F5F7FF] px-4 py-3 rounded-xl border border-danger">
-          <div className="flex flex-row items-center gap-3">
-            <div className="bg-[#FFE2E2] p-2.5 rounded-xl">
-              <IoIosAlert className="text-[#C10007] text-2xl" />
+          <div className="flex flex-row items-center justify-between bg-[#F5F7FF] px-4 py-3 rounded-xl border border-danger">
+            <div className="flex flex-row items-center gap-3">
+              <div className="bg-[#FFE2E2] p-2.5 rounded-xl">
+                <IoIosAlert className="text-[#C10007] text-2xl" />
+              </div>
+              <div className="flex flex-col items-start">
+                <h2 className="text-sm font-semibold">
+                  {kategoriPelanggaran.find((k) => k.key === currentPelanggaran.type)?.label || currentPelanggaran.type}
+                </h2>
+                <h2 className="text-xs font-semibold text-[#F31260]">
+                  {currentPelanggaran.created_at ? new Date(currentPelanggaran.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+                </h2>
+                <h2 className="text-xs text-[#8D8787] font-light">
+                  {currentPelanggaran.description}
+                </h2>
+              </div>
             </div>
-            <div className="flex flex-col items-start">
-              <h2 className="text-sm font-semibold">
-                {currentPelanggaran.judul}
-              </h2>
-              <h2 className="text-xs font-semibold text-[#F31260]">
-                {currentPelanggaran.tanggal}
-              </h2>
-              <h2 className="text-xs text-[#8D8787] font-light">
-                {currentPelanggaran.keterangan}
-              </h2>
+            <div className="flex flex-row gap-2.5 items-center">
+              <button onClick={(e) => handlers.handleEditViolation(currentPelanggaran, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
+                <FaRegEdit className="text-base cursor-pointer" />
+              </button>
+              <button onClick={(e) => handlers.handleDeleteViolation(currentPelanggaran.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
+                <FaRegTrashAlt className="text-base" />
+              </button>
             </div>
           </div>
-          <div className="flex flex-row gap-2.5 items-center">
-            <RiEditBoxFill className="text-xl cursor-pointer" />
-            <MdDelete className="text-red-900 text-xl cursor-pointer" />
-          </div>
-        </div>
+        ) : (
+          <div className="text-center text-sm text-gray-500 py-4">Belum ada pelanggaran</div>
+        )}
 
-        <div className="flex w-full justify-center">
-          <Pagination
-            size="sm"
-            showControls
-            showShadow
-            color="primary"
-            page={pelanggaranPage}
-            total={pelanggaranData.length}
-            onChange={setPelanggaranPage}
-          />
-        </div>
+        {(state.violations.length > 0 || state.violCurrentIndex > 0) && (
+          <div className="flex w-full justify-center">
+            <Pagination
+              size="sm"
+              showControls
+              showShadow
+              color="primary"
+              page={state.violCurrentIndex + 1}
+              total={Math.max(state.violCurrentIndex + 1 + (state.violHasMore ? 1 : 0), 1)}
+              onChange={(page) => {
+                if (page > state.violCurrentIndex + 1) handlers.handleNextViolation();
+                else if (page < state.violCurrentIndex + 1) handlers.handlePrevViolation();
+              }}
+              classNames={{
+                item: "[&:not([data-active=true])]:hidden",
+              }}
+            />
+          </div>
+        )}
       </div>
+
+      <SatpamDetailModals state={state} setters={setters} handlers={handlers} modals={modals} dataKartu={dataKartu} />
     </div>
   );
 };

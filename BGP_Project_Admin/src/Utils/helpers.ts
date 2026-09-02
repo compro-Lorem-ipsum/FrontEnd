@@ -31,6 +31,26 @@ export const formatTanggal = (dateString?: string): string => {
   }
 };
 
+export const formatTanggalIndo = (dateString?: string): string => {
+  if (!dateString) return "-";
+  const safeDateString = dateString.endsWith("Z")
+    ? dateString
+    : `${dateString}Z`;
+
+  try {
+    const date = new Date(safeDateString);
+    if (isNaN(date.getTime())) return "-";
+    return new Intl.DateTimeFormat("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jakarta",
+    }).format(date);
+  } catch (error) {
+    return "-";
+  }
+};
+
 export const getDeviceTimezone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;

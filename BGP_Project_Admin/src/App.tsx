@@ -14,7 +14,7 @@ import AdminManagePos from "./pages/AdminManagePos";
 import AdminManagePosUtama from "./pages/AdminManagePosUtama";
 import AdminRekapAbsensi from "./pages/AdminRekapAbsensi";
 import AdminRekapPatroli from "./pages/AdminRekapPatroli";
-import AdminManageRadius from "./pages/AdminManageRadius";
+import ClientManageRadius from "./pages/ClientManageRadius";
 import AdminManageWaktuJadwal from "./pages/AdminManageWaktuJadwal";
 import NotFoundPage from "./pages/NotFoundPage";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -98,7 +98,7 @@ function App() {
             />
             <Route path="/AdminRekapAbsensi" element={<AdminRekapAbsensi />} />
             <Route path="/AdminRekapPatroli" element={<AdminRekapPatroli />} />
-            <Route path="/AdminManageRadius" element={<AdminManageRadius />} />
+            <Route path="/ClientManageRadius" element={<ClientManageRadius />} />
             <Route
               path="/AdminManageWaktu"
               element={<AdminManageWaktuJadwal />}

@@ -1,5 +1,6 @@
 import { Button, Input, InputOtp, Spinner } from "@heroui/react";
 import { FiArrowLeft } from "react-icons/fi";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import cover from "../assets/images/cover.webp";
 import logo from "../assets/images/logo.webp";
@@ -15,6 +16,8 @@ const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const toggleVisibility = () => setIsVisible(!isVisible);
   const [generalError, setGeneralError] = useState("");
   const [validationErrors, setValidationErrors] = useState<{
     email?: string;
@@ -34,6 +37,10 @@ const Login = () => {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const toggleNewPasswordVisibility = () => setIsNewPasswordVisible(!isNewPasswordVisible);
+  const toggleConfirmPasswordVisibility = () => setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
   const [newPasswordErrors, setNewPasswordErrors] = useState<{
     newPassword?: string;
     confirmNewPassword?: string;
@@ -408,7 +415,7 @@ const Login = () => {
               Password
             </h2>
             <Input
-              type="password"
+              type={isVisible ? "text" : "password"}
               size="lg"
               placeholder="Masukkan Password Anda"
               variant="bordered"
@@ -428,6 +435,15 @@ const Login = () => {
                 }
               }}
               onKeyDown={handleLoginKeyDown}
+              endContent={
+                <button className="focus:outline-none" type="button" onClick={toggleVisibility} aria-label="toggle password visibility">
+                  {isVisible ? (
+                    <FaEyeSlash className="text-xl text-default-400 pointer-events-none" />
+                  ) : (
+                    <FaEye className="text-xl text-default-400 pointer-events-none" />
+                  )}
+                </button>
+              }
             />
 
             {generalError && (
@@ -604,7 +620,7 @@ const Login = () => {
               Password Baru
             </h2>
             <Input
-              type="password"
+              type={isNewPasswordVisible ? "text" : "password"}
               size="lg"
               placeholder="Masukkan Password Baru Anda"
               variant="bordered"
@@ -624,13 +640,22 @@ const Login = () => {
                 }
               }}
               onKeyDown={handleNewPasswordKeyDown}
+              endContent={
+                <button className="focus:outline-none" type="button" onClick={toggleNewPasswordVisibility} aria-label="toggle new password visibility">
+                  {isNewPasswordVisible ? (
+                    <FaEyeSlash className="text-xl text-default-400 pointer-events-none" />
+                  ) : (
+                    <FaEye className="text-xl text-default-400 pointer-events-none" />
+                  )}
+                </button>
+              }
             />
 
             <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
               Konfirmasi Password Baru
             </h2>
             <Input
-              type="password"
+              type={isConfirmPasswordVisible ? "text" : "password"}
               size="lg"
               placeholder="Konfirmasi Password Baru Anda"
               variant="bordered"
@@ -650,6 +675,15 @@ const Login = () => {
                 }
               }}
               onKeyDown={handleNewPasswordKeyDown}
+              endContent={
+                <button className="focus:outline-none" type="button" onClick={toggleConfirmPasswordVisibility} aria-label="toggle confirm password visibility">
+                  {isConfirmPasswordVisible ? (
+                    <FaEyeSlash className="text-xl text-default-400 pointer-events-none" />
+                  ) : (
+                    <FaEye className="text-xl text-default-400 pointer-events-none" />
+                  )}
+                </button>
+              }
             />
 
             {newPasswordGeneralError && (
