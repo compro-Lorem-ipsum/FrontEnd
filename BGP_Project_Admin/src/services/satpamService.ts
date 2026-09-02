@@ -46,11 +46,11 @@ export const satpamService = {
     return res.json();
   },
 
-  update: async (uuid: string, formData: FormData): Promise<void> => {
+  update: async (uuid: string, payload: any): Promise<void> => {
     const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}`, {
-      method: "PUT",
-      headers: getHeaders(true),
-      body: formData,
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
     });
     const result = await res.json().catch(() => ({}));
     if (!res.ok)
@@ -117,5 +117,121 @@ export const satpamService = {
     });
     const result = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(result.message || "Gagal menolak akun");
+  },
+
+  getDocuments: async (uuid: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/documents`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error("Gagal mengambil dokumen satpam");
+    return res.json();
+  },
+
+  getUploadUrl: async (uuid: string, ext: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/documents/upload-url`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ ext }),
+    });
+    if (!res.ok) throw new Error("Gagal mengambil URL unggah dokumen");
+    const json = await res.json();
+    return json.data || json;
+  },
+
+  getAvatarUploadUrl: async (ext: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/avatar-url`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ ext }),
+    });
+    if (!res.ok) throw new Error("Gagal mengambil URL unggah avatar");
+    const json = await res.json();
+    return json.data || json;
+  },
+
+  uploadToGcs: async (uploadUrl: string, fields: Record<string, string>, file: File) => {
+    const formData = new FormData();
+    Object.entries(fields).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    formData.append("file", file);
+
+    const res = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok && res.status !== 204) {
+      throw new Error("Gagal mengunggah file ke bucket");
+    }
+  },
+
+  createDocument: async (uuid: string, payload: { type: string; object_uuid: string }) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/documents`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || "Gagal membuat dokumen");
+    return result;
+  },
+
+  getResource: async (uuid: string, resType: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/${resType}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(`Gagal mengambil data ${resType}`);
+    return res.json();
+  },
+
+  getUploadUrlResource: async (uuid: string, resType: string, ext: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/${resType}/upload-url`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ ext }),
+    });
+    if (!res.ok) throw new Error(`Gagal mengambil URL unggah ${resType}`);
+    const json = await res.json();
+    return json.data || json;
+  },
+
+  createResource: async (uuid: string, resType: string, payload: any) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/${resType}`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || `Gagal membuat ${resType}`);
+    return result;
+  },
+
+  deleteDocument: async (uuid: string, docUuid: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/documents/${docUuid}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error("Gagal menghapus dokumen");
+  },
+
+  updateResource: async (uuid: string, resType: string, credUuid: string, payload: any) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/${resType}/${credUuid}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || `Gagal mengupdate ${resType}`);
+    return result;
+  },
+
+  deleteResource: async (uuid: string, resType: string, credUuid: string) => {
+    const res = await fetchWithAuth(`${API_BASE}/satpam/${uuid}/${resType}/${credUuid}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(`Gagal menghapus ${resType}`);
   },
 };

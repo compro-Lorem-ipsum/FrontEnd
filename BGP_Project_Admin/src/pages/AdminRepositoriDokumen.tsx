@@ -1,7 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatDateTimeZone } from "../Utils/helpers";
 import { useSharedDocumentData } from "../hooks/useSharedDocumentData";
 import { useSharedDocumentForm } from "../hooks/useSharedDocumentForm";
+import { satpamService } from "../services/satpamService";
+import { InfiniteScrollTrigger } from "../Components/common/InfiniteScrollTrigger";
+import { useEffect } from "react";
 import {
   Button,
   Select,
@@ -21,7 +24,10 @@ import {
   ModalFooter,
   Input,
   Textarea,
+  useDisclosure,
+  addToast,
 } from "@heroui/react";
+import { sharedDocumentService } from "../services/sharedDocumentService";
 
 import { FiSearch } from "react-icons/fi";
 import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
@@ -29,13 +35,7 @@ import { LuDownload } from "react-icons/lu";
 import { FaFilePdf } from "react-icons/fa6";
 import { AiOutlineCloudUpload } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
-
-export const clients = [
-  { key: "all", label: "Semua Client" },
-  { key: "smb", label: "Sumarecon Bandung" },
-  { key: "mitra1", label: "Mitra Sejahtera" },
-  { key: "mitra2", label: "Graha Properti" },
-];
+import { DeleteConfirmationModal } from "../Components/common/DeleteConfirmationModal";
 
 export const jenisDokumen = [
   { key: "peraturan", label: "Peraturan" },
@@ -69,6 +69,10 @@ const AdminRepositoriDokumen = () => {
     handleNextPage,
     handlePrevPage,
     refreshData,
+    search,
+    setSearch,
+    filterClient,
+    setFilterClient,
   } = useSharedDocumentData();
 
   const formHook = useSharedDocumentForm(refreshData);
@@ -87,6 +91,8 @@ const AdminRepositoriDokumen = () => {
     handleSelectionChange,
     clearAll,
     openCreateModal,
+    openEditModal,
+    editUuid,
     handleSubmit,
     ALL_KEY
   } = formHook;
@@ -107,8 +113,88 @@ const AdminRepositoriDokumen = () => {
   }, [selectedKeys, targetOptions]);
 
   const handleEdit = (item: any) => {
-    // Edit not implemented yet
-    console.log("Edit item:", item);
+    openEditModal(item.uuid);
+  };
+
+  // Filter Mitra State
+  const [mitraOptions, setMitraOptions] = useState<any[]>([]);
+  const [hasMoreMitra, setHasMoreMitra] = useState(false);
+  const [nextCursorMitra, setNextCursorMitra] = useState<string | null>(null);
+  const [loadingMoreMitra, setLoadingMoreMitra] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialMitra = async () => {
+      try {
+        const res = await satpamService.getMitraOptions();
+        if (res && Array.isArray(res.data)) {
+          setMitraOptions(res.data);
+          if (res.meta) {
+            setHasMoreMitra(res.meta.has_more);
+            setNextCursorMitra(res.meta.next_cursor);
+          }
+        }
+      } catch (e) {
+        console.error("Gagal load mitra for filter", e);
+      }
+    };
+    fetchInitialMitra();
+  }, []);
+
+  const loadMoreMitra = async () => {
+    if (!hasMoreMitra || !nextCursorMitra || loadingMoreMitra) return;
+    setLoadingMoreMitra(true);
+    try {
+      const res = await satpamService.getMitraOptions(nextCursorMitra);
+      if (res && Array.isArray(res.data)) {
+        setMitraOptions((prev) => [...prev, ...res.data]);
+        if (res.meta) {
+          setHasMoreMitra(res.meta.has_more);
+          setNextCursorMitra(res.meta.next_cursor);
+        }
+      }
+    } catch (e) {}
+    finally {
+      setLoadingMoreMitra(false);
+    }
+  };
+
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePrompt = (item: any) => {
+    setDeleteTarget(item);
+    onDeleteOpen();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await sharedDocumentService.remove(deleteTarget.uuid);
+      addToast({
+        title: "Berhasil",
+        description: "Dokumen berhasil dihapus",
+        color: "success",
+        variant: "flat",
+      });
+      refreshData();
+      onDeleteClose();
+    } catch (error: any) {
+      addToast({
+        title: "Gagal",
+        description: error.message || "Gagal menghapus dokumen",
+        color: "danger",
+        variant: "flat",
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null); // Optional: clear target
+    }
   };
 
   return (
@@ -137,21 +223,37 @@ const AdminRepositoriDokumen = () => {
           <FiSearch className="text-[#B0B0B0] text-base flex-shrink-0" />
           <input
             type="search"
-            placeholder="Cari nama dokumen, atau nama mitra"
+            placeholder="Cari nama dokumen, atau deskripsi"
             className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select
           className="w-48"
           placeholder="Semua Client"
+          selectedKeys={[filterClient]}
+          onChange={(e) => setFilterClient(e.target.value || "all")}
           classNames={{
             trigger:
               "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
             value: "text-[#8D8787] text-sm",
           }}
+          listboxProps={{
+            bottomContent: (
+              <InfiniteScrollTrigger
+                hasMore={hasMoreMitra}
+                isLoading={loadingMoreMitra}
+                onLoadMore={loadMoreMitra}
+              />
+            ),
+          }}
         >
-          {clients.map((c) => (
-            <SelectItem key={c.key}>{c.label}</SelectItem>
+          {[
+            { key: "all", label: "Semua Client" },
+            ...mitraOptions.map(m => ({ key: m.uuid, label: m.nama }))
+          ].map((c) => (
+            <SelectItem key={c.key} textValue={c.label}>{c.label}</SelectItem>
           ))}
         </Select>
       </div>
@@ -261,7 +363,7 @@ const AdminRepositoriDokumen = () => {
                         <TableCell>
                           <div className="flex justify-center gap-2">
                             <button
-                              className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF]"
+                              className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
                               onClick={() => handleEdit(item)}
                             >
                               <FaRegEdit className="text-base" />
@@ -270,7 +372,7 @@ const AdminRepositoriDokumen = () => {
                               <a
                                 href={item.file.download_url}
                                 download
-                                className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] flex"
+                                className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] flex cursor-pointer"
                               >
                                 <LuDownload className="text-base" />
                               </a>
@@ -279,7 +381,10 @@ const AdminRepositoriDokumen = () => {
                                 <LuDownload className="text-base" />
                               </button>
                             )}
-                            <button className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED]">
+                            <button
+                              className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer"
+                              onClick={() => handleDeletePrompt(item)}
+                            >
                               <FaRegTrashAlt className="text-base" />
                             </button>
                           </div>
@@ -305,7 +410,7 @@ const AdminRepositoriDokumen = () => {
           {() => (
             <>
               <ModalHeader className="text-[#122C93] font-semibold">
-                Tambah Dokumen
+                {editUuid ? "Update Dokumen" : "Tambah Dokumen"}
               </ModalHeader>
               <ModalBody className="gap-3">
                 <Input
@@ -328,36 +433,37 @@ const AdminRepositoriDokumen = () => {
                   classNames={{ label: labelClass }}
                 />
 
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-[#122C93]">
-                    Upload Dokumen <span className="text-danger">*</span>
-                  </span>
-                  <label
-                    htmlFor="upload-dokumen"
-                    className="flex flex-col items-center justify-center w-full h-36 bg-[#F5F7FF] border-2 border-dashed border-[#8D8787] rounded-xl cursor-pointer hover:bg-[#e6ecff] transition-colors"
-                  >
-                    <div className="flex flex-col items-center gap-1 text-[#9095A0]">
-                      <AiOutlineCloudUpload className="text-2xl" />
-                      <span className="text-xs font-medium text-[#6B7280]">
-                        {file ? file.name : "Unggah Dokumen"}
-                      </span>
-                      <span className="text-xs text-[#9CA3AF]">
-                        PDF, PNG/JPG
-                      </span>
-                    </div>
-                    <input
-                      id="upload-dokumen"
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          setFile(e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-[#122C93]">
+                      Upload Dokumen {!editUuid && <span className="text-danger">*</span>}
+                      {editUuid && <span className="text-gray-500 font-normal"> (Opsional - biarkan kosong jika tidak ingin mengubah file)</span>}
+                    </span>
+                    <label
+                      htmlFor="upload-dokumen"
+                      className="flex flex-col items-center justify-center w-full h-36 bg-[#F5F7FF] border-2 border-dashed border-[#8D8787] rounded-xl cursor-pointer hover:bg-[#e6ecff] transition-colors"
+                    >
+                      <div className="flex flex-col items-center gap-1 text-[#9095A0]">
+                        <AiOutlineCloudUpload className="text-2xl" />
+                        <span className="text-xs font-medium text-[#6B7280]">
+                          {file ? file.name : (editUuid ? "Ganti Dokumen" : "Unggah Dokumen")}
+                        </span>
+                        <span className="text-xs text-[#9CA3AF]">
+                          PDF, PNG/JPG
+                        </span>
+                      </div>
+                      <input
+                        id="upload-dokumen"
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            setFile(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
 
                 <div className="flex flex-col gap-1.5">
                   {/* Label row dengan counter + clear */}
@@ -441,6 +547,16 @@ const AdminRepositoriDokumen = () => {
         </ModalContent>
       </Modal>
       {/* end of modal */}
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleConfirmDelete}
+        title="Konfirmasi Hapus"
+        message={`Apakah Anda yakin ingin menghapus dokumen ${deleteTarget?.nama}? Tindakan ini tidak dapat dibatalkan.`}
+        isLoading={deleting}
+      />
     </div>
   );
 };

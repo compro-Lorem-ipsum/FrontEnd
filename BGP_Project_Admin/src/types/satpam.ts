@@ -1,4 +1,5 @@
 export interface Satpam {
+  kontak_utama: string | undefined;
   uuid: string;
   nama: string;
   asal_daerah: string;
@@ -25,6 +26,18 @@ export interface Satpam {
   };
   enrolled?: boolean;
   updated_at?: string;
+  date_assigned?: string;
+  working_hours?: {
+    this_month?: {
+      hours?: number;
+      shifts?: number;
+    };
+    all_time?: {
+      hours?: number;
+      since?: string;
+    };
+    since?: string;
+  };
 }
 
 export interface CardData {
