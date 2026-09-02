@@ -2,7 +2,7 @@ import { Card, CardBody } from "@heroui/react";
 import { useRadiusSettings } from "../hooks/useRadiusSettings";
 import { RadiusForm } from "../Components/radius/RadiusForm";
 
-const AdminManageRadius = () => {
+const ClientManageRadius = () => {
   const settingsHook = useRadiusSettings();
 
   return (
@@ -28,4 +28,4 @@ const AdminManageRadius = () => {
   );
 };
 
-export default AdminManageRadius;
+export default ClientManageRadius;

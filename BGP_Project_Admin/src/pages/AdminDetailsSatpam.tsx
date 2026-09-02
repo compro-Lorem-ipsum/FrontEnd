@@ -35,6 +35,9 @@ const AdminDetailsSatpam = () => {
     disahkanOleh: "Direktur Utama",
   };
 
+  const kerabat1 = state.emergencyContacts && state.emergencyContacts.length > 0 ? state.emergencyContacts[0] : null;
+  const kerabat2 = state.emergencyContacts && state.emergencyContacts.length > 1 ? state.emergencyContacts[1] : null;
+
   const currentPelanggaran = state.violations.length > 0 ? state.violations[0] : null;
 
   return (
@@ -92,21 +95,24 @@ const AdminDetailsSatpam = () => {
               {state.satpam.jabatan || "-"} · Pos Utama
             </h2>
           </div>
-          <div className="flex flex-col flex-wrap gap-x-4 gap-y-5 w-full h-[160px]">
+          <div className="flex flex-col flex-wrap gap-x-6 gap-y-4 w-full h-[180px]">
             {[
               ["ASAL DAERAH", state.satpam.asal_daerah || "-"],
               ["NO. HP UTAMA", state.satpam.nomor_hp || state.satpam.no_telp || "-"],
-              ["NO. HP KERABAT", state.emergencyContacts && state.emergencyContacts.length > 0 ? state.emergencyContacts.map((ec: any) => `${ec.kontak} (${ec.nama})`).join(", ") : "-"],
+              ["NO. HP KERABAT 1", kerabat1 ? `${kerabat1.kontak} (${kerabat1.nama})` : "-"],
+              ["STATUS HUBUNGAN 1", kerabat1 ? (kerabat1.hubungan?.toUpperCase() || "-") : "-"],
+              ["NO. HP KERABAT 2", kerabat2 ? `${kerabat2.kontak} (${kerabat2.nama})` : "-"],
+              ["STATUS HUBUNGAN 2", kerabat2 ? (kerabat2.hubungan?.toUpperCase() || "-") : "-"],
               ["JENIS KELAMIN", state.satpam.gender === "1" ? "Laki-Laki" : state.satpam.gender === "2" ? "Perempuan" : "-"],
               ["NIP", state.satpam.nip || "-"],
               ["EMAIL", state.satpam.email || "-"],
               ["NRG", state.satpam.nrg || "-"],
             ].map(([label, value], i) => (
               <div key={i} className="flex flex-col">
-                <h2 className="font-light text-xs leading-tight">
+                <h2 className="font-light text-sm leading-tight">
                   {label}
                 </h2>
-                <h2 className="font-light text-sm leading-tight text-[#8D8787] max-w-[200px] truncate" title={String(value)}>
+                <h2 className="font-light text-base leading-tight text-[#8D8787] max-w-[200px] truncate" title={String(value)}>
                   {value}
                 </h2>
               </div>

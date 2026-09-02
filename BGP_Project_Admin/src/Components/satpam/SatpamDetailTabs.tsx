@@ -39,6 +39,7 @@ interface SatpamDetailTabsProps {
   setters: any;
   handlers: any;
   modals: any;
+  readOnly?: boolean;
 }
 
 export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
@@ -46,6 +47,7 @@ export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
   setters,
   handlers,
   modals,
+  readOnly = false,
 }) => {
   const [activeTab, setActiveTab] = useState("absensi");
   const [page, setPage] = useState(1);
@@ -159,14 +161,16 @@ export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
                     {new Date(doc.created_at).toLocaleDateString("id-ID")}
                   </h2>
                 </div>
-                <div className="ml-auto flex flex-row gap-2">
-                  <button onClick={(e) => handlers.handleEditDoc(doc, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
-                    <FaRegEdit className="text-base" />
-                  </button>
-                  <button onClick={(e) => handlers.handleDeleteDoc(doc.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
-                    <FaRegTrashAlt className="text-base" />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="ml-auto flex flex-row gap-2">
+                    <button onClick={(e) => handlers.handleEditDoc(doc, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
+                      <FaRegEdit className="text-base" />
+                    </button>
+                    <button onClick={(e) => handlers.handleDeleteDoc(doc.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
+                      <FaRegTrashAlt className="text-base" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -195,14 +199,16 @@ export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
                     </h2>
                   )}
                 </div>
-                <div className="ml-auto flex flex-row gap-2">
-                  <button onClick={(e) => handlers.handleEditEdu(edu, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
-                    <FaRegEdit className="text-base" />
-                  </button>
-                  <button onClick={(e) => handlers.handleDeleteResource("educations", edu.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
-                    <FaRegTrashAlt className="text-base" />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="ml-auto flex flex-row gap-2">
+                    <button onClick={(e) => handlers.handleEditEdu(edu, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
+                      <FaRegEdit className="text-base" />
+                    </button>
+                    <button onClick={(e) => handlers.handleDeleteResource("educations", edu.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
+                      <FaRegTrashAlt className="text-base" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -231,14 +237,16 @@ export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
                     </h2>
                   )}
                 </div>
-                <div className="ml-auto flex flex-row gap-2">
-                  <button onClick={(e) => handlers.handleEditRec(rec, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
-                    <FaRegEdit className="text-base" />
-                  </button>
-                  <button onClick={(e) => handlers.handleDeleteResource("recognitions", rec.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
-                    <FaRegTrashAlt className="text-base" />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="ml-auto flex flex-row gap-2">
+                    <button onClick={(e) => handlers.handleEditRec(rec, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
+                      <FaRegEdit className="text-base" />
+                    </button>
+                    <button onClick={(e) => handlers.handleDeleteResource("recognitions", rec.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
+                      <FaRegTrashAlt className="text-base" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -263,7 +271,7 @@ export const SatpamDetailTabs: React.FC<SatpamDetailTabsProps> = ({
           <Tab key="pendidikan" title="Riwayat Pendidikan" />
           <Tab key="penghargaan" title="Riwayat Penghargaan" />
         </Tabs>
-        {activeTab !== "absensi" && (
+        {activeTab !== "absensi" && !readOnly && (
           <Button
             className="font-semibold text-white text-xs bg-[#122C93] px-3 py-2 rounded-lg"
             size="sm"

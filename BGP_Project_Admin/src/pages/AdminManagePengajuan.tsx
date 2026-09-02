@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Button,
   Select,
@@ -13,68 +12,16 @@ import {
   Spinner,
 } from "@heroui/react";
 import { FiSearch } from "react-icons/fi";
+import { useManagePengajuan } from "../hooks/useManagePengajuan";
+import type { PengajuanRequest } from "../types/request";
+import { formatTanggalIndo, getRole } from "../Utils/helpers";
 
-export const clients = [
-  { key: "all", label: "Semua Client" },
-  { key: "smb", label: "Sumarecon Bandung" },
-  { key: "mitra1", label: "Mitra Sejahtera" },
-  { key: "mitra2", label: "Graha Properti" },
-];
 
 const filters = [
   { key: "semua", label: "Semua" },
-  { key: "menunggu", label: "Menunggu" },
-  { key: "disetujui", label: "Disetujui" },
-  { key: "ditolak", label: "Ditolak" },
-];
-
-interface PengajuanItem {
-  uuid: string;
-  nama: string;
-  nip: string;
-  mitra: string;
-  tipe: "cuti" | "lembur";
-  tanggal_izin: string;
-  alasan: string;
-  tanggal_pengajuan: string;
-  status: "menunggu" | "disetujui" | "ditolak";
-}
-
-const dummyData: PengajuanItem[] = [
-  {
-    uuid: "1",
-    nama: "Nama Satpam",
-    nip: "0123xx",
-    mitra: "Nama Client",
-    tipe: "cuti",
-    tanggal_izin: "31 Des 2026 - 2 Jan 2027",
-    alasan: "Mau liburan sama keluarga, tolong di izinkan",
-    tanggal_pengajuan: "24 Des 2026",
-    status: "disetujui",
-  },
-  {
-    uuid: "2",
-    nama: "Nama Satpam",
-    nip: "0123xx",
-    mitra: "Nama Client",
-    tipe: "lembur",
-    tanggal_izin: "31 Des 2026",
-    alasan:
-      "Mengganti satpam shift malam yang berhalangan hadir karena liburan.",
-    tanggal_pengajuan: "24 Des 2026",
-    status: "menunggu",
-  },
-  {
-    uuid: "3",
-    nama: "Nama Satpam",
-    nip: "0123xx",
-    mitra: "Nama Client",
-    tipe: "cuti",
-    tanggal_izin: "27 Des 2026 - 31 Des 2026",
-    alasan: "pengen istirahat aja",
-    tanggal_pengajuan: "26 Des 2026",
-    status: "ditolak",
-  },
+  { key: "pending", label: "Menunggu" },
+  { key: "accepted", label: "Disetujui" },
+  { key: "rejected", label: "Ditolak" },
 ];
 
 const INITIAL_COLUMNS = [
@@ -90,49 +37,54 @@ const INITIAL_COLUMNS = [
   { name: "Aksi", uid: "aksi" },
 ];
 
-const tipeStyles: Record<PengajuanItem["tipe"], string> = {
+const tipeStyles: Record<string, string> = {
   cuti: "bg-[#E8EEFF] text-[#122C93]",
   lembur: "bg-[#F1E8FF] text-[#7C3AED]",
 };
 
-const tipeLabels: Record<PengajuanItem["tipe"], string> = {
+const tipeLabels: Record<string, string> = {
   cuti: "Cuti",
   lembur: "Lembur",
 };
 
-const statusStyles: Record<PengajuanItem["status"], string> = {
-  menunggu: "bg-[#FEF6E0] text-[#B45309]",
-  disetujui: "bg-[#E4F9EE] text-[#02A758]",
-  ditolak: "bg-[#FCE7E9] text-[#E11D48]",
+const statusStyles: Record<string, string> = {
+  pending: "bg-[#FEF6E0] text-[#B45309]",
+  accepted: "bg-[#E4F9EE] text-[#02A758]",
+  rejected: "bg-[#FCE7E9] text-[#E11D48]",
 };
 
-const statusLabels: Record<PengajuanItem["status"], string> = {
-  menunggu: "Menunggu",
-  disetujui: "Disetujui",
-  ditolak: "Ditolak",
+const statusLabels: Record<string, string> = {
+  pending: "Menunggu",
+  accepted: "Disetujui",
+  rejected: "Ditolak",
 };
 
 interface PengajuanTableProps {
-  data: PengajuanItem[];
+  data: PengajuanRequest[];
   loading: boolean;
-  page: number;
-  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
   rowsPerPage: number;
-  onPageChange: (page: number) => void;
-  onSetujui: (item: PengajuanItem) => void;
-  onTolak: (item: PengajuanItem) => void;
+  onNextPage: () => void;
+  onPrevPage: () => void;
+  onSetujui: (uuid: string) => void;
+  onTolak: (uuid: string) => void;
 }
 
 const PengajuanTable = ({
   data,
   loading,
-  page,
-  totalPages,
+  currentPage,
+  hasMore,
   rowsPerPage,
-  onPageChange,
+  onNextPage,
+  onPrevPage,
   onSetujui,
   onTolak,
 }: PengajuanTableProps) => {
+  const role = getRole();
+  const columns = role === "client" ? INITIAL_COLUMNS.filter(c => c.uid !== "aksi") : INITIAL_COLUMNS;
+
   return (
     <Table
       aria-label="Tabel Pengajuan Lembur & Cuti"
@@ -140,28 +92,30 @@ const PengajuanTable = ({
       isStriped
       className="rounded-xl"
       bottomContent={
-        totalPages > 0 ? (
-          <div className="flex w-full justify-center">
-            <Pagination
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={totalPages}
-              onChange={onPageChange}
-            />
-          </div>
-        ) : null
+        <div className="flex w-full justify-center px-4 py-2">
+          <Pagination
+            showControls
+            page={currentPage}
+            total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+            onChange={(page) => {
+              if (page > currentPage) onNextPage();
+              else if (page < currentPage) onPrevPage();
+            }}
+            classNames={{
+              item: "[&:not([data-active=true])]:hidden",
+            }}
+          />
+        </div>
       }
     >
-      <TableHeader columns={INITIAL_COLUMNS}>
+      <TableHeader columns={columns}>
         {(column) => (
           <TableColumn
             key={column.uid}
             align={
               column.uid === "tipe" ||
-              column.uid === "status" ||
-              column.uid === "aksi"
+                column.uid === "status" ||
+                column.uid === "aksi"
                 ? "center"
                 : "start"
             }
@@ -181,23 +135,23 @@ const PengajuanTable = ({
                 case "no":
                   return (
                     <TableCell>
-                      {(page - 1) * rowsPerPage + data.indexOf(item) + 1}
+                      {(currentPage - 1) * rowsPerPage + data.indexOf(item) + 1}
                     </TableCell>
                   );
                 case "nama":
-                  return <TableCell>{item.nama}</TableCell>;
+                  return <TableCell>{item.satpam?.nama || "-"}</TableCell>;
                 case "nip":
-                  return <TableCell>{item.nip}</TableCell>;
+                  return <TableCell>{item.satpam?.nip || "-"}</TableCell>;
                 case "mitra":
-                  return <TableCell>{item.mitra}</TableCell>;
+                  return <TableCell>{item.satpam?.client || "-"}</TableCell>;
                 case "tipe":
                   return (
                     <TableCell>
                       <div className="flex justify-center">
                         <span
-                          className={`text-xs font-medium px-3 py-1.5 rounded-full ${tipeStyles[item.tipe]}`}
+                          className={`text-xs font-medium px-3 py-1.5 rounded-full ${tipeStyles[item.type] || "bg-gray-100 text-gray-700"}`}
                         >
-                          {tipeLabels[item.tipe]}
+                          {tipeLabels[item.type] || item.type}
                         </span>
                       </div>
                     </TableCell>
@@ -206,7 +160,9 @@ const PengajuanTable = ({
                   return (
                     <TableCell>
                       <div className="w-[170px] text-sm text-black">
-                        {item.tanggal_izin}
+                        {item.start_date === item.end_date
+                          ? formatTanggalIndo(item.start_date)
+                          : `${formatTanggalIndo(item.start_date)} - ${formatTanggalIndo(item.end_date)}`}
                       </div>
                     </TableCell>
                   );
@@ -214,20 +170,20 @@ const PengajuanTable = ({
                   return (
                     <TableCell>
                       <div className="w-[260px] text-sm text-black">
-                        {item.alasan}
+                        {item.description}
                       </div>
                     </TableCell>
                   );
                 case "tanggal_pengajuan":
-                  return <TableCell>{item.tanggal_pengajuan}</TableCell>;
+                  return <TableCell>{formatTanggalIndo(item.created_at)}</TableCell>;
                 case "status":
                   return (
                     <TableCell>
                       <div className="flex justify-center">
                         <span
-                          className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusStyles[item.status]}`}
+                          className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusStyles[item.status] || "bg-gray-100 text-gray-700"}`}
                         >
-                          {statusLabels[item.status]}
+                          {statusLabels[item.status] || item.status}
                         </span>
                       </div>
                     </TableCell>
@@ -236,12 +192,13 @@ const PengajuanTable = ({
                   return (
                     <TableCell>
                       <div className="flex justify-center gap-2">
-                        {item.status === "menunggu" ? (
+                        {item.status === "pending" ? (
                           <>
                             <Button
                               size="sm"
                               className="bg-[#02A758] text-white font-semibold"
-                              onPress={() => onSetujui(item)}
+                              onPress={() => onSetujui(item.uuid)}
+                              isLoading={loading}
                             >
                               Setuju
                             </Button>
@@ -249,7 +206,8 @@ const PengajuanTable = ({
                               size="sm"
                               variant="bordered"
                               className="border-[#E11D48] text-[#E11D48] font-semibold"
-                              onPress={() => onTolak(item)}
+                              onPress={() => onTolak(item.uuid)}
+                              isLoading={loading}
                             >
                               Tolak
                             </Button>
@@ -272,20 +230,25 @@ const PengajuanTable = ({
 };
 
 const AdminManagePengajuan = () => {
-  const [activeFilter, setActiveFilter] = useState("semua");
-  const [page, setPage] = useState(1);
+  const {
+    data,
+    loading,
+    search,
+    setSearch,
+    filterType,
+    setFilterType,
+    statusFilter,
+    setStatusFilter,
+    currentPage,
+    hasMore,
+    handleNextPage,
+    handlePrevPage,
+    handleSetujui,
+    handleTolak,
+    limit,
+  } = useManagePengajuan();
 
-  const loading = false;
-  const totalPages = 1;
-  const rowsPerPage = 10;
 
-  const handleSetujui = (item: PengajuanItem) => {
-    console.log("setujui", item.uuid);
-  };
-
-  const handleTolak = (item: PengajuanItem) => {
-    console.log("tolak", item.uuid);
-  };
 
   return (
     <div className="flex flex-col gap-2 p-2.5 overflow-hidden">
@@ -303,36 +266,40 @@ const AdminManagePengajuan = () => {
       {/* end of header here */}
 
       {/* search engine */}
-      <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7]">
-        <div className="flex flex-row items-center gap-2 bg-white border border-[#E4E9F7] rounded-xl px-4 h-11 flex-1">
+      <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7] max-md:flex-col">
+        <div className="flex flex-row items-center gap-2 bg-white border border-[#E4E9F7] rounded-xl px-4 h-11 flex-1 w-full">
           <FiSearch className="text-[#B0B0B0] text-base flex-shrink-0" />
           <input
             type="search"
             placeholder="Cari nama deskripsi, atau status"
             className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select
-          className="w-48"
+          className="w-48 max-md:w-full"
           placeholder="Semua Type"
+          selectedKeys={[filterType]}
+          onChange={(e) => setFilterType(e.target.value || "all")}
           classNames={{
             trigger:
               "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
             value: "text-[#8D8787] text-sm",
           }}
         >
-          {clients.map((c) => (
-            <SelectItem key={c.key}>{c.label}</SelectItem>
-          ))}
+          <SelectItem key="all">Semua Type</SelectItem>
+          <SelectItem key="cuti">Cuti</SelectItem>
+          <SelectItem key="lembur">Lembur</SelectItem>
         </Select>
-        <div className="container-selector-filter flex flex-row gap-2 items-center">
+        <div className="container-selector-filter flex flex-row gap-2 items-center max-md:w-full max-md:overflow-x-auto">
           {filters.map((f) => (
             <Button
               key={f.key}
               size="sm"
-              onPress={() => setActiveFilter(f.key)}
+              onPress={() => setStatusFilter(f.key)}
               className={
-                activeFilter === f.key
+                statusFilter === f.key
                   ? "bg-[#122C93] text-white font-semibold h-11"
                   : "bg-white text-[#122C93] border border-[#E4E9F7] h-11 font-medium"
               }
@@ -346,12 +313,13 @@ const AdminManagePengajuan = () => {
 
       <div className="main-content flex flex-col gap-2 rounded-2xl border border-[#E4E9F7] bg-white">
         <PengajuanTable
-          data={dummyData}
+          data={data}
           loading={loading}
-          page={page}
-          totalPages={totalPages}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
+          currentPage={currentPage}
+          hasMore={hasMore}
+          rowsPerPage={limit}
+          onNextPage={handleNextPage}
+          onPrevPage={handlePrevPage}
           onSetujui={handleSetujui}
           onTolak={handleTolak}
         />

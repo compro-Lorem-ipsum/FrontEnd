@@ -12,10 +12,12 @@ const getHeaders = () => {
 };
 
 export const announcementService = {
-  getAll: async (limit: number = 3, cursor: string | null = null, search: string = ""): Promise<AnnouncementResponse> => {
+  getAll: async (limit: number = 3, cursor: string | null = null, search: string = "", recipientType?: string, recipient?: string): Promise<AnnouncementResponse> => {
     const params = new URLSearchParams({ limit: limit.toString() });
     if (cursor) params.append("cursor", cursor);
     if (search) params.append("search", search);
+    if (recipientType) params.append("recipient_type", recipientType);
+    if (recipient) params.append("recipient", recipient);
     const res = await fetchWithAuth(`${API_BASE}/announcements?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),
