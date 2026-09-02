@@ -54,7 +54,7 @@ export const satpamService = {
     });
     const result = await res.json().catch(() => ({}));
     if (!res.ok)
-      throw new Error(result.message || "Gagal mengupdate data satpam");
+      throw new Error(result.error?.message || result.message || "Gagal mengupdate data satpam");
   },
 
   delete: async (uuid: string): Promise<void> => {
@@ -63,7 +63,7 @@ export const satpamService = {
       headers: getHeaders(),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || "Gagal menghapus data");
+    if (!res.ok) throw new Error(result.error?.message || result.message || "Gagal menghapus data");
   },
 
   getMitraOptions: async (cursor: string | null = null): Promise<UserResponse> => {
@@ -98,7 +98,7 @@ export const satpamService = {
 
     const result = await res.json().catch(() => ({}));
     if (!res.ok)
-      throw new Error(result.message || "Gagal menyimpan perubahan penugasan");
+      throw new Error(result.error?.message || result.message || "Gagal menyimpan perubahan penugasan");
   },
 
   approve: async (uuid: string): Promise<void> => {
@@ -107,7 +107,7 @@ export const satpamService = {
       headers: getHeaders(),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || "Gagal menyetujui akun");
+    if (!res.ok) throw new Error(result.error?.message || result.message || "Gagal menyetujui akun");
   },
 
   reject: async (uuid: string): Promise<void> => {
@@ -116,7 +116,7 @@ export const satpamService = {
       headers: getHeaders(),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || "Gagal menolak akun");
+    if (!res.ok) throw new Error(result.error?.message || result.message || "Gagal menolak akun");
   },
 
   getDocuments: async (uuid: string) => {
@@ -173,7 +173,7 @@ export const satpamService = {
       body: JSON.stringify(payload),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || "Gagal membuat dokumen");
+    if (!res.ok) throw new Error(result.error?.message || result.message || "Gagal membuat dokumen");
     return result;
   },
 
@@ -204,7 +204,7 @@ export const satpamService = {
       body: JSON.stringify(payload),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || `Gagal membuat ${resType}`);
+    if (!res.ok) throw new Error(result.error?.message || result.message || `Gagal membuat ${resType}`);
     return result;
   },
 
@@ -223,7 +223,7 @@ export const satpamService = {
       body: JSON.stringify(payload),
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.message || `Gagal mengupdate ${resType}`);
+    if (!res.ok) throw new Error(result.error?.message || result.message || `Gagal mengupdate ${resType}`);
     return result;
   },
 
