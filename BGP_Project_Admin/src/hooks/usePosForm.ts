@@ -7,17 +7,16 @@ import { addToast } from "@heroui/react";
 interface UsePosFormProps {
   onSuccess: () => void;
   onClose: () => void;
-  tipe: string;
+  type: string;
 }
 
-export const usePosForm = ({ onSuccess, onClose, tipe }: UsePosFormProps) => {
+export const usePosForm = ({ onSuccess, onClose, type }: UsePosFormProps) => {
   const [formData, setFormData] = useState<Pos>({
     uuid: null,
     nama: "",
     kode: "",
-    lat: "",
-    lng: "",
-    created_at: "",
+    lat: 0,
+    lng: 0,
   });
   const [selectedPosition, setSelectedPosition] = useState<LatLng | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,9 +26,8 @@ export const usePosForm = ({ onSuccess, onClose, tipe }: UsePosFormProps) => {
       uuid: null,
       nama: "",
       kode: "",
-      lat: "",
-      lng: "",
-      created_at: "",
+      lat: 0,
+      lng: 0,
     });
     setSelectedPosition(null);
   };
@@ -38,17 +36,16 @@ export const usePosForm = ({ onSuccess, onClose, tipe }: UsePosFormProps) => {
     setSelectedPosition(latlng);
     setFormData((prev) => ({
       ...prev,
-      lat: latlng.lat.toString(),
-      lng: latlng.lng.toString(),
+      lat: latlng.lat,
+      lng: latlng.lng,
     }));
   };
 
   const handleManualCoordChange = (field: "lat" | "lng", value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    const latVal =
-      field === "lat" ? parseFloat(value) : parseFloat(formData.lat);
-    const lngVal =
-      field === "lng" ? parseFloat(value) : parseFloat(formData.lng);
+    const numVal = parseFloat(value) || 0;
+    setFormData((prev) => ({ ...prev, [field]: numVal }));
+    const latVal = field === "lat" ? numVal : formData.lat;
+    const lngVal = field === "lng" ? numVal : formData.lng;
 
     if (!isNaN(latVal) && !isNaN(lngVal)) {
       setSelectedPosition(new LatLng(latVal, lngVal));
@@ -89,12 +86,11 @@ export const usePosForm = ({ onSuccess, onClose, tipe }: UsePosFormProps) => {
           uuid: item.uuid,
           nama: item.nama || "",
           kode: item.kode || "",
-          lat: item.lat || "",
-          lng: item.lng || "",
-          created_at: item.created_at || "",
+          lat: item.lat || 0,
+          lng: item.lng || 0,
         });
-        const lat = parseFloat(item.lat);
-        const lng = parseFloat(item.lng);
+        const lat = typeof item.lat === 'number' ? item.lat : parseFloat(item.lat);
+        const lng = typeof item.lng === 'number' ? item.lng : parseFloat(item.lng);
         if (!isNaN(lat) && !isNaN(lng)) {
           setSelectedPosition(new LatLng(lat, lng));
         } else {
@@ -158,7 +154,7 @@ export const usePosForm = ({ onSuccess, onClose, tipe }: UsePosFormProps) => {
       const payload = {
         nama: formData.nama,
         kode: formData.kode,
-        tipe: tipe,
+        type: type,
         lat: selectedPosition!.lat,
         lng: selectedPosition!.lng,
       };

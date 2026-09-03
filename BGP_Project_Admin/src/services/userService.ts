@@ -10,9 +10,10 @@ const getHeaders = () => ({
 });
 
 export const userService = {
-  getAll: async (limit: number = 5, cursor: string | null = null): Promise<UserResponse> => {
+  getAll: async (limit: number = 10, cursor: string | null = null, search: string = ""): Promise<UserResponse> => {
     const params = new URLSearchParams({ limit: limit.toString() });
     if (cursor) params.append("cursor", cursor);
+    if (search) params.append("search", search);
     const res = await fetchWithAuth(`${API_BASE_URL}/client?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),

@@ -1,28 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { sharedDocumentService } from "../services/sharedDocumentService";
+import { eventReportService } from "../services/eventReportService";
+import { getRole } from "../Utils/helpers";
+import type { EventReport } from "../types/eventReport";
 
-export interface SharedDocumentItem {
-  uuid: string;
-  nama: string;
-  deskripsi: string;
-  file: {
-    uuid: string;
-    status: string;
-    view_url: string;
-    download_url: string;
-  };
-  created_at: string;
-  recipient_type: string;
-  recipient_count: number;
+export interface UseEventReportDataOptions {
+  status?: string;
 }
 
-export const useSharedDocumentData = () => {
-  const [dataDocs, setDataDocs] = useState<SharedDocumentItem[]>([]);
+export const useEventReportData = (options?: UseEventReportDataOptions) => {
+  const [dataReport, setDataReport] = useState<EventReport[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [limit, setLimit] = useState(10);
+  const [userRole, setUserRole] = useState<string>("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [filterClient, setFilterClient] = useState("all");
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -31,60 +21,76 @@ export const useSharedDocumentData = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Pagination State (Cursor Based)
+  // Pagination states
+  const [limit, setLimit] = useState(10);
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  const fetchDocs = useCallback(async () => {
+  useEffect(() => {
+    const role = getRole();
+    if (role) setUserRole(role);
+  }, []);
+
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
       const currentCursor = cursorHistory[currentIndex];
-      const response = await sharedDocumentService.getAll(limit, currentCursor, debouncedSearch, filterClient);
+      const response = await eventReportService.getAll(
+        limit,
+        currentCursor,
+        debouncedSearch,
+        options?.status
+      );
+
       if (response && Array.isArray(response.data)) {
-        setDataDocs(response.data);
+        setDataReport(response.data);
         if (response.meta) {
           setHasMore(response.meta.has_more);
           setNextCursor(response.meta.next_cursor);
         }
       } else {
-        setDataDocs([]);
+        setDataReport([]);
         setHasMore(false);
         setNextCursor(null);
       }
     } catch (error: any) {
-      console.error("Fetch docs error:", error);
-      setDataDocs([]);
+      console.error("Fetch event reports error:", error);
+      setDataReport([]);
       setHasMore(false);
       setNextCursor(null);
     } finally {
       setLoading(false);
     }
-  }, [limit, currentIndex, cursorHistory, debouncedSearch, filterClient]);
+  }, [limit, currentIndex, cursorHistory, debouncedSearch, options?.status]);
 
-  // Reset pagination if search or filter changes
+  // Refetch when dependencies change, but reset pagination if search or status changes
   useEffect(() => {
     setCursorHistory([null]);
     setCurrentIndex(0);
-  }, [debouncedSearch, filterClient, limit]);
+  }, [debouncedSearch, options?.status, limit]);
 
   useEffect(() => {
-    fetchDocs();
-  }, [fetchDocs]);
+    fetchReports();
+  }, [fetchReports]);
+
+  // Helper to trigger refetch (useful after handle/resolve action)
+  const refreshData = () => {
+    fetchReports();
+  };
 
   const handleNextPage = () => {
     if (hasMore && nextCursor) {
-      if (currentIndex === cursorHistory.length - 1) {
-        setCursorHistory((prev) => [...prev, nextCursor]);
-      }
-      setCurrentIndex((prev) => prev + 1);
+      const newHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
+      setCursorHistory(newHistory);
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
   const handlePrevPage = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
@@ -94,7 +100,7 @@ export const useSharedDocumentData = () => {
   };
 
   return {
-    dataDocs,
+    dataReport,
     loading,
     limit,
     setLimit,
@@ -102,11 +108,10 @@ export const useSharedDocumentData = () => {
     currentPage: currentIndex + 1,
     handleNextPage,
     handlePrevPage,
+    userRole,
+    refreshData,
     resetPagination,
-    refreshData: fetchDocs,
     search,
     setSearch,
-    filterClient,
-    setFilterClient,
   };
 };

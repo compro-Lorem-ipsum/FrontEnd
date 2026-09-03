@@ -9,7 +9,7 @@ import { addToast } from "@heroui/react";
 export const useAnnouncementData = () => {
   const [dataAnnouncement, setDataAnnouncement] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [limit, setLimit] = useState(3);
+  const [limit, setLimit] = useState(10);
 
   const [mitraOptions, setMitraOptions] = useState<MitraOption[]>([]);
   const [loadingMitra, setLoadingMitra] = useState<boolean>(false);
@@ -87,7 +87,7 @@ export const useAnnouncementData = () => {
   useEffect(() => {
     setCursorHistory([null]);
     setCurrentIndex(0);
-  }, [searchQuery, filterClient]);
+  }, [searchQuery, filterClient, limit]);
 
   const confirmDelete = (uuid: string) => {
     setDeleteTargetId(uuid);
