@@ -2,29 +2,26 @@ export interface Pos {
   uuid: string | null;
   nama: string;
   kode: string;
-  lat: string;
-  lng: string;
+  lat: number;
+  lng: number;
   created_at?: string;
-  tipe?: string;
+  updated_at?: string;
+  type?: string;
 }
 
 export interface PosResponse {
-  data: {
-    data: Pos[];
-    pagination?: {
-      total_pages: number;
-      items_per_page: number;
-      current_page: number;
-      total_items: number;
-    };
+  data: Pos[];
+  meta: {
+    limit: number;
+    has_more: boolean;
+    next_cursor: string | null;
   };
-  message?: string;
 }
 
 export interface CreatePosPayload {
-  nama: string;
-  kode: string;
-  lat: number;
-  lng: number;
-  tipe: string;
+  nama?: string;
+  kode?: string;
+  lat?: number;
+  lng?: number;
+  type?: string;
 }

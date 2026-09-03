@@ -6,7 +6,9 @@ import type { User } from "../types/user";
 export const useUserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [limit, setLimit] = useState(4);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Pagination State (Cursor Based)
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -17,11 +19,30 @@ export const useUserManagement = () => {
   const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
+  const resetPagination = useCallback(() => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  }, []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (debouncedSearch !== search) {
+        setDebouncedSearch(search);
+        resetPagination();
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search, debouncedSearch, resetPagination]);
+
+  useEffect(() => {
+    resetPagination();
+  }, [limit, resetPagination]);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const currentCursor = cursorHistory[currentIndex];
-      const responseData = await userService.getAll(limit, currentCursor);
+      const responseData = await userService.getAll(limit, currentCursor, debouncedSearch);
       if (responseData.data && Array.isArray(responseData.data)) {
         setUsers(responseData.data);
         if (responseData.meta) {
@@ -41,7 +62,7 @@ export const useUserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [limit, currentIndex, cursorHistory]);
+  }, [limit, currentIndex, cursorHistory, debouncedSearch]);
 
   useEffect(() => {
     fetchUsers();
@@ -94,16 +115,14 @@ export const useUserManagement = () => {
     }
   };
 
-  const resetPagination = () => {
-    setCursorHistory([null]);
-    setCurrentIndex(0);
-  };
 
   return {
     users,
     loading,
     limit,
     setLimit,
+    search,
+    setSearch,
     hasMore,
     currentPage: currentIndex + 1,
     handleNextPage,

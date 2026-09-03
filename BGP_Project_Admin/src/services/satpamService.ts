@@ -20,10 +20,21 @@ const getHeaders = (isMultipart: boolean = false) => {
 };
 
 export const satpamService = {
-  getAll: async (limit: number = 7, cursor: string | null = null, status?: string): Promise<SatpamResponse> => {
+  getAll: async (paramsObj: {
+    limit?: number;
+    cursor?: string | null;
+    status?: string;
+    search?: string;
+    client_uuid?: string;
+    decided_within_days?: number;
+  } = {}): Promise<SatpamResponse> => {
+    const limit = paramsObj.limit ?? 7;
     const params = new URLSearchParams({ limit: limit.toString() });
-    if (cursor) params.append("cursor", cursor);
-    if (status) params.append("status", status);
+    if (paramsObj.cursor) params.append("cursor", paramsObj.cursor);
+    if (paramsObj.status) params.append("status", paramsObj.status);
+    if (paramsObj.search) params.append("search", paramsObj.search);
+    if (paramsObj.client_uuid && paramsObj.client_uuid !== "all") params.append("client_uuid", paramsObj.client_uuid);
+    if (paramsObj.decided_within_days !== undefined) params.append("decided_within_days", paramsObj.decided_within_days.toString());
     const res = await fetchWithAuth(`${API_BASE}/satpam/?${params.toString()}`, {
       method: "GET",
       headers: getHeaders(),

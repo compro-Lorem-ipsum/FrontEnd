@@ -21,6 +21,8 @@ const AdminManagePengumuman = () => {
   const {
     dataAnnouncement,
     loading,
+    limit,
+    setLimit,
     hasMore,
     currentPage,
     handleNextPage,
@@ -101,6 +103,27 @@ const AdminManagePengumuman = () => {
             ))}
           </Select>
         )}
+
+        <Select
+          className="w-32"
+          placeholder="Tampilkan"
+          selectedKeys={[limit.toString()]}
+          onChange={(e) => {
+            const newLimit = parseInt(e.target.value);
+            if (!isNaN(newLimit)) setLimit(newLimit);
+          }}
+          classNames={{
+            trigger:
+              "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+            value: "text-[#8D8787] text-sm",
+          }}
+        >
+          {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((pageSize) => (
+            <SelectItem key={pageSize.toString()} textValue={`${pageSize} Data`}>
+              {pageSize} Data
+            </SelectItem>
+          ))}
+        </Select>
       </div>
 
       <PengumumanList

@@ -16,7 +16,7 @@ export const useManagePengajuan = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const limit = 7;
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -64,7 +64,7 @@ export const useManagePengajuan = () => {
   useEffect(() => {
     setCursorStack([null]);
     setCurrentStackIndex(0);
-  }, [debouncedSearch, statusFilter, filterType]);
+  }, [debouncedSearch, statusFilter, filterType, limit]);
 
   useEffect(() => {
     fetchPengajuan(cursorStack[currentStackIndex]);
@@ -147,5 +147,6 @@ export const useManagePengajuan = () => {
     handleSetujui,
     handleTolak,
     limit,
+    setLimit,
   };
 };

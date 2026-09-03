@@ -6,33 +6,60 @@ import { addToast } from "@heroui/react";
 export const usePosData = () => {
   const [dataPos, setDataPos] = useState<Pos[]>([]);
   const [loadingTable, setLoadingTable] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetUuid, setDeleteTargetUuid] = useState<string | null>(null);
+
+  const resetPagination = useCallback(() => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  }, []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (debouncedSearch !== search) {
+        setDebouncedSearch(search);
+        resetPagination();
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search, debouncedSearch, resetPagination]);
+
+  useEffect(() => {
+    resetPagination();
+  }, [limit, resetPagination]);
 
   const fetchData = useCallback(async () => {
     setLoadingTable(true);
     try {
-      const response = await posService.getAll(page);
-      if (response && response.data && Array.isArray(response.data.data)) {
-        setDataPos(response.data.data);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.total_pages);
-          setRowsPerPage(response.data.pagination.items_per_page);
+      const currentCursor = cursorHistory[currentIndex];
+      const response = await posService.getAll(limit, currentCursor, "jaga", debouncedSearch);
+      if (response && Array.isArray(response.data)) {
+        setDataPos(response.data);
+        if (response.meta) {
+          setHasMore(response.meta.has_more);
+          setNextCursor(response.meta.next_cursor);
         }
       } else {
         setDataPos([]);
-        setTotalPages(1);
+        setHasMore(false);
+        setNextCursor(null);
       }
     } catch (error) {
       console.error("Gagal memuat data pos:", error);
       setDataPos([]);
+      setHasMore(false);
+      setNextCursor(null);
     } finally {
       setLoadingTable(false);
     }
-  }, [page]);
+  }, [limit, currentIndex, cursorHistory, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
@@ -68,13 +95,32 @@ export const usePosData = () => {
     }
   };
 
+  const handleNextPage = () => {
+    if (hasMore && nextCursor) {
+      if (currentIndex === cursorHistory.length - 1) {
+        setCursorHistory((prev) => [...prev, nextCursor]);
+      }
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
   return {
     dataPos,
     loadingTable,
-    page,
-    totalPages,
-    rowsPerPage,
-    setPage,
+    limit,
+    setLimit,
+    search,
+    setSearch,
+    hasMore,
+    currentPage: currentIndex + 1,
+    handleNextPage,
+    handlePrevPage,
     refreshData: fetchData,
     deleteState: {
       isOpen: isDeleteModalOpen,

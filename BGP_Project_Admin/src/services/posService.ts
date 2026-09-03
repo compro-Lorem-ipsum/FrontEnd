@@ -3,7 +3,7 @@ import type { Pos, PosResponse, CreatePosPayload } from "../types/pos";
 import { getToken } from "../Utils/helpers";
 
 const BASE_API_URL = import.meta.env.VITE_API_BASE_URL;
-const API_URL = `${BASE_API_URL}/v1/pos`;
+const API_URL = `${BASE_API_URL}/posts`;
 
 const getHeaders = () => ({
   "Content-Type": "application/json",
@@ -11,8 +11,13 @@ const getHeaders = () => ({
 });
 
 export const posService = {
-  getAll: async (page: number, tipe: string = "Jaga"): Promise<PosResponse> => {
-    const res = await fetchWithAuth(`${API_URL}?tipe=${tipe}&pid=${page}`, {
+  getAll: async (limit: number = 10, cursor: string | null = null, type: string = "jaga", search: string = ""): Promise<PosResponse> => {
+    const params = new URLSearchParams({ type, limit: limit.toString() });
+    if (cursor) params.append("cursor", cursor);
+    if (search) params.append("search", search);
+
+    const url = `${API_URL}?${params.toString()}`;
+    const res = await fetchWithAuth(url, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat data pos");
@@ -38,7 +43,7 @@ export const posService = {
 
   update: async (uuid: string, payload: CreatePosPayload): Promise<void> => {
     const res = await fetchWithAuth(`${API_URL}/${uuid}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(payload),
     });

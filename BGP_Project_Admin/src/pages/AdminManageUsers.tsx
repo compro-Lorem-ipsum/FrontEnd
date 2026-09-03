@@ -1,4 +1,5 @@
-import { Button, useDisclosure } from "@heroui/react";
+import { Button, useDisclosure, Select, SelectItem } from "@heroui/react";
+import { FiSearch } from "react-icons/fi";
 import { useUserManagement } from "../hooks/useUserManagement";
 import { UserListTable } from "../Components/users/UserListTable";
 import { AddUserModal } from "../Components/users/AddUserModal";
@@ -9,6 +10,10 @@ const AdminManageUsers = () => {
   const {
     users,
     loading,
+    limit,
+    setLimit,
+    search,
+    setSearch,
     hasMore,
     currentPage,
     handleNextPage,
@@ -32,6 +37,40 @@ const AdminManageUsers = () => {
           >
             Tambah +
           </Button>
+        </div>
+
+        <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7] mt-2">
+          <div className="flex flex-row items-center gap-2 bg-white border border-[#E4E9F7] rounded-xl px-4 h-11 flex-1">
+            <FiSearch className="text-[#B0B0B0] text-base flex-shrink-0" />
+            <input
+              type="search"
+              placeholder="Cari nama atau email client"
+              className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <Select
+            className="w-32"
+            placeholder="Tampilkan"
+            selectedKeys={[limit.toString()]}
+            onChange={(e) => {
+              const newLimit = parseInt(e.target.value);
+              if (!isNaN(newLimit)) setLimit(newLimit);
+            }}
+            classNames={{
+              trigger:
+                "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+              value: "text-[#8D8787] text-sm",
+            }}
+          >
+            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((pageSize) => (
+              <SelectItem key={pageSize.toString()} textValue={`${pageSize} Data`}>
+                {pageSize} Data
+              </SelectItem>
+            ))}
+          </Select>
         </div>
 
         <AddUserModal

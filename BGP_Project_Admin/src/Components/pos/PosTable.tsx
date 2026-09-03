@@ -16,10 +16,11 @@ import { formatTanggal } from "../../Utils/helpers";
 interface PosTableProps {
   data: Pos[];
   loading: boolean;
-  page: number;
-  totalPages: number;
-  rowsPerPage: number;
-  onPageChange: (page: number) => void;
+  limit: number;
+  hasMore: boolean;
+  currentPage: number;
+  onNextPage: () => void;
+  onPrevPage: () => void;
   onEdit: (uuid: string) => void;
   onDelete: (uuid: string) => void;
 }
@@ -27,10 +28,11 @@ interface PosTableProps {
 export const PosTable = ({
   data,
   loading,
-  page,
-  totalPages,
-  rowsPerPage,
-  onPageChange,
+  limit,
+  hasMore,
+  currentPage,
+  onNextPage,
+  onPrevPage,
   onEdit,
   onDelete,
 }: PosTableProps) => {
@@ -48,18 +50,19 @@ export const PosTable = ({
       shadow="none"
       isStriped
       bottomContent={
-        totalPages > 0 ? (
-          <div className="flex w-full justify-center">
-            <Pagination
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={totalPages}
-              onChange={onPageChange}
-            />
-          </div>
-        ) : null
+        <div className="flex w-full justify-center">
+          <Pagination
+            showControls
+            showShadow
+            color="primary"
+            page={currentPage}
+            total={hasMore ? currentPage + 1 : currentPage}
+            onChange={(p) => {
+              if (p > currentPage) onNextPage();
+              else if (p < currentPage) onPrevPage();
+            }}
+          />
+        </div>
       }
     >
       <TableHeader>
@@ -75,7 +78,7 @@ export const PosTable = ({
         {(item) => (
           <TableRow key={item.uuid}>
             <TableCell>
-              {(page - 1) * rowsPerPage + data.indexOf(item) + 1}
+              {(currentPage - 1) * limit + data.indexOf(item) + 1}
             </TableCell>
             <TableCell>
               <div className="w-[150px] truncate">{item.nama}</div>
