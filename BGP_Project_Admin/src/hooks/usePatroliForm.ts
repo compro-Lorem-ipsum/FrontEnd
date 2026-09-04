@@ -10,8 +10,8 @@ interface UsePatroliFormProps {
 
 export const usePatroliForm = ({ onSuccess, onClose }: UsePatroliFormProps) => {
   const [formData, setFormData] = useState<UpdatePatroliPayload>({
-    status_lokasi: "",
-    keterangan: "",
+    status: "",
+    description: "",
   });
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,8 +19,8 @@ export const usePatroliForm = ({ onSuccess, onClose }: UsePatroliFormProps) => {
   const initForm = (item: Patroli) => {
     setSelectedUuid(item.uuid);
     setFormData({
-      status_lokasi: item.status_lokasi,
-      keterangan: item.keterangan,
+      status: item.status,
+      description: item.description,
     });
   };
 

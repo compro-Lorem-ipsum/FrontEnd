@@ -15,9 +15,12 @@ import { useState } from "react";
 import { CalendarDate } from "@internationalized/date";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { MdDelete, MdEditCalendar } from "react-icons/md";
-import ShiftTableNew, {
-  type ShiftData,
-} from "../Components/shifts/ShiftTableNew";
+import { FiSearch } from "react-icons/fi";
+import ShiftTableNew from "../Components/shifts/ShiftTableNew";
+import { useShiftPatternData } from "../hooks/useShiftPatternData";
+import { shiftPatternService } from "../services/shiftPatternService";
+import { addToast } from "@heroui/react";
+import { DeleteConfirmationModal } from "../Components/common/DeleteConfirmationModal";
 
 interface SatpamShift {
   id: number;
@@ -76,12 +79,6 @@ const shiftOptions = [
   { key: "Pagi", label: "Pagi" },
   { key: "Siang", label: "Siang" },
   { key: "Malam", label: "Malam" },
-];
-
-const shiftTableDataInitial: ShiftData[] = [
-  { uuid: "1", nama_shift: "Pagi", jam_mulai: "06:00", jam_selesai: "15:00" },
-  { uuid: "2", nama_shift: "Siang", jam_mulai: "15:00", jam_selesai: "21:00" },
-  { uuid: "3", nama_shift: "Malam", jam_mulai: "21:00", jam_selesai: "06:00" },
 ];
 
 const listSatpamDummy: SatpamOption[] = [
@@ -351,18 +348,70 @@ const ClientPenjadwalanSatpam = () => {
   const [satpamMingguanData, setSatpamMingguanData] = useState<
     SatpamMingguan[]
   >(satpamMingguanDataInitial);
+  const [deleteShiftId, setDeleteShiftId] = useState<string | null>(null);
 
-  const [shiftTableData] = useState<ShiftData[]>(shiftTableDataInitial);
-  const [shiftPage, setShiftPage] = useState(1);
-  const shiftRowsPerPage = 10;
-  const shiftTotalPages = Math.ceil(shiftTableData.length / shiftRowsPerPage);
+  const {
+    data: shiftData,
+    isLoading: isShiftLoading,
+    search: shiftSearch,
+    setSearch: setShiftSearch,
+    limit: shiftLimit,
+    setLimit: setShiftLimit,
+    hasMore: shiftHasMore,
+    currentPageIndex: shiftCurrentPage,
+    handleNextPage: handleShiftNextPage,
+    handlePrevPage: handleShiftPrevPage,
+    refreshData: refreshShiftData,
+  } = useShiftPatternData();
 
-  const handleEditShift = (uuid: string) => {
-    console.log("edit shift", uuid);
+  const handleEditShift = async (uuid: string) => {
+    try {
+      const res = await shiftPatternService.getById(uuid);
+      setShiftFormData({
+        nama: res.data.nama,
+        mulai: res.data.start_local,
+        selesai: res.data.end_local,
+      });
+      setSelectedShiftId(uuid);
+      modalShiftForm.onOpen();
+    } catch (err: any) {
+      addToast({
+        title: "Gagal",
+        description: err.message || "Gagal mengambil detail shift",
+        variant: "flat",
+        color: "danger",
+        timeout: 3000,
+      });
+    }
   };
 
-  const handleDeleteShift = (uuid: string) => {
-    console.log("hapus shift", uuid);
+  const confirmDeleteShift = (uuid: string) => {
+    setDeleteShiftId(uuid);
+  };
+
+  const handleDeleteShift = async () => {
+    if (!deleteShiftId) return;
+    try {
+      await shiftPatternService.delete(deleteShiftId);
+      addToast({
+        title: "Berhasil",
+        description: "Berhasil menghapus shift",
+        variant: "flat",
+        color: "success",
+        timeout: 3000,
+      });
+      refreshShiftData();
+    } catch (err: any) {
+      addToast({
+        title: "Gagal",
+        description: err.message || "Gagal menghapus shift",
+        variant: "flat",
+        color: "danger",
+        timeout: 3000,
+      });
+    } finally {
+      setDeleteShiftId(null);
+    }
   };
 
   // === Modal: Tambah/Edit Jadwal Manual ===
@@ -440,11 +489,59 @@ const ClientPenjadwalanSatpam = () => {
     modalShiftForm.onOpenChange();
   };
 
-  const handleShiftFormSubmit = () => {
+  const handleShiftFormSubmit = async () => {
+    // Validasi
+    const errors: Record<string, string> = {};
+    if (!shiftFormData.nama) errors.nama = "Nama wajib diisi";
+    if (!shiftFormData.mulai) errors.mulai = "Jam mulai wajib diisi";
+    if (!shiftFormData.selesai) errors.selesai = "Jam selesai wajib diisi";
+    
+    if (Object.keys(errors).length > 0) {
+      setShiftFormErrors(errors);
+      return;
+    }
+
     setIsShiftFormSubmitting(true);
-    console.log("submit konfigurasi shift", shiftFormData, selectedShiftId);
-    setIsShiftFormSubmitting(false);
-    handleCloseShiftForm();
+    try {
+      const payload = {
+        nama: shiftFormData.nama,
+        start_local: shiftFormData.mulai,
+        end_local: shiftFormData.selesai,
+        timezone: getDeviceTimezone(),
+      };
+      
+      if (selectedShiftId) {
+        await shiftPatternService.update(selectedShiftId, payload);
+        addToast({
+          title: "Berhasil",
+          description: "Berhasil mengubah shift",
+          variant: "flat",
+          color: "success",
+          timeout: 3000,
+        });
+      } else {
+        await shiftPatternService.create(payload);
+        addToast({
+          title: "Berhasil",
+          description: "Berhasil menambahkan shift",
+          variant: "flat",
+          color: "success",
+          timeout: 3000,
+        });
+      }
+      handleCloseShiftForm();
+      refreshShiftData();
+    } catch (err: any) {
+      addToast({
+        title: "Gagal",
+        description: err.message || "Gagal menyimpan shift",
+        variant: "flat",
+        color: "danger",
+        timeout: 3000,
+      });
+    } finally {
+      setIsShiftFormSubmitting(false);
+    }
   };
 
   const formatTanggal = (date: Date) => {
@@ -720,7 +817,7 @@ const ClientPenjadwalanSatpam = () => {
 
               <div className="right-side flex flex-row items-center gap-3">
                 <Button
-                  className="bg-[#122C93] text-white font-semibold h-10"
+                  className="bg-[#122C93] text-white font-semibold h-11 rounded-xl px-6"
                   onPress={modalManual.onOpen}
                 >
                   Tambah Jadwal +
@@ -736,29 +833,70 @@ const ClientPenjadwalanSatpam = () => {
       case "shift":
         return (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-row items-center justify-between">
-              <h2 className="font-semibold text-md text-[#122C93]">
-                Konfigurasi Shift
-              </h2>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row items-center justify-between">
+                <h2 className="font-semibold text-md text-[#122C93]">
+                  Konfigurasi Shift
+                </h2>
+              </div>
 
-              <Button
-                className="bg-[#122C93] text-white font-semibold h-10"
-                onPress={modalShiftForm.onOpen}
-              >
-                Tambah +
-              </Button>
+              <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7]">
+                <div className="flex flex-row items-center gap-2 bg-white border border-[#E4E9F7] rounded-xl px-4 h-11 flex-1">
+                  <FiSearch className="text-[#B0B0B0] text-base flex-shrink-0" />
+                  <input
+                    type="search"
+                    placeholder="Cari shift..."
+                    className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
+                    value={shiftSearch}
+                    onChange={(e) => setShiftSearch(e.target.value)}
+                  />
+                </div>
+                
+                <Select
+                  className="w-32"
+                  placeholder="Tampilkan"
+                  selectedKeys={[shiftLimit.toString()]}
+                  onChange={(e) => {
+                    const newLimit = parseInt(e.target.value);
+                    if (!isNaN(newLimit)) setShiftLimit(newLimit);
+                  }}
+                  classNames={{
+                    trigger:
+                      "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+                    value: "text-[#8D8787] text-sm",
+                  }}
+                >
+                  {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((pageSize) => (
+                    <SelectItem key={pageSize.toString()} textValue={`${pageSize} Data`}>
+                      {pageSize} Data
+                    </SelectItem>
+                  ))}
+                </Select>
+
+                <Button
+                  className="bg-[#122C93] text-white font-semibold h-11 rounded-xl px-6"
+                  onPress={() => {
+                    resetShiftForm();
+                    modalShiftForm.onOpen();
+                  }}
+                >
+                  Tambah +
+                </Button>
+              </div>
             </div>
 
             {/* table shift here */}
-            <div className="shift-table">
+            <div className="shift-table mt-4">
               <ShiftTableNew
-                data={shiftTableData}
-                page={shiftPage}
-                rowsPerPage={shiftRowsPerPage}
-                totalPages={shiftTotalPages}
-                onPageChange={setShiftPage}
+                data={shiftData}
+                currentPage={shiftCurrentPage + 1}
+                hasMore={shiftHasMore}
+                limit={shiftLimit}
+                isLoading={isShiftLoading}
+                onNextPage={handleShiftNextPage}
+                onPrevPage={handleShiftPrevPage}
                 onEdit={handleEditShift}
-                onDelete={handleDeleteShift}
+                onDelete={confirmDeleteShift}
               />
             </div>
             {/* end of table shift */}
@@ -1028,6 +1166,14 @@ const ClientPenjadwalanSatpam = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deleteShiftId}
+        onClose={() => setDeleteShiftId(null)}
+        onConfirm={handleDeleteShift}
+        title="Konfirmasi Hapus Shift"
+        message="Apakah anda yakin ingin menghapus shift ini?"
+      />
     </div>
   );
 };

@@ -23,6 +23,7 @@ const AdminRekapAbsensi = () => {
     setLimit,
     setSearch,
     setStatus,
+    setFilterClient,
     handleNextPage,
     handlePrevPage,
     refreshData
@@ -98,6 +99,27 @@ const AdminRekapAbsensi = () => {
               </SelectItem>
             ))}
           </Select>
+
+          {data.userRole !== "client" && (
+            <Select
+              className="w-48"
+              placeholder="Semua Client"
+              selectedKeys={[data.filterClient]}
+              onChange={(e) => setFilterClient(e.target.value || "all")}
+              classNames={{
+                trigger:
+                  "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+                value: "text-[#8D8787] text-sm",
+              }}
+            >
+              {[
+                <SelectItem key="all">Semua Client</SelectItem>,
+                ...data.mitraOptions.map((c) => (
+                  <SelectItem key={c.uuid}>{c.nama}</SelectItem>
+                )),
+              ]}
+            </Select>
+          )}
 
           <Select
             className="w-32"

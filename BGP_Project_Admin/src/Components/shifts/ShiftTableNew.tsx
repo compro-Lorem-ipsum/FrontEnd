@@ -12,31 +12,28 @@ import {
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 
-export interface ShiftData {
-  uuid: string;
-  nama_shift: string;
-  jam_mulai: string;
-  jam_selesai: string;
-}
+import type { ShiftPattern } from "../../types/shiftPattern";
 
 interface ShiftTableProps {
-  data: ShiftData[];
-  page: number;
-  rowsPerPage: number;
-  totalPages: number;
+  data: ShiftPattern[];
+  currentPage: number;
+  hasMore: boolean;
+  limit: number;
   isLoading?: boolean;
-  onPageChange: (page: number) => void;
+  onNextPage: () => void;
+  onPrevPage: () => void;
   onEdit: (uuid: string) => void;
   onDelete: (uuid: string) => void;
 }
 
 const ShiftTableNew = ({
   data,
-  page,
-  rowsPerPage,
-  totalPages,
+  currentPage,
+  hasMore,
+  limit,
   isLoading,
-  onPageChange,
+  onNextPage,
+  onPrevPage,
   onEdit,
   onDelete,
 }: ShiftTableProps) => {
@@ -46,18 +43,20 @@ const ShiftTableNew = ({
       shadow="none"
       className="border border-gray-200 rounded-xl"
       bottomContent={
-        totalPages > 0 ? (
-          <div className="flex w-full justify-center">
-            <Pagination
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={totalPages}
-              onChange={onPageChange}
-            />
-          </div>
-        ) : null
+        <div className="flex w-full justify-center items-center px-4 py-2">
+          <Pagination
+            showControls
+            page={currentPage}
+            total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+            onChange={(page) => {
+              if (page > currentPage) onNextPage();
+              else if (page < currentPage) onPrevPage();
+            }}
+            classNames={{
+              item: "[&:not([data-active=true])]:hidden",
+            }}
+          />
+        </div>
       }
     >
       <TableHeader>
@@ -74,14 +73,14 @@ const ShiftTableNew = ({
       >
         {data.map((item, index) => (
           <TableRow key={item.uuid}>
-            <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
+            <TableCell>{(currentPage - 1) * limit + index + 1}</TableCell>
 
             <TableCell>
-              <div className="w-[150px] truncate">{item.nama_shift}</div>
+              <div className="w-[150px] truncate">{item.nama}</div>
             </TableCell>
 
-            <TableCell>{item.jam_mulai}</TableCell>
-            <TableCell>{item.jam_selesai}</TableCell>
+            <TableCell>{item.start_local}</TableCell>
+            <TableCell>{item.end_local}</TableCell>
 
             <TableCell className="text-center">
               <div className="flex flex-row items-center justify-center gap-2">
@@ -96,7 +95,7 @@ const ShiftTableNew = ({
                 <Button
                   size="sm"
                   onPress={() => onDelete(item.uuid)}
-                  className="bg-[#B91C1C] text-white font-semibold"
+                  className="bg-[#A70202] text-white font-semibold"
                   startContent={<MdDelete />}
                 >
                   Hapus
