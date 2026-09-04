@@ -13,8 +13,27 @@ const getHeaders = () => ({
 });
 
 export const attendanceService = {
-  getAll: async (page: number): Promise<AttendanceResponse> => {
-    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/?pid=${page}`, {
+  getAll: async (
+    limit: number = 20,
+    cursor?: string | null,
+    search?: string,
+    status?: string,
+    satpam?: string,
+    client?: string,
+    from?: string,
+    to?: string
+  ): Promise<AttendanceResponse> => {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+    if (cursor) params.append("cursor", cursor);
+    if (search) params.append("search", search);
+    if (status) params.append("status", status);
+    if (satpam) params.append("satpam", satpam);
+    if (client) params.append("client", client);
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+
+    const res = await fetchWithAuth(`${BASE_URL}/attendance?${params.toString()}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal memuat data absensi");
@@ -22,7 +41,7 @@ export const attendanceService = {
   },
 
   getById: async (uuid: string): Promise<{ data: any }> => {
-    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/${uuid}`, {
+    const res = await fetchWithAuth(`${BASE_URL}/attendance/${uuid}`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal mengambil detail data");
@@ -33,23 +52,32 @@ export const attendanceService = {
     uuid: string,
     payload: UpdateAttendancePayload,
   ): Promise<void> => {
-    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/${uuid}`, {
-      method: "PUT",
+    const res = await fetchWithAuth(`${BASE_URL}/attendance/${uuid}`, {
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.message || "Gagal update data");
+      throw new Error(err.error?.message || "Gagal update data");
     }
   },
 
   export: async (): Promise<Blob> => {
-    const res = await fetchWithAuth(`${BASE_URL}/v1/absensi/export`, {
+    const res = await fetchWithAuth(`${BASE_URL}/attendance/export`, {
       method: "GET",
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) throw new Error("Gagal mengunduh file");
+    return res.blob();
+  },
+
+  exportById: async (uuid: string): Promise<Blob> => {
+    const res = await fetchWithAuth(`${BASE_URL}/attendance/${uuid}/export`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) throw new Error("Gagal mengunduh file absensi");
     return res.blob();
   },
 };
