@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { DateRangePicker } from "@heroui/react";
+import { DateRangePicker, Select, SelectItem, Spinner, Tooltip } from "@heroui/react";
 import { FiSearch } from "react-icons/fi";
-import { parseDate } from "@internationalized/date";
 import {
   Table,
   TableHeader,
@@ -11,47 +9,8 @@ import {
   TableCell,
   Pagination,
 } from "@heroui/react";
-
-interface PesanItem {
-  uuid: string;
-  nama: string;
-  nip: string;
-  isi_pesan: string;
-  tanggal_dikirim: string;
-}
-
-const dummyData: PesanItem[] = [
-  {
-    uuid: "1",
-    nama: "Prasetyo Teguh",
-    nip: "1234",
-    isi_pesan: "Lampu di Lokasi A mati, tolong di ganti yang baru",
-    tanggal_dikirim: "07 JUNI 2026 14:45 PM",
-  },
-  {
-    uuid: "2",
-    nama: "Prasetyo Teguh",
-    nip: "1234",
-    isi_pesan: "Lampu di Lokasi A mati, tolong di ganti yang baru",
-    tanggal_dikirim: "13 JUNI 2026 23:45 PM",
-  },
-  {
-    uuid: "3",
-    nama: "Prasetyo Teguh",
-    nip: "1234",
-    isi_pesan: "Lampu di Lokasi A mati, tolong di ganti yang baru",
-    tanggal_dikirim: "30 JUNI 2026 05:45 AM",
-  },
-  {
-    uuid: "4",
-    nama: "Prasetyo Teguh",
-    nip: "1234",
-    isi_pesan: "Lampu di Lokasi A mati, tolong di ganti yang baru",
-    tanggal_dikirim: "01 JULI 2026 08:45 AM",
-  },
-];
-
-const ROWS_PER_PAGE = 10;
+import { useMessageData } from "../hooks/useMessageData";
+import { formatDateTimeZone } from "../Utils/helpers";
 
 const COLUMNS = [
   { name: "No", uid: "no" },
@@ -62,12 +21,20 @@ const COLUMNS = [
 ];
 
 const ClientRiwayatPesan = () => {
-  const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(dummyData.length / ROWS_PER_PAGE);
-  const paginatedData = dummyData.slice(
-    (page - 1) * ROWS_PER_PAGE,
-    page * ROWS_PER_PAGE,
-  );
+  const {
+    data,
+    loading,
+    limit,
+    setLimit,
+    search,
+    setSearch,
+    dateRange,
+    setDateRange,
+    hasMore,
+    currentPage,
+    handleNextPage,
+    handlePrevPage,
+  } = useMessageData();
 
   return (
     <div className="flex flex-col gap-2 p-2.5 overflow-hidden">
@@ -94,21 +61,41 @@ const ClientRiwayatPesan = () => {
             type="search"
             placeholder="Cari histori pesan"
             className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <DateRangePicker
-          size="sm"
           className="w-72"
-          defaultValue={{
-            start: parseDate("2024-04-01"),
-            end: parseDate("2024-04-08"),
-          }}
+          value={dateRange as any}
+          onChange={(val: any) => setDateRange(val)}
           label="Filter Tanggal"
-          variant="bordered"
           classNames={{
             label: "!text-xs !font-light !text-[#122C93]",
+            inputWrapper:
+              "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white group-data-[focus=true]:bg-white",
           }}
         />
+        <Select
+          className="w-32"
+          placeholder="Tampilkan"
+          selectedKeys={[limit.toString()]}
+          onChange={(e) => {
+            const newLimit = parseInt(e.target.value);
+            if (!isNaN(newLimit)) setLimit(newLimit);
+          }}
+          classNames={{
+            trigger:
+              "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+            value: "text-[#8D8787] text-sm",
+          }}
+        >
+          {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((pageSize) => (
+            <SelectItem key={pageSize.toString()} textValue={`${pageSize} Data`}>
+              {pageSize} Data
+            </SelectItem>
+          ))}
+        </Select>
       </div>
       {/* end of search engine */}
 
@@ -120,19 +107,20 @@ const ClientRiwayatPesan = () => {
           isStriped
           className="rounded-xl border border-[#E8EEFF]"
           bottomContent={
-            totalPages > 0 ? (
-              <div className="flex w-full justify-center pb-1">
-                <Pagination
-                  size="sm"
-                  showControls
-                  showShadow
-                  color="primary"
-                  page={page}
-                  total={totalPages}
-                  onChange={setPage}
-                />
-              </div>
-            ) : null
+            <div className="flex w-full justify-center items-center px-4 py-2">
+              <Pagination
+                showControls
+                page={currentPage}
+                total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+                onChange={(p) => {
+                  if (p > currentPage) handleNextPage();
+                  else if (p < currentPage) handlePrevPage();
+                }}
+                classNames={{
+                  item: "[&:not([data-active=true])]:hidden",
+                }}
+              />
+            </div>
           }
         >
           <TableHeader columns={COLUMNS}>
@@ -146,7 +134,7 @@ const ClientRiwayatPesan = () => {
             )}
           </TableHeader>
 
-          <TableBody items={paginatedData} emptyContent="Tidak ada data">
+          <TableBody items={data} emptyContent={loading ? <Spinner size="lg" /> : "Tidak ada data"}>
             {(item) => (
               <TableRow key={item.uuid}>
                 {(columnKey) => {
@@ -154,34 +142,48 @@ const ClientRiwayatPesan = () => {
                     case "no":
                       return (
                         <TableCell className="text-sm text-black">
-                          {(page - 1) * ROWS_PER_PAGE +
-                            paginatedData.indexOf(item) +
+                          {(currentPage - 1) * limit +
+                            data.indexOf(item) +
                             1}
                         </TableCell>
                       );
                     case "nama":
                       return (
                         <TableCell className="text-sm text-black">
-                          {item.nama}
+                          {item.satpam?.nama || "-"}
                         </TableCell>
                       );
                     case "nip":
                       return (
                         <TableCell className="text-sm text-black">
-                          {item.nip}
+                          {item.satpam?.nip || "-"}
                         </TableCell>
                       );
                     case "isi_pesan":
                       return (
                         <TableCell className="text-sm text-black">
-                          {item.isi_pesan}
+                          <Tooltip
+                            content={
+                              <div className="px-1 py-2 max-w-[300px] whitespace-normal">
+                                <div className="text-sm font-bold mb-1">{item.title}</div>
+                                <div className="text-xs">{item.content}</div>
+                              </div>
+                            }
+                            placement="top"
+                            className="bg-[#122C93] text-white"
+                          >
+                            <div className="flex flex-col cursor-pointer w-max">
+                              <span className="font-semibold text-gray-800 truncate max-w-[250px]">{item.title}</span>
+                              <span className="text-gray-600 truncate max-w-[250px]">{item.content}</span>
+                            </div>
+                          </Tooltip>
                         </TableCell>
                       );
                     case "tanggal_dikirim":
                       return (
                         <TableCell>
                           <span className="bg-[#E8EEFF] text-[#122C93] text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
-                            {item.tanggal_dikirim}
+                            {formatDateTimeZone(item.created_at)}
                           </span>
                         </TableCell>
                       );

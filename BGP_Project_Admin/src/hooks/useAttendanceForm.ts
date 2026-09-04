@@ -14,9 +14,8 @@ export const useAttendanceForm = ({
   onClose,
 }: UseAttendanceFormProps) => {
   const [formData, setFormData] = useState<FormData>({
-    check_in: "",
-    check_out: "",
-    kategori: "",
+    checked_in_at: "",
+    checked_out_at: "",
   });
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,9 +27,8 @@ export const useAttendanceForm = ({
       const item = res.data;
       if (item) {
         setFormData({
-          check_in: toDateTimeLocal(item.check_in),
-          check_out: toDateTimeLocal(item.check_out),
-          kategori: item.kategori || "",
+          checked_in_at: toDateTimeLocal(item.checked_in_at),
+          checked_out_at: toDateTimeLocal(item.checked_out_at),
         });
       }
     } catch (error: any) {
@@ -48,11 +46,10 @@ export const useAttendanceForm = ({
     setIsSubmitting(true);
 
     const payload: UpdateAttendancePayload = {};
-    if (formData.check_in)
-      payload.check_in = new Date(formData.check_in).toISOString();
-    if (formData.check_out)
-      payload.check_out = new Date(formData.check_out).toISOString();
-    if (formData.kategori) payload.kategori = formData.kategori;
+    if (formData.checked_in_at)
+      payload.checked_in_at = new Date(formData.checked_in_at).toISOString();
+    if (formData.checked_out_at)
+      payload.checked_out_at = new Date(formData.checked_out_at).toISOString();
 
     try {
       await attendanceService.update(selectedUuid, payload);
