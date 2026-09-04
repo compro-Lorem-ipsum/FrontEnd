@@ -39,14 +39,14 @@ export const PatroliEditModal = ({
               labelPlacement="inside"
               placeholder="Pilih Status"
               selectedKeys={
-                formData.status_lokasi ? [formData.status_lokasi] : []
+                formData.status ? [formData.status.toLowerCase()] : []
               }
               onChange={(e) =>
-                setFormData({ ...formData, status_lokasi: e.target.value })
+                setFormData({ ...formData, status: e.target.value })
               }
             >
-              <SelectItem key="Aman">Aman</SelectItem>
-              <SelectItem key="Tidak Aman">Tidak Aman</SelectItem>
+              <SelectItem key="aman">Aman</SelectItem>
+              <SelectItem key="tidak aman">Tidak Aman</SelectItem>
             </Select>
             <Input
               label="Keterangan"
@@ -54,9 +54,9 @@ export const PatroliEditModal = ({
               labelPlacement="inside"
               maxLength={501}
               placeholder="Keterangan situasi..."
-              value={formData.keterangan}
+              value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, keterangan: e.target.value })
+                setFormData({ ...formData, description: e.target.value })
               }
             />
           </div>

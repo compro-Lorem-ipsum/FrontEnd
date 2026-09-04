@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { attendanceService } from "../services/attendanceService";
 import type { Absensi } from "../types/attendance";
+import type { MitraOption } from "../types/satpam";
+import { satpamService } from "../services/satpamService";
+import { getRole } from "../Utils/helpers";
 import { addToast } from "@heroui/react";
 
 export const useAttendanceData = () => {
@@ -11,11 +14,35 @@ export const useAttendanceData = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [filterClient, setFilterClient] = useState("all");
 
   const [cursorStack, setCursorStack] = useState<(string | null)[]>([null]);
   const [currentStackIndex, setCurrentStackIndex] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+
+  const [userRole, setUserRole] = useState<string>("");
+  const [mitraOptions, setMitraOptions] = useState<MitraOption[]>([]);
+
+  useEffect(() => {
+    const role = getRole();
+    if (role) setUserRole(role);
+  }, []);
+
+  const fetchMitraOptions = useCallback(async () => {
+    try {
+      const res = await satpamService.getMitraOptions();
+      if (res && Array.isArray(res.data)) {
+        setMitraOptions(res.data);
+      }
+    } catch (error) {
+      console.error("Fetch mitra error:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMitraOptions();
+  }, [fetchMitraOptions]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -29,12 +56,15 @@ export const useAttendanceData = () => {
     try {
       const currentCursor = cursorStack[currentStackIndex];
       const apiStatus = status === "all" ? undefined : status;
+      const apiClient = filterClient === "all" ? undefined : filterClient;
       
       const result = await attendanceService.getAll(
         limit, 
         currentCursor, 
         debouncedSearch || undefined, 
-        apiStatus
+        apiStatus,
+        undefined,
+        apiClient
       );
       
       if (result && Array.isArray(result.data)) {
@@ -61,7 +91,7 @@ export const useAttendanceData = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [limit, currentStackIndex, cursorStack, debouncedSearch, status]);
+  }, [limit, currentStackIndex, cursorStack, debouncedSearch, status, filterClient]);
 
   useEffect(() => {
     fetchAbsensi();
@@ -70,7 +100,7 @@ export const useAttendanceData = () => {
   useEffect(() => {
     setCursorStack([null]);
     setCurrentStackIndex(0);
-  }, [limit, debouncedSearch, status]);
+  }, [limit, debouncedSearch, status, filterClient]);
 
   const handleNextPage = () => {
     if (hasMore && !isLoading) {
@@ -94,12 +124,16 @@ export const useAttendanceData = () => {
       limit,
       search,
       status,
+      filterClient,
       hasMore,
       currentPage: currentStackIndex + 1,
+      userRole,
+      mitraOptions,
     },
     setLimit,
     setSearch,
     setStatus,
+    setFilterClient,
     handleNextPage,
     handlePrevPage,
     refreshData: fetchAbsensi,
