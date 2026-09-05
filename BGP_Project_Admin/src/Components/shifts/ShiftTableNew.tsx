@@ -6,7 +6,6 @@ import {
   TableRow,
   TableCell,
   Pagination,
-  Button,
   Spinner,
 } from "@heroui/react";
 import { FaEdit } from "react-icons/fa";
@@ -84,22 +83,20 @@ const ShiftTableNew = ({
 
             <TableCell className="text-center">
               <div className="flex flex-row items-center justify-center gap-2">
-                <Button
-                  size="sm"
-                  onPress={() => onEdit(item.uuid)}
-                  className="bg-[#02A758] text-white font-semibold"
-                  startContent={<FaEdit />}
+                <button
+                  type="button"
+                  className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer transition-colors"
+                  onClick={() => onEdit(item.uuid)}
                 >
-                  Ubah
-                </Button>
-                <Button
-                  size="sm"
-                  onPress={() => onDelete(item.uuid)}
-                  className="bg-[#A70202] text-white font-semibold"
-                  startContent={<MdDelete />}
+                  <FaEdit className="text-base" />
+                </button>
+                <button
+                  type="button"
+                  className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer transition-colors"
+                  onClick={() => onDelete(item.uuid)}
                 >
-                  Hapus
-                </Button>
+                  <MdDelete className="text-base" />
+                </button>
               </div>
             </TableCell>
           </TableRow>

@@ -7,6 +7,8 @@ export interface SatpamOption {
 }
 
 export interface ShiftOption {
+  end_local: any;
+  start_local: any;
   uuid: string;
   nama: string;
   mulai: string;
@@ -20,24 +22,42 @@ export interface PosOption {
 
 export interface Jadwal {
   uuid: string;
-  tanggal: string;
-  satpam_id: number;
-  user_id: number;
-  satpam_name: string;
-  shift_nama: string;
-  mulai: string;
-  selesai: string;
-  nama_pos: string;
+  work_date: string;
+  starts_at: string;
+  ends_at: string;
+  status: "scheduled" | "cancelled" | "completed";
+  satpam: { uuid: string; nama: string; nip: string; jabatan?: string };
+  pattern: { uuid: string; nama: string; timezone: string };
+  pos: { uuid: string; nama: string };
 }
 
 export interface ScheduleResponse {
-  data: {
-    data: Jadwal[];
-    pagination?: {
-      total_pages: number;
-      items_per_page: number;
-    };
+  data: Jadwal[];
+  meta: {
+    limit: number;
+    has_more: boolean;
+    next_cursor: string | null;
   };
+}
+
+export interface ScheduleDetailResponse {
+  data: Jadwal;
+}
+
+export interface CreateJadwalBody {
+  satpam_uuid: string;
+  pos_uuid: string;
+  shift_uuid: string;
+  tanggal: string;
+}
+
+export interface GenerateJadwalBody {
+  satpam_uuid: string;
+  pos_uuid: string;
+  shift_uuid: string;
+  start_date: string;
+  end_date: string;
+  days_of_week: number[];
 }
 
 export interface FormData {
