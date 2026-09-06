@@ -29,6 +29,9 @@ export interface Jadwal {
   satpam: { uuid: string; nama: string; nip: string; jabatan?: string };
   pattern: { uuid: string; nama: string; timezone: string };
   pos: { uuid: string; nama: string };
+  assignment?: { uuid: string };
+  assignment_uuid?: string;
+  recurrence_id?: string;
 }
 
 export interface ScheduleResponse {

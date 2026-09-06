@@ -70,11 +70,11 @@ export const useJadwalSatpam = (initialSwitch: "jadwal" | "shift" = "jadwal") =>
 
   // Hapus Jadwal (satu instance)
   const jadwalDeleteModal = useDisclosure();
-  const [deleteJadwalTarget, setDeleteJadwalTarget] = useState<string | null>(null);
+  const [deleteJadwalTarget, setDeleteJadwalTarget] = useState<Jadwal | null>(null);
   const [isDeletingJadwal, setIsDeletingJadwal] = useState(false);
 
-  const confirmDeleteJadwal = useCallback((uuid: string) => {
-    setDeleteJadwalTarget(uuid);
+  const confirmDeleteJadwal = useCallback((item: Jadwal) => {
+    setDeleteJadwalTarget(item);
     jadwalDeleteModal.onOpen();
   }, [jadwalDeleteModal]);
 

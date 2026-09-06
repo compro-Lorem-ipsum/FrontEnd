@@ -18,7 +18,7 @@ interface AssignPerHariModalProps {
   onClose: () => void;
   scheduleOptions: any;
   onSuccess: () => void;
-  selectedAssignJadwalUuid?: string | null;
+  selectedJadwalItem?: any | null;
   initialData?: {
     satpam_uuid: string;
     tanggal: string;
@@ -32,7 +32,7 @@ const AssignPerHariModal = ({
   onClose,
   scheduleOptions,
   onSuccess,
-  selectedAssignJadwalUuid,
+  selectedJadwalItem,
   initialData,
 }: AssignPerHariModalProps) => {
   const [assignPerHariData, setAssignPerHariData] = useState({
@@ -69,8 +69,8 @@ const AssignPerHariModal = ({
 
     setIsAssignPerHariSubmitting(true);
     try {
-      if (selectedAssignJadwalUuid) {
-        await scheduleService.update(selectedAssignJadwalUuid, {
+      if (selectedJadwalItem) {
+        await scheduleService.update(selectedJadwalItem, {
           satpam_uuid: assignPerHariData.satpam_uuid,
           pos_uuid: assignPerHariData.pos_uuid,
           shift_uuid: assignPerHariData.shift_uuid,
@@ -86,7 +86,7 @@ const AssignPerHariModal = ({
       }
       addToast({
         title: "Berhasil",
-        description: `Jadwal berhasil ${selectedAssignJadwalUuid ? "diubah" : "ditambahkan"}`,
+        description: `Jadwal berhasil ${selectedJadwalItem ? "diubah" : "ditambahkan"}`,
         color: "success",
       });
       onSuccess();
@@ -106,7 +106,7 @@ const AssignPerHariModal = ({
     <Modal backdrop="opaque" isOpen={isOpen} onClose={onClose} size="md">
       <ModalContent>
         <ModalHeader className="text-[#122C93]">
-          {selectedAssignJadwalUuid ? "Edit Shift" : "Pilih Shift"}
+          {selectedJadwalItem ? "Edit Shift" : "Pilih Shift"}
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-6 p-3">
@@ -154,7 +154,7 @@ const AssignPerHariModal = ({
             onPress={handleAssignPerHariSubmit}
             isLoading={isAssignPerHariSubmitting}
           >
-            {selectedAssignJadwalUuid ? "Update" : "Simpan"}
+            {selectedJadwalItem ? "Update" : "Simpan"}
           </Button>
         </ModalFooter>
       </ModalContent>
