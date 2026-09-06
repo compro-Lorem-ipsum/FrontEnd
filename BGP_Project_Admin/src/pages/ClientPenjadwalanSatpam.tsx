@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, useDisclosure } from "@heroui/react";
+import { Button, useDisclosure, RadioGroup, Radio } from "@heroui/react";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { useShiftPatternData } from "../hooks/useShiftPatternData";
 import { useScheduleOptions } from "../hooks/useScheduleOptions";
@@ -30,6 +30,9 @@ const ClientPenjadwalanSatpam = () => {
     jadwalDeleteModal,
     confirmDeleteJadwal,
     executeDeleteJadwal,
+    deleteJadwalTarget,
+    deleteMode,
+    setDeleteMode,
   } = useJadwalSatpam("jadwal");
 
   const scheduleOptions = useScheduleOptions(activeSwitch === "jadwal");
@@ -263,7 +266,21 @@ const ClientPenjadwalanSatpam = () => {
         onConfirm={executeDeleteJadwal}
         title="Konfirmasi Hapus Jadwal"
         message="Apakah anda yakin ingin menghapus jadwal ini?"
-      />
+      >
+        {deleteJadwalTarget && (deleteJadwalTarget.assignment_uuid || deleteJadwalTarget.assignment?.uuid) && (
+          <div className="mt-4 text-left">
+            <RadioGroup
+              label="Terapkan penghapusan pada:"
+              value={deleteMode}
+              onValueChange={(val) => setDeleteMode(val as "single" | "future")}
+              size="sm"
+            >
+              <Radio value="single">Hanya hari ini saja</Radio>
+              <Radio value="future">Mulai hari ini & seterusnya</Radio>
+            </RadioGroup>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </div>
   );
 };

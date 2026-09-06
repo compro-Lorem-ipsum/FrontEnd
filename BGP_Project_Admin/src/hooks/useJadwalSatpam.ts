@@ -72,9 +72,11 @@ export const useJadwalSatpam = (initialSwitch: "jadwal" | "shift" = "jadwal") =>
   const jadwalDeleteModal = useDisclosure();
   const [deleteJadwalTarget, setDeleteJadwalTarget] = useState<Jadwal | null>(null);
   const [isDeletingJadwal, setIsDeletingJadwal] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<"single" | "future">("single");
 
   const confirmDeleteJadwal = useCallback((item: Jadwal) => {
     setDeleteJadwalTarget(item);
+    setDeleteMode("single");
     jadwalDeleteModal.onOpen();
   }, [jadwalDeleteModal]);
 
@@ -82,7 +84,7 @@ export const useJadwalSatpam = (initialSwitch: "jadwal" | "shift" = "jadwal") =>
     if (!deleteJadwalTarget) return;
     setIsDeletingJadwal(true);
     try {
-      await scheduleService.delete(deleteJadwalTarget);
+      await scheduleService.delete(deleteJadwalTarget, deleteMode);
       addToast({
         title: "Berhasil",
         description: "Jadwal berhasil dihapus",
@@ -120,5 +122,8 @@ export const useJadwalSatpam = (initialSwitch: "jadwal" | "shift" = "jadwal") =>
     confirmDeleteJadwal,
     executeDeleteJadwal,
     isDeletingJadwal,
+    deleteJadwalTarget,
+    deleteMode,
+    setDeleteMode,
   };
 };

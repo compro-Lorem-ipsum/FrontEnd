@@ -8,6 +8,8 @@ import {
   Select,
   SelectItem,
   addToast,
+  RadioGroup,
+  Radio,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
 import { scheduleService } from "../../services/scheduleService";
@@ -44,6 +46,7 @@ const AssignPerHariModal = ({
 
   const [assignPerHariErrors, setAssignPerHariErrors] = useState<Record<string, string>>({});
   const [isAssignPerHariSubmitting, setIsAssignPerHariSubmitting] = useState(false);
+  const [editMode, setEditMode] = useState<"single" | "future">("single");
 
   useEffect(() => {
     if (isOpen) {
@@ -56,6 +59,7 @@ const AssignPerHariModal = ({
         }
       );
       setAssignPerHariErrors({});
+      setEditMode("single");
     }
   }, [isOpen, initialData, scheduleOptions.listPos]);
 
@@ -75,7 +79,7 @@ const AssignPerHariModal = ({
           pos_uuid: assignPerHariData.pos_uuid,
           shift_uuid: assignPerHariData.shift_uuid,
           tanggal: assignPerHariData.tanggal,
-        });
+        }, editMode);
       } else {
         await scheduleService.create({
           satpam_uuid: assignPerHariData.satpam_uuid,
@@ -143,6 +147,18 @@ const AssignPerHariModal = ({
                 </SelectItem>
               ))}
             </Select>
+
+            {selectedJadwalItem && (selectedJadwalItem.assignment_uuid || selectedJadwalItem.assignment?.uuid) && (
+              <RadioGroup
+                label="Terapkan perubahan pada:"
+                value={editMode}
+                onValueChange={(val) => setEditMode(val as "single" | "future")}
+                size="sm"
+              >
+                <Radio value="single">Hanya hari ini saja</Radio>
+                <Radio value="future">Mulai hari ini & seterusnya</Radio>
+              </RadioGroup>
+            )}
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-center pb-8">
