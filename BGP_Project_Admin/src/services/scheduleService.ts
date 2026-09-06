@@ -8,6 +8,7 @@ import type {
   PosOption,
   CreateJadwalBody,
   GenerateJadwalBody,
+  Jadwal,
 } from "../types/schedule";
 
 const BASE_URL_API = import.meta.env.VITE_API_BASE_URL;
@@ -96,13 +97,53 @@ export const scheduleService = {
     return result;
   },
 
-  update: async (_uuid: string, _body: CreateJadwalBody) => {
-    throw new Error(
-      "Fitur ubah jadwal belum didukung oleh backend saat ini. Hapus lalu buat ulang jadwal.",
-    );
+  update: async (item: Jadwal | any, body: CreateJadwalBody) => {
+    if (item.assignment_uuid) {
+      // It's a recurring schedule, use shift-exceptions override
+      const payload = {
+        assignment_uuid: item.assignment_uuid,
+        recurrence_id: item.recurrence_id || item.work_date,
+        type: "override",
+        work_date: body.tanggal,
+        pattern_uuid: body.shift_uuid,
+      };
+      const res = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok)
+        throw new Error(result.error?.message || result.message || "Gagal mengubah jadwal");
+      return result;
+    } else {
+      // It's a manual schedule, cancel the old one and create a new one
+      await scheduleService.delete(item.uuid);
+      return await scheduleService.create(body);
+    }
   },
 
-  delete: async (uuid: string) => {
+  delete: async (target: string | Jadwal | any) => {
+    if (typeof target === "object" && target.assignment_uuid) {
+      // It's a recurring schedule, use shift-exceptions cancel
+      const payload = {
+        assignment_uuid: target.assignment_uuid,
+        recurrence_id: target.recurrence_id || target.work_date,
+        type: "cancel",
+        reason: "admin"
+      };
+      const res = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok)
+        throw new Error(result.error?.message || result.message || "Gagal menghapus jadwal");
+      return result;
+    }
+
+    const uuid = typeof target === "string" ? target : target.uuid;
     const res = await fetchWithAuth(`${BASE_URL_API}/shift-instances/${uuid}/cancel`, {
       method: "POST",
       headers: getHeaders(),

@@ -9,7 +9,7 @@ interface JadwalHarianViewProps {
   allJadwal: Jadwal[];
   handleOpenAssign: (shiftUuid: string) => void;
   handleEditJadwalInstance: (item: Jadwal) => void;
-  confirmDeleteJadwal: (uuid: string) => void;
+  confirmDeleteJadwal: (item: Jadwal) => void;
 }
 
 const JadwalHarianView = ({
@@ -95,7 +95,7 @@ const JadwalHarianView = ({
                         <button
                           type="button"
                           className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer transition-colors"
-                          onClick={() => confirmDeleteJadwal(item.uuid)}
+                          onClick={() => confirmDeleteJadwal(item)}
                         >
                           <MdDelete className="text-base" />
                         </button>

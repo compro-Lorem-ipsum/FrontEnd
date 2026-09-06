@@ -47,7 +47,7 @@ const ClientPenjadwalanSatpam = () => {
   } = useDisclosure();
   const [manualInitialData, setManualInitialData] = useState<any>();
 
-  const [selectedAssignJadwalUuid, setSelectedAssignJadwalUuid] = useState<string | null>(null);
+  const [selectedJadwalItem, setSelectedJadwalItem] = useState<Jadwal | null>(null);
   const {
     isOpen: isAssignPerHariOpen,
     onOpen: onAssignPerHariOpen,
@@ -83,7 +83,7 @@ const ClientPenjadwalanSatpam = () => {
   };
 
   const handleOpenAssignForDate = (satpamUuid: string, dateIso: string) => {
-    setSelectedAssignJadwalUuid(null);
+    setSelectedJadwalItem(null);
     setAssignPerHariInitialData({
       satpam_uuid: satpamUuid,
       tanggal: dateIso,
@@ -94,7 +94,7 @@ const ClientPenjadwalanSatpam = () => {
   };
 
   const handleEditJadwalInstance = (item: Jadwal) => {
-    setSelectedAssignJadwalUuid(item.uuid);
+    setSelectedJadwalItem(item);
     setAssignPerHariInitialData({
       satpam_uuid: item.satpam.uuid,
       tanggal: String(item.work_date).split("T")[0],
@@ -253,7 +253,7 @@ const ClientPenjadwalanSatpam = () => {
         onClose={onAssignPerHariClose}
         scheduleOptions={scheduleOptions}
         onSuccess={fetchAllJadwal}
-        selectedAssignJadwalUuid={selectedAssignJadwalUuid}
+        selectedJadwalItem={selectedJadwalItem}
         initialData={assignPerHariInitialData}
       />
 
