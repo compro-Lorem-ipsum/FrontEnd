@@ -109,8 +109,6 @@ export const scheduleService = {
     const assignmentUuid = item.assignment_uuid || item.assignment?.uuid;
     if (assignmentUuid) {
       if (mode === "single") {
-        // Exception: override occurrence satu hari saja
-        // recurrence_id = tanggal asli yang dijadwalkan (bukan work_date yang sudah digeser)
         const recurrenceId = item.recurrence_id || item.work_date;
         const payload: Record<string, string> = {
           assignment_uuid: assignmentUuid,
@@ -126,16 +124,13 @@ export const scheduleService = {
         });
         const result = await res.json().catch(() => ({}));
         if (!res.ok) {
-          // 409 EXCEPTION_EXISTS: exception sudah ada, coba DELETE dulu lalu POST ulang
           if (res.status === 409 && result.error?.code === "EXCEPTION_EXISTS") {
-            // Cari exception yang ada dan hapus dulu
             const exQuery = new URLSearchParams({ assignment: assignmentUuid });
             const exRes = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions?${exQuery}`, { headers: getHeaders() });
             const exData = await exRes.json().catch(() => ({ data: [] }));
             const existingEx = (exData.data || []).find((e: any) => e.recurrence_id === recurrenceId || e.recurrence_id?.startsWith(recurrenceId));
             if (existingEx) {
               await fetchWithAuth(`${BASE_URL_API}/shift-exceptions/${existingEx.uuid}`, { method: "DELETE", headers: getHeaders() });
-              // Coba POST lagi
               const retryRes = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
                 method: "POST",
                 headers: getHeaders(),
@@ -143,7 +138,6 @@ export const scheduleService = {
               });
               const retryResult = await retryRes.json().catch(() => ({}));
               if (!retryRes.ok) throw new Error(retryResult.error?.message || retryResult.message || "Gagal mengubah jadwal");
-              // Generate untuk hari itu agar instance lama di-retire dan diganti yang baru
               await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
                 method: "POST",
                 headers: getHeaders(),
@@ -154,8 +148,6 @@ export const scheduleService = {
           }
           throw new Error(result.error?.message || result.message || "Gagal mengubah jadwal");
         }
-        // Panggil generate untuk hari tersebut agar instance lama (pattern asli) di-retire
-        // dan diganti instance baru (override). Tanpa ini akan muncul double entry.
         await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
           method: "POST",
           headers: getHeaders(),
@@ -163,13 +155,10 @@ export const scheduleService = {
         }).catch(() => { });
         return result;
       } else {
-        // It's a recurring schedule, but we want to change this and future occurrences
-        // 1. Fetch old assignment to get its rrule
         const oldAssignmentRes = await scheduleService.getAssignmentById(assignmentUuid);
         const oldAssignment = oldAssignmentRes.data || oldAssignmentRes;
         const rrule = oldAssignment.rrule;
 
-        // 2. Patch old assignment effective_to to the day before body.tanggal
         const targetDate = new Date(body.tanggal);
         targetDate.setDate(targetDate.getDate() - 1);
         const effectiveTo = targetDate.toISOString().split("T")[0];
@@ -180,7 +169,6 @@ export const scheduleService = {
           body: JSON.stringify({ effective_to: effectiveTo }),
         });
 
-        // 3. Create new assignment
         const payload = {
           pattern_uuid: body.shift_uuid,
           pos_uuid: body.pos_uuid,
@@ -198,7 +186,6 @@ export const scheduleService = {
         if (!newAssignmentRes.ok)
           throw new Error(result.error?.message || result.message || "Gagal membuat jadwal baru");
 
-        // 4. Generate shifts to materialize (for a month ahead)
         const toDate = new Date(targetDate);
         toDate.setDate(toDate.getDate() + 32);
         await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
@@ -210,7 +197,6 @@ export const scheduleService = {
         return result;
       }
     } else {
-      // It's a manual schedule, cancel the old one and create a new one
       await scheduleService.delete(item.uuid);
       return await scheduleService.create(body);
     }
@@ -220,8 +206,6 @@ export const scheduleService = {
     const assignmentUuid = typeof target === "object" ? (target.assignment_uuid || target.assignment?.uuid) : null;
     if (assignmentUuid) {
       if (mode === "single") {
-        // Exception: cancel occurrence satu hari saja
-        // recurrence_id = tanggal asli yang dijadwalkan
         const recurrenceId = target.recurrence_id || target.work_date;
         const payload = {
           assignment_uuid: assignmentUuid,
@@ -236,7 +220,6 @@ export const scheduleService = {
         });
         const result = await res.json().catch(() => ({}));
         if (!res.ok) {
-          // 409 EXCEPTION_EXISTS: exception sudah ada, hapus dulu lalu cancel lagi
           if (res.status === 409 && result.error?.code === "EXCEPTION_EXISTS") {
             const exQuery = new URLSearchParams({ assignment: assignmentUuid });
             const exRes = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions?${exQuery}`, { headers: getHeaders() });
@@ -258,34 +241,59 @@ export const scheduleService = {
         }
         return result;
       } else {
-        // mode === "future": tutup assignment di hari sebelum tanggal ini
-        // Docs: "satpam_uuid, pattern_uuid and pos_uuid are not patchable,
-        // so changing who works a pattern means closing the old assignment and creating its successor."
-        // Cukup PATCH effective_to. Backend akan retire future instances dan exceptions otomatis.
         const targetDateStr = target.recurrence_id || target.work_date;
-        const targetDate = new Date(targetDateStr);
-        targetDate.setDate(targetDate.getDate() - 1);
-        const effectiveTo = targetDate.toISOString().split("T")[0];
 
-        const res = await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignmentUuid}`, {
-          method: "PATCH",
-          headers: getHeaders(),
-          body: JSON.stringify({ effective_to: effectiveTo }),
-        });
-        const result = await res.json().catch(() => ({}));
-        if (!res.ok)
-          throw new Error(result.error?.message || result.message || "Gagal menghapus jadwal ke depannya");
+        const assignmentRes = await scheduleService.getAssignmentById(assignmentUuid);
+        const assignment = assignmentRes.data || assignmentRes;
+        const effectiveFrom: string = assignment.effective_from;
+        const satpamUuid: string = assignment.satpam_uuid || assignment.satpam?.uuid;
 
-        // Trigger generate agar backend segera meng-retire instance yang sudah di luar jangkauan
+        if (!effectiveFrom || effectiveFrom >= targetDateStr) {
+          await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignmentUuid}`, {
+            method: "DELETE",
+            headers: getHeaders(),
+          });
+        } else {
+          const dayBefore = new Date(targetDateStr);
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          const effectiveTo = dayBefore.toISOString().split("T")[0];
+
+          const patchRes = await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignmentUuid}`, {
+            method: "PATCH",
+            headers: getHeaders(),
+            body: JSON.stringify({ effective_to: effectiveTo }),
+          });
+          const patchResult = await patchRes.json().catch(() => ({}));
+          if (!patchRes.ok)
+            throw new Error(patchResult.error?.message || patchResult.message || "Gagal menutup jadwal");
+        }
+
+        if (satpamUuid) {
+          const listRes = await fetchWithAuth(
+            `${BASE_URL_API}/shift-assignments?satpam=${satpamUuid}&limit=50`,
+            { headers: getHeaders() }
+          );
+          const listData = await listRes.json().catch(() => ({ data: [] }));
+          const successors = (listData.data || []).filter(
+            (a: any) => a.uuid !== assignmentUuid && (a.effective_from || "") >= targetDateStr
+          );
+          for (const succ of successors) {
+            await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${succ.uuid}`, {
+              method: "DELETE",
+              headers: getHeaders(),
+            }).catch(() => {});
+          }
+        }
+
         const toDate = new Date(targetDateStr);
         toDate.setDate(toDate.getDate() + 32);
         await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify({ from: targetDateStr, to: toDate.toISOString().split("T")[0] }),
-        }).catch(() => { }); // fire-and-forget; kegagalan generate tidak membatalkan operasi
+        }).catch(() => {});
 
-        return result;
+        return { success: true };
       }
     }
 
