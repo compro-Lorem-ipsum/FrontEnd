@@ -15,6 +15,7 @@ interface DeleteConfirmationModalProps {
   title?: string;
   message?: string;
   isLoading?: boolean;
+  children?: React.ReactNode;
 }
 
 export const DeleteConfirmationModal = ({
@@ -23,6 +24,7 @@ export const DeleteConfirmationModal = ({
   onConfirm,
   title = "Konfirmasi Hapus",
   message = "Apakah anda yakin ingin menghapus data ini?",
+  children,
 }: DeleteConfirmationModalProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="opaque">
@@ -35,6 +37,7 @@ export const DeleteConfirmationModal = ({
             </ModalHeader>
             <ModalBody className="text-center font-medium">
               <p>{message}</p>
+              {children}
             </ModalBody>
             <ModalFooter className="justify-center">
               <Button variant="light" onPress={onClose}>

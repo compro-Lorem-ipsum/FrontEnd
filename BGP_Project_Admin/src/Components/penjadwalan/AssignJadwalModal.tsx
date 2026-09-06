@@ -104,22 +104,23 @@ const AssignJadwalModal = ({
           tanggal: manualData.tanggalMulai!.toString(),
         });
       } else {
-        const end = manualData.tanggalAkhir ?? manualData.tanggalMulai!;
-        let cursor = manualData.tanggalMulai!;
-        const dates: string[] = [];
-        while (cursor.compare(end) <= 0) {
-          const jsDate = new Date(cursor.year, cursor.month - 1, cursor.day);
-          if (manualData.selectedDays.includes(jsDate.getDay())) {
-            dates.push(cursor.toString());
-          }
-          cursor = cursor.add({ days: 1 });
-        }
-        for (const tanggal of dates) {
+        if (manualData.tanggalAkhir) {
+          // It's a recurring schedule (assignment)
+          await scheduleService.generate({
+            satpam_uuid: manualData.satpam_uuid,
+            pos_uuid: manualData.pos_uuid,
+            shift_uuid: manualData.shift_uuid,
+            start_date: manualData.tanggalMulai!.toString(),
+            end_date: manualData.tanggalAkhir!.toString(),
+            days_of_week: manualData.selectedDays,
+          });
+        } else {
+          // It's a one-off manual schedule
           await scheduleService.create({
             satpam_uuid: manualData.satpam_uuid,
             pos_uuid: manualData.pos_uuid,
             shift_uuid: manualData.shift_uuid,
-            tanggal,
+            tanggal: manualData.tanggalMulai!.toString(),
           });
         }
       }
