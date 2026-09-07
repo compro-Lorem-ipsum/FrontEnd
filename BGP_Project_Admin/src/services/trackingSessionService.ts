@@ -5,13 +5,15 @@ const BASE_URL_API = import.meta.env.VITE_API_BASE_URL;
 
 export const trackingSessionService = {
   getAll: async (params: { limit?: number; cursor?: string | null; search?: string }) => {
-    const url = new URL(`${BASE_URL_API}/tracking-sessions`);
-    
-    if (params.limit) url.searchParams.append("limit", params.limit.toString());
-    if (params.cursor) url.searchParams.append("cursor", params.cursor);
-    if (params.search) url.searchParams.append("search", params.search);
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.cursor) queryParams.append("cursor", params.cursor);
+    if (params.search) queryParams.append("search", params.search);
 
-    const res = await fetchWithAuth(url.toString(), {
+    const queryString = queryParams.toString();
+    const url = queryString ? `${BASE_URL_API}/tracking-sessions?${queryString}` : `${BASE_URL_API}/tracking-sessions`;
+
+    const res = await fetchWithAuth(url, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
 
