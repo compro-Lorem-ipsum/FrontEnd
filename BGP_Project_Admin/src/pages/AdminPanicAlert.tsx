@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Button,
   Table,
@@ -8,112 +7,160 @@ import {
   TableRow,
   TableCell,
   Pagination,
+  Select,
+  SelectItem,
+  Spinner,
 } from "@heroui/react";
-import { FiSearch } from "react-icons/fi";
+import { useState } from "react";
 import { GoAlertFill } from "react-icons/go";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { usePanicAlertData } from "../hooks/usePanicAlertData";
+import { useScheduleOptions } from "../hooks/useScheduleOptions";
+import { InfiniteScrollTrigger } from "../Components/common/InfiniteScrollTrigger";
+import type { PanicAlertData } from "../types/panicAlert";
+import { formatDateTimeZone, getRole } from "../Utils/helpers";
+
 
 const filters = [
   { key: "semua", label: "Semua" },
-  { key: "aktif", label: "Aktif" },
-  { key: "dalampenanganan", label: "Dalam Penanganan" },
-  { key: "selesai", label: "Selesai" },
+  { key: "active", label: "Aktif" },
+  { key: "handled", label: "Dalam Penanganan" },
+  { key: "resolved", label: "Selesai" },
 ];
 
-interface PanicAlertItem {
-  uuid: string;
-  nama: string;
-  nip: string;
-  mitra: string;
-  lokasi_url?: string;
-  waktu: string;
-  status: "aktif" | "dalam_penanganan" | "selesai";
-}
-
-const dummyData: PanicAlertItem[] = [
-  {
-    uuid: "1",
-    nama: "Nama Satpam",
-    nip: "0123456789",
-    mitra: "Nama Client",
-    waktu: "01 Jun 2026, 23:00",
-    status: "aktif",
-  },
-  {
-    uuid: "2",
-    nama: "Nama Satpam",
-    nip: "0123456789",
-    mitra: "Nama Client",
-    waktu: "01 Jun 2026, 23:00",
-    status: "dalam_penanganan",
-  },
-  {
-    uuid: "3",
-    nama: "Nama Satpam",
-    nip: "0123456789",
-    mitra: "Nama Client",
-    waktu: "01 Jun 2026, 23:00",
-    status: "selesai",
-  },
-  {
-    uuid: "4",
-    nama: "Nama Satpam",
-    nip: "0123456789",
-    mitra: "Nama Client",
-    waktu: "01 Jun 2026, 23:00",
-    status: "selesai",
-  },
-];
-
-const statusStyles: Record<PanicAlertItem["status"], string> = {
-  aktif: "bg-[#FFE2E2] text-[#F31260]",
-  dalam_penanganan: "bg-[#E8EEFF] text-[#122C93]",
-  selesai: "bg-[#E4F9EE] text-[#02A758]",
+const statusStyles: Record<string, string> = {
+  active: "bg-[#FFE2E2] text-[#F31260]",
+  handled: "bg-[#E8EEFF] text-[#122C93]",
+  resolved: "bg-[#E4F9EE] text-[#02A758]",
 };
 
-const statusLabels: Record<PanicAlertItem["status"], string> = {
-  aktif: "Aktif",
-  dalam_penanganan: "Dalam Penanganan",
-  selesai: "Selesai",
+const statusLabels: Record<string, string> = {
+  active: "Aktif",
+  handled: "Dalam Penanganan",
+  resolved: "Selesai",
 };
 
 const AdminPanicAlert = () => {
-  const [activeFilter, setActiveFilter] = useState("semua");
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  const role = getRole();
+
+  const {
+    data,
+    activeData,
+    loading,
+    satpamId,
+    setSatpamId,
+    statusFilter,
+    setStatusFilter,
+    limit,
+    setLimit,
+    currentIndex,
+    hasMore,
+    handleNextPage,
+    handlePrevPage,
+    resolveAlert,
+    handleAlert,
+  } = usePanicAlertData();
+
+  const scheduleOptions = useScheduleOptions(true);
+
+  const activeAlerts = activeData || [];
+  const [activeAlertPage, setActiveAlertPage] = useState(1);
+  const activeAlertsLimit = 3;
+  const paginatedAlerts = activeAlerts.slice(
+    (activeAlertPage - 1) * activeAlertsLimit,
+    activeAlertPage * activeAlertsLimit
+  );
+
+  const columns = [
+    { name: "No", uid: "no" },
+    { name: "Nama", uid: "nama" },
+    { name: "NIP", uid: "nip" },
+  ];
+  if (role !== "client") {
+    columns.push({ name: "Mitra", uid: "mitra" });
+  }
+  columns.push(
+    { name: "Lokasi", uid: "lokasi" },
+    { name: "Waktu", uid: "waktu" },
+    { name: "Status", uid: "status" }
+  );
+  if (role !== "admin") {
+    columns.push({ name: "Aksi", uid: "aksi" });
+  }
 
   return (
     <div className="flex flex-col gap-2 p-2.5">
-      {/* Header placement here */}
+      {/* Header */}
       <div className="header-container flex flex-row items-center justify-between mt-2">
         <div className="flex flex-col items-start">
           <h2 className="font-semibold text-2xl text-[#122C93]">Panic Alert</h2>
-          <p className="text-md text-black text-sm w-200">
+          <p className="text-md text-black text-sm w-full max-w-2xl">
             Tombol darurat satpam. Status Aktif perlu tindakan secepatnya.
           </p>
         </div>
       </div>
-      {/* end of header */}
 
-      {/* search engine placemnet here */}
+      {/* Search Engine */}
       <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7]">
-        <div className="flex flex-row items-center gap-2 bg-white border border-[#E4E9F7] rounded-xl px-4 h-11 flex-1">
-          <FiSearch className="text-[#B0B0B0] text-base flex-shrink-0" />
-          <input
-            type="search"
-            placeholder="Cari nama atau status"
-            className="bg-transparent text-sm text-gray-700 placeholder:text-[#B0B0B0] outline-none w-full h-full"
-          />
-        </div>
-        <div className="container-selector-filter flex flex-row gap-2 items-center">
+        <Select
+          className="flex-1 min-w-0"
+          placeholder="Filter by Satpam"
+          selectedKeys={satpamId ? [satpamId] : [""]}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0];
+            setSatpamId(val ? String(val) : "");
+          }}
+          classNames={{
+            trigger: "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11",
+            value: "text-gray-700 text-sm",
+          }}
+          listboxProps={{
+            bottomContent: (
+              <InfiniteScrollTrigger
+                hasMore={scheduleOptions.hasMoreSatpam}
+                isLoading={scheduleOptions.isLoadingSatpam}
+                onLoadMore={scheduleOptions.loadMoreSatpam}
+              />
+            ),
+          }}
+        >
+          {[{ uuid: "", nama: "Semua Satpam", nip: "" }, ...scheduleOptions.listSatpam].map((s: any) => (
+            <SelectItem key={s.uuid} textValue={s.uuid ? `${s.nama} - ${s.nip}` : s.nama}>
+              {s.uuid ? `${s.nama} - ${s.nip}` : s.nama}
+            </SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          className="w-28 flex-shrink-0"
+          placeholder="Data"
+          selectedKeys={[limit.toString()]}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0];
+            if (val) setLimit(Number(val));
+          }}
+          classNames={{
+            trigger: "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11",
+            value: "text-[#8D8787] text-sm",
+          }}
+        >
+          {[5, 10, 15, 20].map((pageSize) => (
+            <SelectItem key={pageSize.toString()} textValue={`${pageSize} Data`}>
+              {pageSize} Data
+            </SelectItem>
+          ))}
+        </Select>
+
+        <div className="container-selector-filter flex flex-row gap-2 items-center flex-shrink-0">
           {filters.map((f) => (
             <Button
               key={f.key}
               size="sm"
-              onPress={() => setActiveFilter(f.key)}
+              onPress={() => setStatusFilter(f.key)}
               className={
-                activeFilter === f.key
-                  ? "bg-[#122C93] text-white font-semibold h-11"
-                  : "bg-white text-[#122C93] border border-[#E4E9F7] h-11 font-medium"
+                statusFilter === f.key
+                  ? "bg-[#122C93] text-white font-semibold h-11 px-4"
+                  : "bg-white text-[#122C93] border border-[#E4E9F7] h-11 font-medium px-4"
               }
             >
               {f.label}
@@ -121,47 +168,100 @@ const AdminPanicAlert = () => {
           ))}
         </div>
       </div>
-      {/* end of search engine */}
 
-      {/* main content */}
-      <div className="main-container-card-table flex flex-col gap-2 mt-3">
-        <h2 className="font-semibold">
-          Aktif <span className="text-danger">(1)</span>
-        </h2>
+      {/* Main Content */}
+      <div className="main-container-card-table flex flex-col gap-2 mt-3 w-full min-w-0 overflow-hidden">
 
-        <div className="card-scroll flex flex-row items-center gap-2">
-          <div className="card-1 w-md flex flex-col gap-3 items-start p-5 bg-white border border-[#A70202] rounded-xl">
-            <div className="header-card flex flex-row items-center w-full justify-between">
-              <div className="left-side flex flex-row items-center gap-3">
-                <div className="logo-container bg-[#FFE2E2] rounded-2xl p-5">
-                  <GoAlertFill className="text-3xl text-[#A70202]" />
+        {/* Active Alerts Section */}
+        <div className="flex flex-row items-center justify-between w-full">
+          <h2 className="font-semibold">
+            Aktif <span className="text-danger">({activeAlerts.length})</span>
+          </h2>
+          {activeAlerts.length > activeAlertsLimit && (
+            <div className="flex flex-row gap-2">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                className="bg-white border border-gray-200"
+                onPress={() => setActiveAlertPage((prev) => Math.max(1, prev - 1))}
+                isDisabled={activeAlertPage === 1}
+              >
+                <FiChevronLeft className="text-lg text-[#122C93]" />
+              </Button>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                className="bg-white border border-gray-200"
+                onPress={() => setActiveAlertPage((prev) => prev + 1)}
+                isDisabled={activeAlertPage * activeAlertsLimit >= activeAlerts.length}
+              >
+                <FiChevronRight className="text-lg text-[#122C93]" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="w-full pb-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 w-full">
+            {paginatedAlerts.map((item) => (
+              <div key={item.uuid} className="card-1 flex flex-col gap-3 items-start p-5 bg-white border border-[#A70202] rounded-xl w-full">
+              <div className="header-card flex flex-row items-center w-full justify-between">
+                <div className="left-side flex flex-row items-center gap-3">
+                  <div className="logo-container bg-[#FFE2E2] rounded-2xl p-5 flex-shrink-0">
+                    <GoAlertFill className="text-3xl text-[#A70202]" />
+                  </div>
+                  <div className="desc-container gap-1.5 flex flex-col items-start overflow-hidden">
+                    <h2 className="text-sm font-semibold truncate w-full">{item.satpam.nama}</h2>
+                    <h2 className="text-[#6B6B6B] text-xs font-medium truncate w-full">
+                      NIP {item.satpam.nip} · {formatDateTimeZone(item.created_at)}
+                    </h2>
+                    <h2 className="font-semibold text-xs text-[#122C93] truncate w-full">
+                      {item.client}
+                    </h2>
+                  </div>
                 </div>
-                <div className="desc-container gap-1.5 flex flex-col items-start">
-                  <h2 className="text-sm font-semibold">Nama Satpam</h2>
-                  <h2 className="text-[#6B6B6B] text-xs font-medium">
-                    NIP 123xxx · 01 Jun 2026, 23:00
-                  </h2>
-                  <h2 className="font-semibold text-xs text-[#122C93]">
-                    Nama Mitra
-                  </h2>
+                <div className="indicator-active bg-[#FFE2E2] -mt-15 rounded-2xl px-4 py-1 flex-shrink-0">
+                  <h2 className="text-[#F31260] font-medium text-xs">Aktif</h2>
                 </div>
               </div>
-              <div className="indicator-active bg-[#FFE2E2] -mt-15 rounded-2xl px-5">
-                <h2 className="text-[#F31260] font-medium text-sm ">Aktif</h2>
+
+              <div className="bottom-side flex flex-row items-center justify-between w-full mt-2">
+                <a
+                  href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#122C93] font-medium text-sm hover:underline"
+                >
+                  Lihat Lokasi
+                </a>
+
+                <div className="flex flex-row gap-2 flex-shrink-0">
+                  {role === "admin" ? (
+                    <span className="text-sm font-semibold text-[#F31260]">
+                      Menunggu Ditangani
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-[#E8EEFF] text-[#122C93] font-semibold"
+                      onPress={() => handleAlert(item.uuid)}
+                    >
+                      Tandai Ditangani
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="bottom-side flex flex-row items-center justify-between w-full">
-              <h2 className="font-medium text-md text-[#122C93]">
-                Lattitude, Longitude
-              </h2>
-              <h2 className="italic text-[#6B6B6B] text-sm">
-                Menunggu ditangani
-              </h2>
-            </div>
+          ))}
+          {activeAlerts.length === 0 && (
+            <div className="text-sm text-gray-500 italic p-2">Tidak ada panic alert aktif saat ini.</div>
+          )}
           </div>
         </div>
 
-        {/* Table here */}
+        {/* Table */}
         <div className="table-container mt-3">
           <Table
             aria-label="Tabel Riwayat Panic Alert"
@@ -174,58 +274,106 @@ const AdminPanicAlert = () => {
                   showControls
                   showShadow
                   color="primary"
-                  page={page}
-                  total={1}
-                  onChange={setPage}
+                  page={currentIndex + 1}
+                  total={Math.max(currentIndex + 1 + (hasMore ? 1 : 0), 1)}
+                  onChange={(page) => {
+                    if (page > currentIndex + 1) handleNextPage();
+                    else if (page < currentIndex + 1) handlePrevPage();
+                  }}
+                  classNames={{
+                    item: "[&:not([data-active=true])]:hidden",
+                  }}
                 />
               </div>
             }
           >
-            <TableHeader>
-              <TableColumn>No</TableColumn>
-              <TableColumn>Nama</TableColumn>
-              <TableColumn>NIP</TableColumn>
-              <TableColumn>Mitra</TableColumn>
-              <TableColumn>Lokasi</TableColumn>
-              <TableColumn>Waktu</TableColumn>
-              <TableColumn align="center">Status</TableColumn>
+            <TableHeader columns={columns}>
+              {(column) => (
+                <TableColumn key={column.uid} align={column.uid === "status" || column.uid === "aksi" ? "center" : "start"}>
+                  {column.name}
+                </TableColumn>
+              )}
             </TableHeader>
 
-            <TableBody items={dummyData} emptyContent="Tidak ada data">
-              {(item) => (
+            <TableBody
+              items={data}
+              emptyContent={loading ? <Spinner size="sm" /> : "Tidak ada data"}
+              isLoading={loading}
+            >
+              {(item: PanicAlertData) => (
                 <TableRow key={item.uuid}>
-                  <TableCell>
-                    {(page - 1) * rowsPerPage + dummyData.indexOf(item) + 1}
-                  </TableCell>
-                  <TableCell>{item.nama}</TableCell>
-                  <TableCell>{item.nip}</TableCell>
-                  <TableCell>{item.mitra}</TableCell>
-                  <TableCell>
-                    <a
-                      href={item.lokasi_url || "#"}
-                      className="text-[#122C93] font-medium text-sm hover:underline"
-                    >
-                      Lattitude, Longitude
-                    </a>
-                  </TableCell>
-                  <TableCell>{item.waktu}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-center">
-                      <span
-                        className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusStyles[item.status]}`}
-                      >
-                        {statusLabels[item.status]}
-                      </span>
-                    </div>
-                  </TableCell>
+                  {(columnKey) => {
+                    switch (columnKey) {
+                      case "no":
+                        return (
+                          <TableCell>
+                            {currentIndex * limit + data.indexOf(item) + 1}
+                          </TableCell>
+                        );
+                      case "nama":
+                        return <TableCell>{item.satpam.nama}</TableCell>;
+                      case "nip":
+                        return <TableCell>{item.satpam.nip}</TableCell>;
+                      case "mitra":
+                        return <TableCell>{item.client}</TableCell>;
+                      case "lokasi":
+                        return (
+                          <TableCell>
+                            <a
+                              href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#122C93] font-medium text-sm hover:underline"
+                            >
+                              Lihat Lokasi
+                            </a>
+                          </TableCell>
+                        );
+                      case "waktu":
+                        return <TableCell>{formatDateTimeZone(item.created_at)}</TableCell>;
+                      case "status":
+                        return (
+                          <TableCell>
+                            <div className="flex justify-center">
+                              <span
+                                className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusStyles[item.status] || ""}`}
+                              >
+                                {statusLabels[item.status] || item.status}
+                              </span>
+                            </div>
+                          </TableCell>
+                        );
+                      case "aksi":
+                        return (
+                          <TableCell>
+                            <div className="flex justify-center items-center gap-2">
+                              {item.status === "active" && (
+                                <Button size="sm" className="bg-[#E8EEFF] text-[#122C93] text-xs font-medium" onPress={() => handleAlert(item.uuid)}>
+                                  Tangani
+                                </Button>
+                              )}
+                              {item.status === "handled" && (
+                                <Button size="sm" className="bg-[#E4F9EE] text-[#02A758] text-xs font-medium" onPress={() => resolveAlert(item.uuid)}>
+                                  Selesaikan
+                                </Button>
+                              )}
+                              {item.status === "resolved" && (
+                                <span className="text-gray-400 text-xs">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        );
+                      default:
+                        return <TableCell>-</TableCell>;
+                    }
+                  }}
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-        {/* end of table */}
       </div>
-      {/* end of main content */}
+
     </div>
   );
 };

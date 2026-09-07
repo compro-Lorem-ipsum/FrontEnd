@@ -1,16 +1,15 @@
 import type { ActivityLogItem } from "../types/activityLog";
 import type { IconType } from "react-icons";
-import { 
-  AiOutlineDelete, 
-  AiOutlineUpload 
+import {
+  AiOutlineDelete,
 } from "react-icons/ai";
-import { 
-  FaUserTimes, 
-  FaUserCheck, 
-  FaUserPlus, 
-  FaAddressCard 
+import {
+  FaUserTimes,
+  FaUserCheck,
+  FaUserPlus,
+  FaAddressCard
 } from "react-icons/fa";
-import { 
+import {
   RiEditBoxFill,
   RiMapPin2Fill,
   RiFileList3Fill
@@ -20,6 +19,46 @@ import { GoAlertFill } from "react-icons/go";
 import { HiDocumentCheck } from "react-icons/hi2";
 import { TbLayoutDashboard } from "react-icons/tb";
 
+export const translateActionFilter = (action: string): string => {
+  switch (action) {
+    case "patrol.update": return "Memperbarui Patroli";
+    case "patrol.download": return "Unduh Laporan Patroli";
+    case "attendance.update": return "Memperbarui Absensi";
+    case "attendance.download": return "Unduh Laporan Absensi";
+    case "post.create": return "Menambah Pos";
+    case "post.update": return "Memperbarui Pos";
+    case "post.delete": return "Menghapus Pos";
+    case "shift_pattern.create": return "Menambah Pola Shift";
+    case "shift_pattern.update": return "Memperbarui Pola Shift";
+    case "shift_pattern.delete": return "Menghapus Pola Shift";
+    case "shift_instance.create": return "Menambah Jadwal Shift";
+    case "shift_instance.cancel": return "Membatalkan Jadwal Shift";
+    case "shift_instance.generate": return "Generate Jadwal Shift";
+    case "shift_assignment.create": return "Menambah Penugasan Shift";
+    case "shift_assignment.update": return "Memperbarui Penugasan Shift";
+    case "shift_assignment.delete": return "Menghapus Penugasan Shift";
+    case "shift_exception.create": return "Mencatat Pengecualian Shift";
+    case "shift_exception.delete": return "Menghapus Pengecualian Shift";
+    case "satpam.card_data": return "Akses/Ubah Data Kartu Satpam";
+    case "satpam.approve": return "Menyetujui Pendaftaran Satpam";
+    case "satpam.reject": return "Menolak Pendaftaran Satpam";
+    case "satpam.update": return "Memperbarui Data Satpam";
+    case "satpam.delete": return "Menghapus Satpam";
+    case "message.create": return "Mengirim Pesan";
+    case "alert.handle": return "Merespon Peringatan";
+    case "alert.resolve": return "Menyelesaikan Peringatan";
+    case "event_report.handle": return "Merespon Laporan Kejadian";
+    case "event_report.resolve": return "Menyelesaikan Laporan Kejadian";
+    case "document.download": return "Unduh Dokumen Sistem";
+    case "client_settings.update": return "Ubah Pengaturan Client";
+    case "violation.create": return "Mencatat Pelanggaran";
+    case "violation.update": return "Memperbarui Pelanggaran";
+    case "violation.delete": return "Menghapus Pelanggaran";
+    default: return action.replace("_", " ");
+  }
+};
+
+
 export const formatLogMessage = (log: ActivityLogItem): string => {
   const { action, payload } = log;
 
@@ -28,33 +67,33 @@ export const formatLogMessage = (log: ActivityLogItem): string => {
       return `Memperbarui data patroli untuk satpam ${payload?.satpam?.nama || ""} di pos ${payload?.pos || ""}`;
     case "patrol.download":
       return `Mengunduh laporan patroli (${payload?.filters?.from || ""} s/d ${payload?.filters?.to || ""})`;
-      
+
     case "attendance.update":
       return `Memperbarui absensi satpam ${payload?.satpam?.nama || ""} pada tanggal ${payload?.work_date || ""}`;
     case "attendance.download":
       return `Mengunduh laporan absensi satpam ${payload?.satpam?.nama || ""} pada tanggal ${payload?.work_date || ""}`;
-      
+
     case "post.create":
       return `Menambahkan data pos baru: ${payload?.nama || payload?.request?.nama || ""}`;
     case "post.update":
       return `Memperbarui data pos: ${payload?.nama || payload?.request?.nama || ""}`;
     case "post.delete":
       return `Menghapus data pos`;
-      
+
     case "shift_pattern.create":
       return `Membuat pola shift baru: ${payload?.nama || payload?.request?.nama || ""}`;
     case "shift_pattern.update":
       return `Memperbarui pola shift: ${payload?.nama || payload?.request?.nama || ""}`;
     case "shift_pattern.delete":
       return `Menghapus konfigurasi pola shift`;
-      
+
     case "shift_instance.create":
       return `Membuat jadwal shift tanggal ${payload?.work_date || ""}`;
     case "shift_instance.cancel":
       return `Membatalkan jadwal shift tanggal ${payload?.work_date || ""}`;
     case "shift_instance.generate":
       return `Melakukan generate jadwal shift secara massal`;
-      
+
     case "satpam.card_data":
       return `Memperbarui/mengakses data kartu satpam ${payload?.nama || ""} (NIP: ${payload?.nip || ""})`;
     case "satpam.approve":
@@ -65,33 +104,33 @@ export const formatLogMessage = (log: ActivityLogItem): string => {
       return `Memperbarui data satpam`;
     case "satpam.delete":
       return `Menghapus data satpam`;
-      
+
     case "message.create":
       return `Mengirim pesan "${payload?.title || ""}" ke satpam ${payload?.satpam?.nama || ""}`;
-      
+
     case "alert.handle":
       return `Merespon peringatan (alert)`;
     case "alert.resolve":
       return `Menyelesaikan masalah peringatan (alert)`;
-      
+
     case "event_report.handle":
       return `Merespon laporan kejadian`;
     case "event_report.resolve":
       return `Menyelesaikan laporan kejadian`;
-      
+
     case "document.download":
       return `Mengunduh dokumen sistem`;
-      
+
     case "client_settings.update":
       return `Memperbarui pengaturan client`;
-      
+
     case "violation.create":
       return `Mencatat pelanggaran untuk satpam`;
     case "violation.update":
       return `Memperbarui data pelanggaran`;
     case "violation.delete":
       return `Menghapus catatan pelanggaran`;
-      
+
     case "shift_assignment.create":
       return `Membuat penugasan shift baru`;
     case "shift_assignment.update":
@@ -125,7 +164,7 @@ export const getLogIcon = (action: string): IconType => {
   // Resource based fallback
   switch (resource) {
     case "post": return RiMapPin2Fill;
-    case "shift_pattern": 
+    case "shift_pattern":
     case "shift_instance":
     case "shift_assignment":
     case "shift_exception":

@@ -1,6 +1,6 @@
 import { DateRangePicker, Select, SelectItem, Spinner } from "@heroui/react";
 import { useActivityLogData } from "../hooks/useActivityLogData";
-import { formatLogMessage, getLogIcon } from "../Utils/activityLogFormatter";
+import { formatLogMessage, getLogIcon, translateActionFilter } from "../Utils/activityLogFormatter";
 import type { RangeValue } from "@react-types/shared";
 import { getLocalTimeZone } from "@internationalized/date";
 
@@ -43,12 +43,12 @@ const ClientActivityLog = () => {
   };
 
   return (
-    <div className="container-main flex flex-col items-start gap-3 p-2.5 h-full">
+    <div className="container-main flex flex-col items-start gap-3 p-2 h-[calc(100vh-90px)] w-full overflow-hidden">
       {/* header title */}
-      <h2 className="font-semibold text-xl text-[#122C93]">Activity Log</h2>
+      <h2 className="font-semibold text-xl text-[#122C93] flex-shrink-0">Activity Log</h2>
 
       {/* search engine */}
-      <div className="container-search rounded-2xl w-full flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7]">
+      <div className="container-search rounded-2xl w-full flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7] flex-shrink-0">
         <Select
           className="w-80"
           placeholder="Semua Aksi"
@@ -63,17 +63,20 @@ const ClientActivityLog = () => {
           {[
             <SelectItem key="all" textValue="Semua Aksi">Semua Aksi</SelectItem>,
             ...actionsList.map((c) => (
-              <SelectItem key={c.action} textValue={c.action}>{c.action}</SelectItem>
+              <SelectItem key={c.action} textValue={translateActionFilter(c.action)}>
+                {translateActionFilter(c.action)}
+              </SelectItem>
             ))
           ]}
         </Select>
 
         <DateRangePicker
-          variant="bordered"
           className="w-72"
           onChange={handleDateChange}
           classNames={{
-            inputWrapper: "h-11 min-h-11 rounded-xl border-[#E4E9F7]"
+            inputWrapper:
+              "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white group-data-[focus=true]:bg-white group-data-[focus=true]:border-[#E4E9F7]",
+            segment: "text-[#8D8787] text-sm",
           }}
         />
       </div>
@@ -81,7 +84,7 @@ const ClientActivityLog = () => {
 
       {/* main content here */}
       <div
-        className="main-content-container flex flex-col gap-2 w-full max-h-[680px] flex-1 overflow-y-auto pr-1"
+        className="main-content-container flex flex-col gap-2 w-full flex-1 min-h-0 overflow-y-auto pr-1"
         onScroll={(e) => {
           const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
           if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !isLoading) {
@@ -110,15 +113,13 @@ const ClientActivityLog = () => {
         })}
 
         {isLoading && (
-          <div className="flex justify-center p-4">
+          <div className="flex justify-center p-4 flex-shrink-0">
             <Spinner size="sm" />
           </div>
         )}
 
-
-
         {!isLoading && data.length === 0 && (
-          <div className="flex justify-center p-8 text-gray-500">
+          <div className="flex justify-center p-8 text-gray-500 flex-shrink-0">
             Tidak ada log aktivitas ditemukan
           </div>
         )}
