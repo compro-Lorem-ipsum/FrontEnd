@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { formatDateTimeZone } from "../Utils/helpers";
+import { formatDateTimeZone, getRole } from "../Utils/helpers";
 import { useSharedDocumentData } from "../hooks/useSharedDocumentData";
 import { useSharedDocumentForm } from "../hooks/useSharedDocumentForm";
 import { satpamService } from "../services/satpamService";
@@ -60,6 +60,7 @@ const columns = [
 ];
 
 const AdminRepositoriDokumen = () => {
+  const role = getRole();
   const {
     dataDocs,
     loading,
@@ -210,13 +211,15 @@ const AdminRepositoriDokumen = () => {
             satpam via aplikasi. Bisa untuk semua satpam atau client tertentu.
           </p>
         </div>
-        <Button
-          className="text-white font-semibold bg-[#122C93]"
-          size="md"
-          onPress={openCreateModal}
-        >
-          + Upload Dokumen
-        </Button>
+        {role !== "client" && (
+          <Button
+            className="text-white font-semibold bg-[#122C93]"
+            size="md"
+            onPress={openCreateModal}
+          >
+            + Upload Dokumen
+          </Button>
+        )}
       </div>
 
       <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7]">
