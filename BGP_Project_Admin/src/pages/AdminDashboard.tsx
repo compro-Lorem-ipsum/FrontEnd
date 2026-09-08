@@ -149,9 +149,9 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="flex flex-col p-5 bg-gray-50/50 gap-4">
+    <div className="flex flex-col p-5 bg-gray-50/50 gap-4 flex-1 h-0 overflow-hidden">
       {/* HEADER */}
-      <div>
+      <div className="flex-shrink-0">
         <h1 className="text-2xl font-bold text-[#122C93]">Dashboard</h1>
         <p className="text-gray-500 text-sm">
           {greeting}, {user?.nama || "User"}. Silakan pilih menu di bawah ini.
@@ -159,7 +159,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* STAT GRID 3×2 */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 flex-shrink-0 overflow-y-auto custom-scrollbar">
         {/* Jumlah Satpam */}
         <div className="flex flex-col bg-white p-5 rounded-xl border border-[#E8EEFF] justify-between gap-2">
           <div className="flex items-center justify-between">
@@ -300,7 +300,7 @@ const AdminDashboard = () => {
       {/* END STAT GRID */}
 
       {/* TABLE */}
-      <div className="flex flex-col bg-white border border-[#E8EEFF] rounded-2xl w-full p-4 gap-3">
+      <div className="flex flex-col bg-white border border-[#E8EEFF] rounded-2xl w-full p-4 gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         <div className="flex items-center gap-4">
           <div className="bg-[#FFE2E2] p-2 rounded-xl flex items-center">
             <PiWarningCircleFill className="text-2xl text-[#C10007]" />

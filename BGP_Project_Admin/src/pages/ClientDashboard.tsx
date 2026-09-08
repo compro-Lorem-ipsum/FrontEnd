@@ -17,14 +17,6 @@ import {
   LabelList,
 } from "recharts";
 
-const trendData = [
-  { bulan: "jan", hadir: 29, terlambat: 13, izin: 5, tidakHadir: 2 },
-  { bulan: "feb", hadir: 28, terlambat: 12, izin: 6, tidakHadir: 2 },
-  { bulan: "mar", hadir: 29, terlambat: 12, izin: 6, tidakHadir: 2 },
-  { bulan: "apr", hadir: 31, terlambat: 10, izin: 7, tidakHadir: 1 },
-  { bulan: "mei", hadir: 30, terlambat: 10, izin: 7, tidakHadir: 3 },
-  { bulan: "jun", hadir: 29, terlambat: 9, izin: 5, tidakHadir: 4 },
-];
 
 const CustomDot = (props: any) => {
   const { cx, cy, stroke } = props;
@@ -79,10 +71,22 @@ const ClientDashboard = () => {
     fetchDashboard();
   }, []);
 
+  const trendData = (dashboardData?.all_time?.monthly || []).map((m: any) => {
+    const date = new Date(m.month + "-01");
+    const bulan = date.toLocaleDateString("id-ID", { month: "short" }).toLowerCase();
+    return {
+      bulan,
+      hadir: m.ontime || 0,
+      terlambat: m.late || 0,
+      izin: (m.excused || 0) + (m.cuti || 0) + (m.cuti_lembur || 0),
+      tidakHadir: m.absent || 0,
+    };
+  });
+
   return (
-    <div className="flex flex-col p-3 bg-gray-50/50 gap-2">
+    <div className="flex flex-col p-3 bg-gray-50/50 gap-2 flex-1 h-0 overflow-hidden">
       {/* HEADER */}
-      <div>
+      <div className="flex-shrink-0">
         <h1 className="text-lg font-bold text-[#122C93]">Dashboard</h1>
         <p className="text-gray-500 text-[11px]">
           {greeting}, {user?.nama || "User"}. Silakan pilih menu di bawah ini.
@@ -90,7 +94,7 @@ const ClientDashboard = () => {
       </div>
 
       {/* STAT GRID */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 flex-shrink-0">
         <div className="flex flex-col bg-white p-3 rounded-xl border border-[#E8EEFF] justify-between">
           <div className="flex flex-row items-center justify-between">
             <h2 className="text-[12px] font-semibold">Jumlah Satpam</h2>
@@ -146,7 +150,7 @@ const ClientDashboard = () => {
       </div>
 
       {/* KEHADIRAN HARI INI */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 flex-shrink-0">
         <div>
           <h2 className="font-semibold text-base text-[#122C93]">
             Kehadiran Hari Ini
@@ -203,7 +207,7 @@ const ClientDashboard = () => {
       </div>
 
       {/* LINE CHART */}
-      <div className="flex flex-col border border-[#E8EEFF] bg-white rounded-lg gap-1 p-2.5">
+      <div className="flex flex-col border border-[#E8EEFF] bg-white rounded-lg gap-1 p-2.5 flex-1 min-h-0">
         <div>
           <h2 className="text-[#122C93] font-semibold text-base">
             Tren kehadiran satpam per Bulan
@@ -212,7 +216,7 @@ const ClientDashboard = () => {
             Rata-rata tingkat kehadiran personel
           </h2>
         </div>
-        <ResponsiveContainer width="100%" height={170}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={trendData}
             margin={{ top: 8, right: 16, left: -15, bottom: 0 }}
@@ -285,7 +289,7 @@ const ClientDashboard = () => {
       </div>
 
       {/* BAR CHART */}
-      <div className="flex flex-col border border-[#E8EEFF] bg-white rounded-lg gap-1 p-2.5">
+      <div className="flex flex-col border border-[#E8EEFF] bg-white rounded-lg gap-1 p-2.5 flex-1 min-h-0">
         <div>
           <h2 className="font-semibold text-base text-[#122C93]">
             Satpam Perlu Perhatian
@@ -295,7 +299,7 @@ const ClientDashboard = () => {
             terakhir
           </h2>
         </div>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={offendersData}
             margin={{ top: 16, right: 16, left: -15, bottom: 0 }}

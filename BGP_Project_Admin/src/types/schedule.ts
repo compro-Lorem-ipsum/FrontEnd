@@ -54,6 +54,8 @@ export interface CreateJadwalBody {
   pos_uuid: string;
   shift_uuid: string;
   tanggal: string;
+  start_local?: string;
+  end_local?: string;
 }
 
 export interface GenerateJadwalBody {

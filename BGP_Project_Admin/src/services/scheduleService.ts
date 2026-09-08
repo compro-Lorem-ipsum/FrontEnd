@@ -216,12 +216,16 @@ export const scheduleService = {
   },
 
   create: async (body: CreateJadwalBody) => {
-    const payload = {
+    const payload: any = {
       pattern_uuid: body.shift_uuid,
       pos_uuid: body.pos_uuid,
       satpam_uuid: body.satpam_uuid,
       work_date: body.tanggal,
     };
+    if (body.start_local && body.end_local) {
+      payload.start_local = body.start_local;
+      payload.end_local = body.end_local;
+    }
     const res = await fetchWithAuth(`${BASE_URL_API}/shift-instances`, {
       method: "POST",
       headers: getHeaders(),
@@ -245,6 +249,10 @@ export const scheduleService = {
           work_date: body.tanggal,
           pattern_uuid: body.shift_uuid,
         };
+        if (body.start_local && body.end_local) {
+          payload.start_local = body.start_local;
+          payload.end_local = body.end_local;
+        }
         const res = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
           method: "POST",
           headers: getHeaders(),
@@ -526,8 +534,27 @@ export const scheduleService = {
     const result = await res.json().catch(() => ({}));
     if (!res.ok) {
       if (res.status === 409 && result.error?.code === "EXCEPTION_EXISTS") {
-        // Exception already exists — silently ignore, already cancelled via rule
-        return result;
+        const existingEx = await findExceptionForRecurrence(assignmentUuid, recurrenceId);
+        if (existingEx) {
+          if (isProtectedException(existingEx)) {
+            throw new Error("Tanggal ini sudah dibatalkan karena cuti/lembur yang disetujui.");
+          }
+          if (existingEx.type === "cancel") return result; // Already cancelled
+          await fetchWithAuth(`${BASE_URL_API}/shift-exceptions/${existingEx.uuid}`, { method: "DELETE", headers: getHeaders() });
+          const retryRes = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+              assignment_uuid: assignmentUuid,
+              recurrence_id: recurrenceId,
+              type: "cancel",
+              reason,
+            }),
+          });
+          const retryResult = await retryRes.json().catch(() => ({}));
+          if (!retryRes.ok) throw new Error(retryResult.error?.message || retryResult.message || "Gagal membatalkan jadwal via aturan");
+          return retryResult;
+        }
       }
       throw new Error(result.error?.message || result.message || "Gagal membuat exception");
     }
