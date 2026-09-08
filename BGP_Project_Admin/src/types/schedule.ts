@@ -26,6 +26,8 @@ export interface Jadwal {
   starts_at: string;
   ends_at: string;
   status: "scheduled" | "cancelled" | "completed";
+  /** Where the instance came from. Determines which actions are available in the UI. */
+  source: "pattern" | "override" | "manual";
   satpam: { uuid: string; nama: string; nip: string; jabatan?: string };
   pattern: { uuid: string; nama: string; timezone: string };
   pos: { uuid: string; nama: string };

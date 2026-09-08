@@ -106,7 +106,7 @@ const AssignJadwalModal = ({
       } else {
         if (manualData.tanggalAkhir) {
           // It's a recurring schedule (assignment)
-          await scheduleService.generate({
+          const result = await scheduleService.generate({
             satpam_uuid: manualData.satpam_uuid,
             pos_uuid: manualData.pos_uuid,
             shift_uuid: manualData.shift_uuid,
@@ -114,6 +114,19 @@ const AssignJadwalModal = ({
             end_date: manualData.tanggalAkhir!.toString(),
             days_of_week: manualData.selectedDays,
           });
+
+          // SKENARIO 2 FIX: Beberapa hari di-skip karena satpam sudah punya
+          // jadwal lain yang waktunya tumpang tindih di hari tersebut.
+          if (result?.hasSkippedOverlap) {
+            addToast({
+              title: "Jadwal sebagian berhasil dibuat",
+              description: `${result.skipped_overlap} hari dilewati karena satpam sudah memiliki jadwal lain yang waktunya bertabrakan. Periksa tampilan jadwal untuk detailnya.`,
+              color: "warning",
+            });
+            onSuccess();
+            onClose();
+            return;
+          }
         } else {
           // It's a one-off manual schedule
           await scheduleService.create({
@@ -142,6 +155,7 @@ const AssignJadwalModal = ({
       setIsManualSubmitting(false);
     }
   };
+
 
   return (
     <Modal backdrop="opaque" isOpen={isOpen} onClose={onClose} size="4xl">
