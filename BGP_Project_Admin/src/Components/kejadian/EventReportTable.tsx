@@ -84,7 +84,7 @@ export const EventReportTable = ({
 
   const isClient = userRole.toLowerCase() === "client";
 
-  const columns = [
+  let columns = [
     { name: "No", uid: "no" },
     { name: "Nama", uid: "nama" },
     { name: "NIP", uid: "nip" },
@@ -97,6 +97,7 @@ export const EventReportTable = ({
   ];
 
   if (isClient) {
+    columns = columns.filter(c => c.uid !== "mitra");
     columns.push({ name: "Aksi", uid: "aksi" });
   }
 

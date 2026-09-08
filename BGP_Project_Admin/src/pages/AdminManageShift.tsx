@@ -20,7 +20,7 @@ const AdminManageShift = () => {
     onOpenChange: onFormChange,
   } = useDisclosure();
 
-  const { data, setPage, refreshData, deleteState } = useScheduleData();
+  const { data, setPage, refreshData, deleteState }:any = useScheduleData();
   const options = useScheduleOptions(isOpenForm || isOpenGenerate);
 
   const formHook = useScheduleForm({
@@ -54,9 +54,9 @@ const AdminManageShift = () => {
   };
 
   return (
-    <div className="flex flex-col p-5">
-      <div className="container-content flex flex-col gap-4">
-        <div className="header-container flex flex-row items-center justify-between mt-5">
+    <div className="flex flex-col p-5 h-[calc(100vh-90px)] overflow-hidden">
+      <div className="container-content flex flex-col gap-4 h-full">
+        <div className="header-container flex flex-row items-center justify-between mt-2 flex-shrink-0">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
             Manage Shift
           </h2>
@@ -76,7 +76,7 @@ const AdminManageShift = () => {
           </div>
         </div>
 
-        <div className="table-section-container mt-6">
+        <div className="table-section-container mt-2 flex-1 min-h-0 overflow-y-auto scrollbar-hide pb-4">
           <ScheduleTable
             data={data.dataJadwal}
             isLoading={data.isLoading}

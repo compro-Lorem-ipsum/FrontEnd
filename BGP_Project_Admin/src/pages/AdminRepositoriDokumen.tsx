@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
 import { formatDateTimeZone, getRole } from "../Utils/helpers";
 import { useSharedDocumentData } from "../hooks/useSharedDocumentData";
 import { useSharedDocumentForm } from "../hooks/useSharedDocumentForm";
-import { satpamService } from "../services/satpamService";
+import { useMitraOptions } from "../hooks/useMitraOptions";
+import { useDocumentDelete } from "../hooks/useDocumentDelete";
 import { InfiniteScrollTrigger } from "../Components/common/InfiniteScrollTrigger";
-import { useEffect } from "react";
 import {
   Button,
   Select,
@@ -17,25 +16,15 @@ import {
   TableCell,
   Pagination,
   Spinner,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Input,
-  Textarea,
-  useDisclosure,
-  addToast,
 } from "@heroui/react";
-import { sharedDocumentService } from "../services/sharedDocumentService";
 
 import { FiSearch } from "react-icons/fi";
 import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 import { LuDownload } from "react-icons/lu";
 import { FaFilePdf } from "react-icons/fa6";
-import { AiOutlineCloudUpload } from "react-icons/ai";
-import { IoClose } from "react-icons/io5";
+
 import { DeleteConfirmationModal } from "../Components/common/DeleteConfirmationModal";
+import { DocumentFormModal } from "../Components/sharedDocument/DocumentFormModal";
 
 export const jenisDokumen = [
   { key: "peraturan", label: "Peraturan" },
@@ -43,12 +32,6 @@ export const jenisDokumen = [
   { key: "sop", label: "SOP" },
   { key: "lainnya", label: "Lainnya" },
 ];
-
-
-
-const labelClass = "text-xs font-semibold text-[#122C93]";
-
-
 
 const columns = [
   { name: "No", uid: "no" },
@@ -60,7 +43,8 @@ const columns = [
 ];
 
 const AdminRepositoriDokumen = () => {
-  const role = getRole();
+  const role = getRole() ?? "";
+  const visibleColumns = role === "client" ? columns.filter(c => c.uid !== "tujuan") : columns;
   const {
     dataDocs,
     loading,
@@ -99,105 +83,25 @@ const AdminRepositoriDokumen = () => {
     ALL_KEY
   } = formHook;
 
-  const selectedCount = useMemo(() => {
-    if (selectedKeys as any === "all") return targetOptions.length;
-    const keySet = selectedKeys as Set<string>;
-    return keySet.has(ALL_KEY) ? targetOptions.length - 1 : keySet.size;
-  }, [selectedKeys, targetOptions, ALL_KEY]);
-
-  const selectedLabels = useMemo(() => {
-    if (selectedKeys as any === "all") {
-      return targetOptions.map((t) => t.label);
-    }
-    return targetOptions
-      .filter((t) => (selectedKeys as Set<string>).has(t.key))
-      .map((t) => t.label);
-  }, [selectedKeys, targetOptions]);
-
   const handleEdit = (item: any) => {
     openEditModal(item.uuid);
   };
 
-  // Filter Mitra State
-  const [mitraOptions, setMitraOptions] = useState<any[]>([]);
-  const [hasMoreMitra, setHasMoreMitra] = useState(false);
-  const [nextCursorMitra, setNextCursorMitra] = useState<string | null>(null);
-  const [loadingMoreMitra, setLoadingMoreMitra] = useState(false);
-
-  useEffect(() => {
-    const fetchInitialMitra = async () => {
-      try {
-        const res = await satpamService.getMitraOptions();
-        if (res && Array.isArray(res.data)) {
-          setMitraOptions(res.data);
-          if (res.meta) {
-            setHasMoreMitra(res.meta.has_more);
-            setNextCursorMitra(res.meta.next_cursor);
-          }
-        }
-      } catch (e) {
-        console.error("Gagal load mitra for filter", e);
-      }
-    };
-    fetchInitialMitra();
-  }, []);
-
-  const loadMoreMitra = async () => {
-    if (!hasMoreMitra || !nextCursorMitra || loadingMoreMitra) return;
-    setLoadingMoreMitra(true);
-    try {
-      const res = await satpamService.getMitraOptions(nextCursorMitra);
-      if (res && Array.isArray(res.data)) {
-        setMitraOptions((prev) => [...prev, ...res.data]);
-        if (res.meta) {
-          setHasMoreMitra(res.meta.has_more);
-          setNextCursorMitra(res.meta.next_cursor);
-        }
-      }
-    } catch (e) {}
-    finally {
-      setLoadingMoreMitra(false);
-    }
-  };
+  const {
+    mitraOptions,
+    hasMoreMitra,
+    loadingMoreMitra,
+    loadMoreMitra,
+  } = useMitraOptions();
 
   const {
-    isOpen: isDeleteOpen,
-    onOpen: onDeleteOpen,
-    onClose: onDeleteClose,
-  } = useDisclosure();
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDeletePrompt = (item: any) => {
-    setDeleteTarget(item);
-    onDeleteOpen();
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await sharedDocumentService.remove(deleteTarget.uuid);
-      addToast({
-        title: "Berhasil",
-        description: "Dokumen berhasil dihapus",
-        color: "success",
-        variant: "flat",
-      });
-      refreshData();
-      onDeleteClose();
-    } catch (error: any) {
-      addToast({
-        title: "Gagal",
-        description: error.message || "Gagal menghapus dokumen",
-        color: "danger",
-        variant: "flat",
-      });
-    } finally {
-      setDeleting(false);
-      setDeleteTarget(null); // Optional: clear target
-    }
-  };
+    isDeleteOpen,
+    onDeleteClose,
+    deleteTarget,
+    deleting,
+    handleDeletePrompt,
+    handleConfirmDelete,
+  } = useDocumentDelete(refreshData);
 
   return (
     <div className="flex flex-col gap-2 p-2.5 overflow-hidden">
@@ -233,33 +137,35 @@ const AdminRepositoriDokumen = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select
-          className="w-48"
-          placeholder="Semua Client"
-          selectedKeys={[filterClient]}
-          onChange={(e) => setFilterClient(e.target.value || "all")}
-          classNames={{
-            trigger:
-              "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
-            value: "text-[#8D8787] text-sm",
-          }}
-          listboxProps={{
-            bottomContent: (
-              <InfiniteScrollTrigger
-                hasMore={hasMoreMitra}
-                isLoading={loadingMoreMitra}
-                onLoadMore={loadMoreMitra}
-              />
-            ),
-          }}
-        >
-          {[
-            { key: "all", label: "Semua Client" },
-            ...mitraOptions.map(m => ({ key: m.uuid, label: m.nama }))
-          ].map((c) => (
-            <SelectItem key={c.key} textValue={c.label}>{c.label}</SelectItem>
-          ))}
-        </Select>
+        {role !== "client" && (
+          <Select
+            className="w-48"
+            placeholder="Semua Client"
+            selectedKeys={[filterClient]}
+            onChange={(e) => setFilterClient(e.target.value || "all")}
+            classNames={{
+              trigger:
+                "bg-white border border-[#E4E9F7] rounded-xl shadow-none h-11 min-h-11 data-[hover=true]:bg-white",
+              value: "text-[#8D8787] text-sm",
+            }}
+            listboxProps={{
+              bottomContent: (
+                <InfiniteScrollTrigger
+                  hasMore={hasMoreMitra}
+                  isLoading={loadingMoreMitra}
+                  onLoadMore={loadMoreMitra}
+                />
+              ),
+            }}
+          >
+            {[
+              { key: "all", label: "Semua Client" },
+              ...mitraOptions.map(m => ({ key: m.uuid, label: m.nama }))
+            ].map((c) => (
+              <SelectItem key={c.key} textValue={c.label}>{c.label}</SelectItem>
+            ))}
+          </Select>
+        )}
         <Select
           className="w-32"
           placeholder="Tampilkan"
@@ -305,7 +211,7 @@ const AdminRepositoriDokumen = () => {
             </div>
           }
         >
-          <TableHeader columns={columns}>
+          <TableHeader columns={visibleColumns}>
             {(column) => (
               <TableColumn
                 key={column.uid}
@@ -367,15 +273,16 @@ const AdminRepositoriDokumen = () => {
                         </TableCell>
                       );
                     case "tujuan":
+                      if (role === "client") return <TableCell>{" "}</TableCell>;
                       return (
                         <TableCell>
                           {item.recipient_type === "all_client" ? (
                             <span className="bg-[#E8EEFF] text-[#122C93] text-xs font-medium px-3 py-1.5 rounded-full">
-                              Semua satpam
+                              Semua Mitra
                             </span>
                           ) : (
                             <span className="bg-[#E4F9EE] text-[#02A758] text-xs font-medium px-3 py-1.5 rounded-full">
-                              {item.recipient_count} Mitra
+                              Mitra
                             </span>
                           )}
                         </TableCell>
@@ -386,12 +293,14 @@ const AdminRepositoriDokumen = () => {
                       return (
                         <TableCell>
                           <div className="flex justify-center gap-2">
-                            <button
-                              className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
-                              onClick={() => handleEdit(item)}
-                            >
-                              <FaRegEdit className="text-base" />
-                            </button>
+                            {role !== "client" && (
+                              <button
+                                className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
+                                onClick={() => handleEdit(item)}
+                              >
+                                <FaRegEdit className="text-base" />
+                              </button>
+                            )}
                             {item.file?.download_url ? (
                               <a
                                 href={item.file.download_url}
@@ -405,12 +314,14 @@ const AdminRepositoriDokumen = () => {
                                 <LuDownload className="text-base" />
                               </button>
                             )}
-                            <button
-                              className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer"
-                              onClick={() => handleDeletePrompt(item)}
-                            >
-                              <FaRegTrashAlt className="text-base" />
-                            </button>
+                            {role !== "client" && (
+                              <button
+                                className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer"
+                                onClick={() => handleDeletePrompt(item)}
+                              >
+                                <FaRegTrashAlt className="text-base" />
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                       );
@@ -424,154 +335,25 @@ const AdminRepositoriDokumen = () => {
         </Table>
       </div>
 
-      {/* Modal here */}
-      <Modal
+      <DocumentFormModal
         isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-        backdrop="blur"
-      >
-        <ModalContent>
-          {() => (
-            <>
-              <ModalHeader className="text-[#122C93] font-semibold">
-                {editUuid ? "Update Dokumen" : "Tambah Dokumen"}
-              </ModalHeader>
-              <ModalBody className="gap-3">
-                <Input
-                  label="Judul / Nama"
-                  value={judul}
-                  onValueChange={setJudul}
-                  labelPlacement="outside-top"
-                  placeholder="mis. SOP Kebakaran"
-                  isRequired
-                  variant="bordered"
-                  classNames={{ label: labelClass }}
-                />
-                <Textarea
-                  label="Deskripsi (Opsional)"
-                  value={deskripsi}
-                  onValueChange={setDeskripsi}
-                  labelPlacement="outside-top"
-                  placeholder="Ringkasan isi dokumen"
-                  variant="bordered"
-                  classNames={{ label: labelClass }}
-                />
+        onClose={onClose}
+        editUuid={editUuid}
+        judul={judul}
+        setJudul={setJudul}
+        deskripsi={deskripsi}
+        setDeskripsi={setDeskripsi}
+        file={file}
+        setFile={setFile}
+        selectedKeys={selectedKeys}
+        handleSelectionChange={handleSelectionChange}
+        clearAll={clearAll}
+        targetOptions={targetOptions}
+        ALL_KEY={ALL_KEY}
+        handleSubmit={handleSubmit}
+        submitting={submitting}
+      />
 
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-[#122C93]">
-                      Upload Dokumen {!editUuid && <span className="text-danger">*</span>}
-                      {editUuid && <span className="text-gray-500 font-normal"> (Opsional - biarkan kosong jika tidak ingin mengubah file)</span>}
-                    </span>
-                    <label
-                      htmlFor="upload-dokumen"
-                      className="flex flex-col items-center justify-center w-full h-36 bg-[#F5F7FF] border-2 border-dashed border-[#8D8787] rounded-xl cursor-pointer hover:bg-[#e6ecff] transition-colors"
-                    >
-                      <div className="flex flex-col items-center gap-1 text-[#9095A0]">
-                        <AiOutlineCloudUpload className="text-2xl" />
-                        <span className="text-xs font-medium text-[#6B7280]">
-                          {file ? file.name : (editUuid ? "Ganti Dokumen" : "Unggah Dokumen")}
-                        </span>
-                        <span className="text-xs text-[#9CA3AF]">
-                          PDF, PNG/JPG
-                        </span>
-                      </div>
-                      <input
-                        id="upload-dokumen"
-                        type="file"
-                        accept=".pdf,.png,.jpg,.jpeg"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files.length > 0) {
-                            setFile(e.target.files[0]);
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                <div className="flex flex-col gap-1.5">
-                  {/* Label row dengan counter + clear */}
-                  <div className="flex flex-row items-center justify-between">
-                    <span className="text-sm font-semibold text-[#122C93]">
-                      Target Penerima <span className="text-danger">*</span>
-                    </span>
-                    {selectedCount > 0 && (
-                      <div className="flex flex-row items-center gap-1.5">
-                        <span className="inline-flex items-center justify-center bg-[#122C93] text-white text-[10px] font-semibold rounded-full w-5 h-5">
-                          {selectedCount}
-                        </span>
-                        <span className="text-[11px] text-[#8D8787]">
-                          terpilih
-                        </span>
-                        <button
-                          onClick={clearAll}
-                          className="flex items-center justify-center w-4 h-4 rounded-full bg-[#E4E9F7] hover:bg-[#DBEAFE] transition-colors"
-                        >
-                          <IoClose className="text-[#122C93] text-[10px]" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {/* Select */}
-                  <div className="flex flex-col border border-[#E4E9F7] rounded-xl overflow-hidden">
-                    <Select
-                      className="max-w-full"
-                      labelPlacement="outside-top"
-                      variant="bordered"
-                      placeholder="Pilih target penerima"
-                      selectedKeys={selectedKeys}
-                      selectionMode="multiple"
-                      onSelectionChange={handleSelectionChange}
-                      renderValue={() => (
-                        <span className="text-sm text-gray-700">
-                          Pilih target penerima
-                        </span>
-                      )}
-                      classNames={{
-                        trigger:
-                          "border-none shadow-none rounded-none rounded-t-xl data-[hover=true]:bg-white",
-                        label: "text-sm font-semibold text-[#122C93]",
-                      }}
-                    >
-                      {targetOptions.map((t) => (
-                        <SelectItem key={t.key}>{t.label}</SelectItem>
-                      ))}
-                    </Select>
-
-                    {selectedLabels.length > 0 && (
-                      <div className="flex flex-row flex-wrap gap-x-1 gap-y-0.5 px-3 py-2 border-t border-[#E4E9F7] bg-[#F5F7FF]">
-                        {selectedLabels.map((label, i) => (
-                          <span
-                            key={label}
-                            className="text-xs text-[#122C93] font-medium"
-                          >
-                            {label}
-                            {i < selectedLabels.length - 1 ? "," : ""}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="bordered" onPress={onClose}>
-                  Batal
-                </Button>
-                <Button
-                  className="bg-[#122C93] text-white font-medium"
-                  onPress={handleSubmit}
-                  isLoading={submitting}
-                >
-                  Simpan
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-      {/* end of modal */}
-      
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeleteOpen}

@@ -108,27 +108,19 @@ export const usePosForm = ({ onSuccess, onClose, type }: UsePosFormProps) => {
   };
 
   const validateForm = () => {
-    if (
-      !formData.nama ||
-      formData.nama.length < 4 ||
-      formData.nama.length > 100
-    ) {
+    if (!formData.nama || formData.nama.trim().length < 1 || formData.nama.length > 150) {
       addToast({
         title: "Validasi Gagal",
-        description: "Nama harus 4-100 karakter.",
+        description: "Nama wajib diisi dan maksimal 150 karakter.",
         color: "danger",
         variant: "flat",
       });
       return false;
     }
-    if (
-      !formData.kode ||
-      formData.kode.length < 1 ||
-      formData.kode.length > 20
-    ) {
+    if (!formData.kode || formData.kode.trim().length < 1 || formData.kode.length > 50) {
       addToast({
         title: "Validasi Gagal",
-        description: "Kode harus 1-20 karakter.",
+        description: "Kode wajib diisi dan maksimal 50 karakter.",
         color: "danger",
         variant: "flat",
       });
@@ -137,7 +129,25 @@ export const usePosForm = ({ onSuccess, onClose, type }: UsePosFormProps) => {
     if (!selectedPosition) {
       addToast({
         title: "Validasi Gagal",
-        description: "Lokasi (Lat/Lng) wajib diisi.",
+        description: "Lokasi (Lat/Lng) wajib dipilih.",
+        color: "danger",
+        variant: "flat",
+      });
+      return false;
+    }
+    if (selectedPosition.lat < -90 || selectedPosition.lat > 90) {
+      addToast({
+        title: "Validasi Gagal",
+        description: "Latitude minimal -90 dan maksimal 90.",
+        color: "danger",
+        variant: "flat",
+      });
+      return false;
+    }
+    if (selectedPosition.lng < -180 || selectedPosition.lng > 180) {
+      addToast({
+        title: "Validasi Gagal",
+        description: "Longitude minimal -180 dan maksimal 180.",
         color: "danger",
         variant: "flat",
       });

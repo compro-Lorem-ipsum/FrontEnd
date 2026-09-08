@@ -375,6 +375,7 @@ export const SatpamDetailModals: React.FC<SatpamDetailModalsProps> = ({
                   classNames={{ label: labelClass }}
                   selectedKeys={state.violationType ? new Set([state.violationType]) : new Set()}
                   onSelectionChange={(keys) => setters.setViolationType(Array.from(keys)[0] as string)}
+                  isDisabled={!!state.editViolationUuid}
                 >
                   {kategoriPelanggaran.map((item) => (
                     <SelectItem key={item.key}>{item.label}</SelectItem>
