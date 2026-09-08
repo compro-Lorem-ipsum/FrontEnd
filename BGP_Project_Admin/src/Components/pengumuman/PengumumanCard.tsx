@@ -68,11 +68,13 @@ export const PengumumanCard = ({
             </button>
           </div>
         )}
-        <div className="assign-to mt-auto">
-          <h2 className="text-xs bg-[#DBEAFE] px-3 py-1 border border-[#122C93] font-light rounded-full whitespace-nowrap">
-            {item.recipient_type === "all_client" ? "Seluruh Satpam" : "Client"}
-          </h2>
-        </div>
+        {!hideActions && (
+          <div className="assign-to mt-auto">
+            <h2 className="text-xs bg-[#DBEAFE] px-3 py-1 border border-[#122C93] font-light rounded-full whitespace-nowrap">
+              {item.recipient_type === "all_client" ? "Semua Mitra" : "Mitra"}
+            </h2>
+          </div>
+        )}
       </div>
     </div>
   );

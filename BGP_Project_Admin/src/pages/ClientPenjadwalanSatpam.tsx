@@ -131,7 +131,7 @@ const ClientPenjadwalanSatpam = () => {
     : [];
 
   return (
-    <div className="manage-penjadwalan-satpam-container p-6">
+    <div className="manage-penjadwalan-satpam-container flex flex-col p-6 h-[calc(100vh-90px)] overflow-hidden">
       <div className="title flex flex-col gap-1 items-start">
         <h1 className="text-xl font-bold text-[#122C93]">Manajemen Shift &amp; Penjadwalan</h1>
         <p className="text-[#8D8787] text-sm">
@@ -163,8 +163,10 @@ const ClientPenjadwalanSatpam = () => {
         </div>
       </div>
 
-      {activeSwitch === "jadwal" ? (
-        <div className="flex flex-col gap-4">
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pb-4">
+        {activeSwitch === "jadwal" ? (
+          <div className="flex flex-col gap-4 h-full">
           {/* View controls */}
           <div className="flex flex-row items-center justify-between w-full">
             <div className="left-side flex flex-row items-center gap-4 flex-wrap">
@@ -305,14 +307,13 @@ const ClientPenjadwalanSatpam = () => {
               )}
             </div>
           )}
-        </div>
-      ) : (
-        <ShiftConfigSection />
-      )}
+          </div>
+        ) : (
+          <ShiftConfigSection />
+        )}
+      </div>
 
-      {/* === Modals === */}
-
-      {/* Tambah Jadwal Baru */}
+      {/* Modals */}
       <AssignJadwalModal
         isOpen={isManualOpen}
         onClose={onManualClose}

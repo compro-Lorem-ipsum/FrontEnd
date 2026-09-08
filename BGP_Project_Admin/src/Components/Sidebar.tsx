@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Divider } from "@heroui/react";
+import { Divider, Tooltip } from "@heroui/react";
 import {
   IoMdSettings,
   IoMdPulse,
@@ -232,8 +232,8 @@ const Sidebar = () => {
           className={`flex flex-col overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 ml-0" : "w-auto opacity-100"
             }`}
         >
-          <h1 className="text-lg font-bold text-[#122C93] tracking-tight leading-none whitespace-nowrap">
-            PT. Bima Global
+          <h1 className="text-[15px] font-bold text-[#122C93] tracking-tight leading-none whitespace-nowrap">
+            PT Bima Global Security
           </h1>
           <span className="text-[10px] text-gray-400 font-medium tracking-wider mt-1 uppercase whitespace-nowrap">
             Dashboard Admin
@@ -254,55 +254,49 @@ const Sidebar = () => {
             const isActive = location.pathname === item.path;
 
             return (
-              <button
+              <Tooltip
                 key={item.key}
-                onClick={() => navigate(item.path)}
-                className={`
-                  group relative flex items-center w-full outline-none
-                  py-3 px-3 rounded-xl transition-all duration-200
-                  ${isActive
-                    ? "bg-[#122C93] text-white shadow-md shadow-blue-900/30"
-                    : "bg-transparent text-gray-500 hover:bg-blue-50 hover:text-[#122C93]"
-                  }
-                  ${isCollapsed ? "justify-center" : "justify-start gap-2"}
-                `}
+                content={item.name}
+                placement="right"
+                isDisabled={!isCollapsed}
+                showArrow
+                classNames={{
+                  content: "bg-gray-800 text-white text-xs px-2 py-1.5",
+                  base: "before:bg-gray-800"
+                }}
               >
-                {/* Icon Wrapper */}
-                <div
-                  className={`flex items-center justify-center ${isCollapsed ? "w-full" : ""}`}
+                <button
+                  onClick={() => navigate(item.path)}
+                  className={`
+                    group relative flex items-center w-full outline-none
+                    py-3 px-3 rounded-xl transition-all duration-200
+                    ${isActive
+                      ? "bg-[#122C93] text-white shadow-md shadow-blue-900/30"
+                      : "bg-transparent text-gray-500 hover:bg-blue-50 hover:text-[#122C93]"
+                    }
+                    ${isCollapsed ? "justify-center" : "justify-start gap-2"}
+                  `}
                 >
-                  <span className={`text-xl transition-colors duration-200`}>
-                    {item.icon}
-                  </span>
-                </div>
-
-                {/* Text Menu - Hide saat collapsed */}
-                <span
-                  className={`font-medium text-sm ml-2 whitespace-nowrap transition-all duration-200 ${isCollapsed
-                    ? "hidden opacity-0 w-0"
-                    : "block opacity-100 w-auto"
-                    }`}
-                >
-                  {item.name}
-                </span>
-
-                {/* Manual Tooltip (Only visible when collapsed + hover) */}
-                {isCollapsed && (
+                  {/* Icon Wrapper */}
                   <div
-                    className="
-                      absolute left-full ml-3 px-2 py-1.5 
-                      bg-gray-800 text-white text-xs rounded-md 
-                      opacity-0 group-hover:opacity-100 
-                      pointer-events-none transition-opacity duration-200 z-50
-                      whitespace-nowrap shadow-lg
-                    "
+                    className={`flex items-center justify-center ${isCollapsed ? "w-full" : ""}`}
+                  >
+                    <span className={`text-xl transition-colors duration-200`}>
+                      {item.icon}
+                    </span>
+                  </div>
+
+                  {/* Text Menu - Hide saat collapsed */}
+                  <span
+                    className={`font-medium text-sm ml-2 whitespace-nowrap transition-all duration-200 ${isCollapsed
+                      ? "hidden opacity-0 w-0"
+                      : "block opacity-100 w-auto"
+                      }`}
                   >
                     {item.name}
-                    {/* Panah kecil tooltip (opsional) */}
-                    <div className="absolute top-1/2 -left-1 -mt-1 border-4 border-transparent border-r-gray-800"></div>
-                  </div>
-                )}
-              </button>
+                  </span>
+                </button>
+              </Tooltip>
             );
           })}
         </div>
@@ -312,39 +306,31 @@ const Sidebar = () => {
       <div className="p-4 mt-auto">
         <Divider className="mb-4" />
 
-        <button
-          onClick={handleLogout}
-          className={`
-            group relative flex items-center outline-none
-            text-danger rounded-xl
-            hover:bg-red-50 transition-colors duration-200
-            ${isCollapsed ? "w-full h-12 justify-center" : "w-full h-12 px-4 justify-start gap-2"}
-          `}
+        <Tooltip
+          content="Keluar"
+          placement="right"
+          isDisabled={!isCollapsed}
+          showArrow
+          color="danger"
         >
-          <TbLogout className="text-xl text-red-500" />
+          <button
+            onClick={handleLogout}
+            className={`
+              group relative flex items-center outline-none
+              text-danger rounded-xl
+              hover:bg-red-50 transition-colors duration-200
+              ${isCollapsed ? "w-full h-12 justify-center" : "w-full h-12 px-4 justify-start gap-2"}
+            `}
+          >
+            <TbLogout className="text-xl text-red-500" />
 
-          {!isCollapsed && <span className="text-red-500">Keluar</span>}
-
-          {/* Manual Tooltip untuk Logout */}
-          {isCollapsed && (
-            <div
-              className="
-                absolute left-full ml-3 px-2 py-1.5 
-                bg-red-500 text-white text-xs rounded-md 
-                opacity-0 group-hover:opacity-100 
-                pointer-events-none transition-opacity duration-200 z-50
-                whitespace-nowrap shadow-lg
-              "
-            >
-              Keluar
-              <div className="absolute top-1/2 -left-1 -mt-1 border-4 border-transparent border-r-red-500"></div>
-            </div>
-          )}
-        </button>
+            {!isCollapsed && <span className="text-red-500">Keluar</span>}
+          </button>
+        </Tooltip>
 
         {!isCollapsed && (
           <div className="text-center mt-2 text-[10px] text-gray-300 whitespace-nowrap overflow-hidden">
-            v1.0.0 &copy; 2026 Bima Global
+            v2.0.0 &copy; 2026 Bima Global Security
           </div>
         )}
       </div>

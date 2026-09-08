@@ -73,10 +73,10 @@ export const UserListTable = ({
         {users.map((item) => (
           <TableRow key={item.uuid}>
             <TableCell>
-              <div className="w-[150px] truncate">{item.nama}</div>
+              <div className="max-w-[250px] truncate" title={item.nama}>{item.nama}</div>
             </TableCell>
             <TableCell>
-              <div className="w-[150px] truncate">{item.email}</div>
+              <div className="max-w-[300px] truncate" title={item.email}>{item.email}</div>
             </TableCell>
             <TableCell>{formatTanggal(item.created_at)}</TableCell>
             <TableCell>

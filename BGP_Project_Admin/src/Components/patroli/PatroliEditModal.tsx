@@ -38,6 +38,7 @@ export const PatroliEditModal = ({
               variant="underlined"
               labelPlacement="inside"
               placeholder="Pilih Status"
+              isRequired
               selectedKeys={
                 formData.status ? [formData.status.toLowerCase()] : []
               }
@@ -52,7 +53,9 @@ export const PatroliEditModal = ({
               label="Keterangan"
               variant="underlined"
               labelPlacement="inside"
-              maxLength={501}
+              maxLength={2000}
+              minLength={1}
+              isRequired
               placeholder="Keterangan situasi..."
               value={formData.description}
               onChange={(e) =>

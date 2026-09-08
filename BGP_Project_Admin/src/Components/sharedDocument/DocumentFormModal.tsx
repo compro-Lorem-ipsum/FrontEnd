@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Modal,
   ModalContent,
@@ -9,130 +10,135 @@ import {
   Textarea,
   Select,
   SelectItem,
-  DatePicker,
 } from "@heroui/react";
+import { AiOutlineCloudUpload } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
 
-interface TargetOption {
-  key: string;
-  label: string;
-}
-
-interface PengumumanModalProps {
+interface DocumentFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   editUuid: string | null;
-  submitting: boolean;
-  title: string;
-  setTitle: (val: string) => void;
-  location: string;
-  setLocation: (val: string) => void;
-  datetime: any;
-  setDatetime: (val: any) => void;
-  description: string;
-  setDescription: (val: string) => void;
-  selectedKeys: Set<string>;
+  judul: string;
+  setJudul: (val: string) => void;
+  deskripsi: string;
+  setDeskripsi: (val: string) => void;
+  file: File | null;
+  setFile: (val: File | null) => void;
+  selectedKeys: any;
   handleSelectionChange: (keys: any) => void;
   clearAll: () => void;
-  targetOptions: TargetOption[];
-  handleSubmit: () => void;
+  targetOptions: any[];
   ALL_KEY: string;
+  handleSubmit: () => void;
+  submitting: boolean;
 }
 
-export const PengumumanModal = ({
+const labelClass = "text-xs font-semibold text-[#122C93]";
+
+export const DocumentFormModal = ({
   isOpen,
   onClose,
   editUuid,
-  submitting,
-  title,
-  setTitle,
-  location,
-  setLocation,
-  datetime,
-  setDatetime,
-  description,
-  setDescription,
+  judul,
+  setJudul,
+  deskripsi,
+  setDeskripsi,
+  file,
+  setFile,
   selectedKeys,
   handleSelectionChange,
   clearAll,
   targetOptions,
-  handleSubmit,
   ALL_KEY,
-}: PengumumanModalProps) => {
-  const selectedCount = selectedKeys.has(ALL_KEY)
-    ? targetOptions.length - 1
-    : selectedKeys.size;
+  handleSubmit,
+  submitting,
+}: DocumentFormModalProps) => {
+  const selectedCount = useMemo(() => {
+    if (selectedKeys === "all") return targetOptions.length;
+    const keySet = selectedKeys as Set<string>;
+    return keySet.has(ALL_KEY) ? targetOptions.length - 1 : keySet.size;
+  }, [selectedKeys, targetOptions, ALL_KEY]);
 
-  const selectedLabels = targetOptions
-    .filter((t) => t.key !== ALL_KEY && selectedKeys.has(t.key))
-    .map((t) => t.label);
+  const selectedLabels = useMemo(() => {
+    if (selectedKeys === "all") {
+      return targetOptions.map((t) => t.label);
+    }
+    return targetOptions
+      .filter((t) => (selectedKeys as Set<string>).has(t.key))
+      .map((t) => t.label);
+  }, [selectedKeys, targetOptions]);
 
   return (
-    <Modal size="lg" backdrop="blur" isOpen={isOpen} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      backdrop="blur"
+    >
       <ModalContent>
-        {(onClose) => (
+        {() => (
           <>
-            <ModalHeader className="flex flex-col gap-1 text-[#122C93]">
-              {editUuid ? "Edit Pengumuman" : "Tambah Pengumuman"}
+            <ModalHeader className="text-[#122C93] font-semibold">
+              {editUuid ? "Update Dokumen" : "Tambah Dokumen"}
             </ModalHeader>
-            <ModalBody className="flex flex-col w-full gap-3">
+            <ModalBody className="gap-3">
               <Input
-                className="max-w-full"
-                label="Nama Pengumuman / Agenda"
-                isRequired
+                label="Judul / Nama"
+                value={judul}
+                onValueChange={setJudul}
                 labelPlacement="outside-top"
-                placeholder="mis. Apel Pagi"
+                placeholder="mis. SOP Kebakaran"
+                isRequired
                 variant="bordered"
-                maxLength={255}
-                minLength={1}
-                value={title}
-                onValueChange={setTitle}
-                classNames={{ label: "text-sm font-semibold text-[#122C93]" }}
+                classNames={{ label: labelClass }}
               />
-              <div className="flex flex-row gap-2">
-                <Input
-                  className="w-1/2"
-                  label="Tempat"
-                  isRequired
-                  labelPlacement="outside-top"
-                  placeholder="mis. Lapangan"
-                  variant="bordered"
-                  maxLength={255}
-                  minLength={1}
-                  value={location}
-                  onValueChange={setLocation}
-                  classNames={{
-                    label: "text-sm font-semibold text-[#122C93]",
-                  }}
-                />
-
-                <DatePicker
-                  hideTimeZone
-                  showMonthAndYearPickers
-                  value={datetime}
-                  onChange={(val) => val && setDatetime(val)}
-                  label="Waktu"
-                  className="w-1/2"
-                  labelPlacement="outside-top"
-                  variant="bordered"
-                  classNames={{
-                    label: "text-sm font-semibold text-[#122C93]",
-                  }}
-                />
-              </div>
               <Textarea
-                className="max-w-full"
-                label="Isi / Deskripsi"
-                isRequired
+                label="Deskripsi (Opsional)"
+                value={deskripsi}
+                onValueChange={setDeskripsi}
                 labelPlacement="outside-top"
-                placeholder="Jelaskan isi pengumuman, agenda kegiatan atau hal yang perlu disiapkan"
+                placeholder="Ringkasan isi dokumen"
                 variant="bordered"
-                minLength={1}
-                value={description}
-                onValueChange={setDescription}
-                classNames={{ label: "text-sm font-semibold text-[#122C93]" }}
+                classNames={{ label: labelClass }}
               />
-              <hr className="w-full border-[#E4E9F7]" />
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-[#122C93]">
+                  Upload Dokumen {!editUuid && <span className="text-danger">*</span>}
+                  {editUuid && (
+                    <span className="text-gray-500 font-normal">
+                      {" "}
+                      (Opsional - biarkan kosong jika tidak ingin mengubah file)
+                    </span>
+                  )}
+                </span>
+                <label
+                  htmlFor="upload-dokumen"
+                  className="flex flex-col items-center justify-center w-full h-36 bg-[#F5F7FF] border-2 border-dashed border-[#8D8787] rounded-xl cursor-pointer hover:bg-[#e6ecff] transition-colors"
+                >
+                  <div className="flex flex-col items-center gap-1 text-[#9095A0]">
+                    <AiOutlineCloudUpload className="text-2xl" />
+                    <span className="text-xs font-medium text-[#6B7280]">
+                      {file
+                        ? file.name
+                        : editUuid
+                        ? "Ganti Dokumen"
+                        : "Unggah Dokumen"}
+                    </span>
+                    <span className="text-xs text-[#9CA3AF]">PDF, PNG/JPG</span>
+                  </div>
+                  <input
+                    id="upload-dokumen"
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex flex-row items-center justify-between">
@@ -144,9 +150,7 @@ export const PengumumanModal = ({
                       <span className="inline-flex items-center justify-center bg-[#122C93] text-white text-[10px] font-semibold rounded-full w-5 h-5">
                         {selectedCount}
                       </span>
-                      <span className="text-[11px] text-[#8D8787]">
-                        terpilih
-                      </span>
+                      <span className="text-[11px] text-[#8D8787]">terpilih</span>
                       <button
                         onClick={clearAll}
                         className="flex items-center justify-center w-4 h-4 rounded-full bg-[#E4E9F7] hover:bg-[#DBEAFE] transition-colors"
@@ -156,7 +160,6 @@ export const PengumumanModal = ({
                     </div>
                   )}
                 </div>
-
                 <div className="flex flex-col border border-[#E4E9F7] rounded-xl overflow-hidden">
                   <Select
                     className="max-w-full"
@@ -199,16 +202,15 @@ export const PengumumanModal = ({
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button variant="bordered" onPress={onClose} isDisabled={submitting}>
+              <Button variant="bordered" onPress={onClose}>
                 Batal
               </Button>
               <Button
                 className="bg-[#122C93] text-white font-medium"
                 onPress={handleSubmit}
                 isLoading={submitting}
-                isDisabled={!title || !description || !location || selectedKeys.size === 0}
               >
-                {editUuid ? "Simpan Perubahan" : "Buat Pengumuman"}
+                Simpan
               </Button>
             </ModalFooter>
           </>

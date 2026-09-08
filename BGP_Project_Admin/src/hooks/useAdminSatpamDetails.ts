@@ -315,10 +315,7 @@ export const useAdminSatpamDetails = (uuid: string) => {
     setIsUploadingViolation(true);
     try {
       if (editViolationUuid) {
-        await violationService.updateViolation(editViolationUuid, {
-          type: violationType,
-          description: violationDesc,
-        });
+        await violationService.updateViolation(editViolationUuid, violationDesc);
       } else {
         await violationService.createViolation({
           satpam_uuid: uuid,

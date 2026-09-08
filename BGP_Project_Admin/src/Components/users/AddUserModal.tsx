@@ -43,30 +43,29 @@ export const AddUserModal = ({
               placeholder="Masukan nama"
               labelPlacement="inside"
               value={formState.nama}
-              maxLength={151}
+              maxLength={150}
               minLength={1}
               isInvalid={!!errors.nama}
               errorMessage={errors.nama}
               onValueChange={(val) => setters.setNama(val)}
             />
             <Input
-              type="text"
+              type="email"
               isRequired
               variant="underlined"
               size="lg"
               label="Email"
               placeholder="Masukan Email"
               labelPlacement="inside"
-              description="Min 5 karakter, huruf, angka, dan underscore (_)"
+              description="Sesuai format email standar"
               value={formState.email}
-              maxLength={101}
-              minLength={50}
+              maxLength={100}
               isInvalid={!!errors.email}
               errorMessage={errors.email}
               onValueChange={(val) => setters.setEmail(val)}
             />
             <Input
-              type="text"
+              type="password"
               isRequired
               variant="underlined"
               size="lg"
@@ -76,7 +75,7 @@ export const AddUserModal = ({
               description="Panjang password 8 - 16 karakter"
               value={formState.password}
               minLength={8}
-              maxLength={17}
+              maxLength={16}
               isInvalid={!!errors.password}
               errorMessage={errors.password}
               onValueChange={(val) => setters.setPassword(val)}
