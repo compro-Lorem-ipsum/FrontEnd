@@ -2,6 +2,13 @@ import type { Jadwal } from "../../types/schedule";
 
 const hariSingkatanMingguTable = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
+// Source chip colors (consistent with other views)
+const SOURCE_CHIP: Record<string, string> = {
+  pattern: "!bg-blue-50 !text-blue-700 border-blue-200",
+  override: "!bg-amber-50 !text-amber-700 border-amber-200",
+  manual: "!bg-indigo-50 !text-indigo-700 border-indigo-200",
+};
+
 export const getTanggalTableMingguan = (date: Date) => {
   const dayOfWeek = date.getDay();
   const minggu = new Date(date);
@@ -39,20 +46,34 @@ const JadwalMingguanView = ({
   handleOpenAssignForDate,
 }: JadwalMingguanViewProps) => {
   const tanggalTable = getTanggalTableMingguan(currentDate);
+  const todayIso = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
 
   return (
-    <div className="table-container mt-2 rounded-2xl border border-[#E4E9F7] overflow-hidden overflow-x-auto">
+    <div
+      className="table-container mt-2 rounded-2xl border border-[#E4E9F7] overflow-hidden"
+      style={{ maxHeight: "calc(100vh - 280px)", overflowY: "auto", overflowX: "auto" }}
+    >
       <table className="w-full border-collapse">
-        <thead>
+        <thead className="sticky top-0 z-10">
           <tr className="bg-[#F1F1F1]">
             <th className="text-left py-4 px-5 font-bold text-base text-black min-w-[220px]">
               Nama
             </th>
-            {tanggalTable.map(({ hari, tanggal }) => (
-              <th key={hari} className="py-4 px-3 text-center min-w-[110px]">
+            {tanggalTable.map(({ hari, tanggal, iso }) => (
+              <th
+                key={hari}
+                className={`py-4 px-3 text-center min-w-[130px] ${iso === todayIso ? "bg-blue-50" : ""}`}
+              >
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-normal text-[#8D8787]">{hari}</span>
-                  <span className="text-base font-bold text-black">{tanggal}</span>
+                  <span
+                    className={`text-base font-bold ${iso === todayIso ? "text-[#122C93]" : "text-black"}`}
+                  >
+                    {tanggal}
+                  </span>
                 </div>
               </th>
             ))}
@@ -82,33 +103,65 @@ const JadwalMingguanView = ({
                     </div>
                   </div>
                 </td>
+
                 {tanggalTable.map(({ hari, iso }) => {
-                  const match = allJadwal.find(
-                    (j) =>
-                      j.satpam.uuid === satpam.uuid &&
-                      j.work_date === iso &&
-                      j.status !== "cancelled"
+                  // Show ALL instances including cancelled
+                  const matches = allJadwal.filter(
+                    (j) => j.satpam.uuid === satpam.uuid && j.work_date.split("T")[0] === iso
                   );
+                  const activeMatches = matches.filter((j) => j.status !== "cancelled");
 
                   return (
-                    <td key={hari} className="py-3 px-3 text-center">
-                      {match ? (
-                        <button
-                          type="button"
-                          onClick={() => handleEditJadwalInstance(match)}
-                          className="min-h-8 h-8 px-3 rounded-full text-xs font-medium !bg-[#EFF6FF] !text-[#2563EB] border border-[#BFDBFE]"
-                        >
-                          {match.pattern.nama}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAssignForDate(satpam.uuid, iso)}
-                          className="w-8 h-8 rounded-full border border-dashed border-[#C4C4C4] text-[#9CA3AF] text-xs data-[hover=true]:bg-[#F5F7FF]"
-                        >
-                          +
-                        </button>
-                      )}
+                    <td key={hari} className={`py-3 px-3 text-center ${iso === todayIso ? "bg-blue-50/30" : ""}`}>
+                      <div className="flex flex-col items-center gap-1">
+                        {matches.length > 0 ? (
+                          <>
+                            {matches.map((match) => {
+                              const isCancelled = match.status === "cancelled";
+                              const chipClass = isCancelled
+                                ? "!bg-slate-100 !text-slate-400 border-slate-200 line-through"
+                                : SOURCE_CHIP[match.source] ?? SOURCE_CHIP.pattern;
+
+                              return (
+                                <button
+                                  key={match.uuid}
+                                  type="button"
+                                  onClick={() => !isCancelled && handleEditJadwalInstance(match)}
+                                  disabled={isCancelled}
+                                  className={`w-full min-h-8 h-8 px-2 rounded-full text-xs font-medium border truncate transition-colors ${chipClass} ${
+                                    isCancelled
+                                      ? "cursor-default"
+                                      : "hover:brightness-95 cursor-pointer"
+                                  }`}
+                                  title={`${match.pattern.nama}${isCancelled ? " (dibatalkan)" : ""}`}
+                                >
+                                  {match.pattern.nama}
+                                </button>
+                              );
+                            })}
+
+                            {/* Tombol tambah jadwal lain di hari yang sama */}
+                            {activeMatches.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAssignForDate(satpam.uuid, iso)}
+                                className="w-6 h-6 rounded-full border border-dashed border-[#C4C4C4] text-[#9CA3AF] text-xs hover:bg-[#F5F7FF] transition-colors"
+                                title="Tambah jadwal lain"
+                              >
+                                +
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssignForDate(satpam.uuid, iso)}
+                            className="w-8 h-8 rounded-full border border-dashed border-[#C4C4C4] text-[#9CA3AF] text-xs hover:bg-[#F5F7FF] transition-colors"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
                     </td>
                   );
                 })}

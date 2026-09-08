@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { useDashboard } from "../hooks/useDashboard";
+import { dashboardService } from "../services/dashboardService";
 import { IoLocationOutline, IoPersonOutline } from "react-icons/io5";
 import { GiPoliceOfficerHead } from "react-icons/gi";
 import {
@@ -24,18 +26,6 @@ const trendData = [
   { bulan: "jun", hadir: 29, terlambat: 9, izin: 5, tidakHadir: 4 },
 ];
 
-const perhatianData = [
-  {
-    nama: "Prasertyo Teguh",
-    hadir: 15,
-    terlambat: 25,
-    izin: 29,
-    tidakHadir: 15,
-  },
-  { nama: "Satpam 2", hadir: 7, terlambat: 22, izin: 11, tidakHadir: 26 },
-  { nama: "Satpam 3", hadir: 8, terlambat: 22, izin: 28, tidakHadir: 18 },
-];
-
 const CustomDot = (props: any) => {
   const { cx, cy, stroke } = props;
   return <circle cx={cx} cy={cy} r={3} fill={stroke} stroke={stroke} />;
@@ -47,6 +37,10 @@ const legendFormatter = (value: string) => {
     terlambat: "Terlambat",
     izin: "Izin/Sakit",
     tidakHadir: "Tidak Hadir",
+    late: "Terlambat",
+    absent: "Tidak Hadir",
+    teguran: "Teguran",
+    sp: "Surat Peringatan"
   };
   return (
     <span style={{ fontSize: 11, color: "#374151" }}>
@@ -57,6 +51,33 @@ const legendFormatter = (value: string) => {
 
 const ClientDashboard = () => {
   const { user, greeting } = useDashboard();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [offendersData, setOffendersData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const [dashRes, offendersRes] = await Promise.all([
+          dashboardService.getDashboard(),
+          dashboardService.getOffenders(4, 30) // Get top 4 offenders for last 30 days
+        ]);
+        if (dashRes.ok) {
+          const dashJson = await dashRes.json();
+          setDashboardData(dashJson.data || dashJson);
+        }
+        if (offendersRes.ok) {
+          const offendersJson = await offendersRes.json();
+          setOffendersData(offendersJson.data || offendersJson);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
 
   return (
     <div className="flex flex-col p-3 bg-gray-50/50 gap-2">
@@ -79,7 +100,7 @@ const ClientDashboard = () => {
           </div>
           <div className="flex flex-row items-end gap-1 mt-1">
             <h2 className="font-extrabold text-[26px] leading-none text-[#122C93]">
-              170
+              {loading ? "-" : dashboardData?.satpam_assigned || 0}
             </h2>
             <h2 className="font-light text-[11px] text-black mb-0.5">
               Personel ditugaskan
@@ -96,14 +117,11 @@ const ClientDashboard = () => {
           </div>
           <div className="flex flex-row items-center gap-2 mt-1">
             <h2 className="font-extrabold text-[26px] leading-none text-[#122C93]">
-              6
+              {loading ? "-" : dashboardData?.posts || 0}
             </h2>
             <div className="flex flex-col">
               <h2 className="font-light text-[11px] text-black">
                 titik penjagaan
-              </h2>
-              <h2 className="font-light text-[11px] text-black">
-                1 Pos Utama · 5 Pos Patroli
               </h2>
             </div>
           </div>
@@ -118,10 +136,10 @@ const ClientDashboard = () => {
           </div>
           <div className="flex flex-row items-end gap-1 mt-1">
             <h2 className="font-extrabold text-[26px] leading-none text-[#122C93]">
-              19
+              {loading ? "-" : dashboardData?.scheduled_today || 0}
             </h2>
             <h2 className="font-light text-[11px] text-black mb-0.5">
-              Dari 30 Personel
+              Dari {loading ? "-" : dashboardData?.satpam_assigned || 0} Personel
             </h2>
           </div>
         </div>
@@ -141,25 +159,25 @@ const ClientDashboard = () => {
           {[
             {
               label: "Tepat Waktu",
-              count: 13,
+              count: dashboardData?.today?.ontime || 0,
               color: "#122C93",
               sub: "Check in sesuai jadwal",
             },
             {
               label: "Terlambat",
-              count: 3,
+              count: dashboardData?.today?.late || 0,
               color: "#CB9235",
               sub: "Melewati jam masuk shift",
             },
             {
               label: "Izin/Sakit",
-              count: 3,
+              count: (dashboardData?.today?.excused || 0) + (dashboardData?.today?.cuti || 0) + (dashboardData?.today?.cuti_lembur || 0),
               color: "#2F58FB",
               sub: "Dengan keterangan resmi",
             },
             {
               label: "Tidak Hadir",
-              count: 0,
+              count: dashboardData?.today?.absent || 0,
               color: "#A70202",
               sub: "Tanpa kabar",
             },
@@ -175,7 +193,7 @@ const ClientDashboard = () => {
               <div className="flex flex-col">
                 <h2 className="font-semibold text-[11px]">{item.label}</h2>
                 <h2 className="font-semibold text-[24px] leading-tight">
-                  {item.count}
+                  {loading ? "-" : item.count}
                 </h2>
                 <h2 className="text-[11px] text-gray-500">{item.sub}</h2>
               </div>
@@ -279,7 +297,7 @@ const ClientDashboard = () => {
         </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart
-            data={perhatianData}
+            data={offendersData}
             margin={{ top: 16, right: 16, left: -15, bottom: 0 }}
             barCategoryGap="30%"
             barGap={2}
@@ -299,8 +317,7 @@ const ClientDashboard = () => {
               tick={{ fontSize: 11, fill: "#6b7280" }}
               axisLine={false}
               tickLine={false}
-              domain={[0, 35]}
-              ticks={[0, 5, 10, 15, 20, 25, 30]}
+              domain={[0, 'dataMax + 5']}
             />
             <Tooltip
               contentStyle={{
@@ -315,30 +332,30 @@ const ClientDashboard = () => {
               iconSize={10}
               formatter={legendFormatter}
             />
-            <Bar dataKey="hadir" fill="#122C93" radius={[3, 3, 0, 0]}>
+            <Bar dataKey="late" fill="#CB9235" radius={[3, 3, 0, 0]}>
               <LabelList
-                dataKey="hadir"
+                dataKey="late"
                 position="top"
                 style={{ fontSize: 10, fill: "#374151" }}
               />
             </Bar>
-            <Bar dataKey="terlambat" fill="#CB9235" radius={[3, 3, 0, 0]}>
+            <Bar dataKey="absent" fill="#A70202" radius={[3, 3, 0, 0]}>
               <LabelList
-                dataKey="terlambat"
+                dataKey="absent"
                 position="top"
                 style={{ fontSize: 10, fill: "#374151" }}
               />
             </Bar>
-            <Bar dataKey="izin" fill="#2F58FB" radius={[3, 3, 0, 0]}>
+            <Bar dataKey="teguran" fill="#2F58FB" radius={[3, 3, 0, 0]}>
               <LabelList
-                dataKey="izin"
+                dataKey="teguran"
                 position="top"
                 style={{ fontSize: 10, fill: "#374151" }}
               />
             </Bar>
-            <Bar dataKey="tidakHadir" fill="#A70202" radius={[3, 3, 0, 0]}>
+            <Bar dataKey="sp" fill="#122C93" radius={[3, 3, 0, 0]}>
               <LabelList
-                dataKey="tidakHadir"
+                dataKey="sp"
                 position="top"
                 style={{ fontSize: 10, fill: "#374151" }}
               />

@@ -50,18 +50,20 @@ const AssignPerHariModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setAssignPerHariData(
-        initialData || {
+      if (initialData) {
+        setAssignPerHariData(initialData);
+      } else {
+        setAssignPerHariData({
           satpam_uuid: "",
           tanggal: "",
           shift_uuid: "",
           pos_uuid: scheduleOptions.listPos.length > 0 ? scheduleOptions.listPos[0].uuid : "",
-        }
-      );
+        });
+      }
       setAssignPerHariErrors({});
       setEditMode("single");
     }
-  }, [isOpen, initialData, scheduleOptions.listPos]);
+  }, [isOpen, initialData]);
 
   const handleAssignPerHariSubmit = async () => {
     const errs: Record<string, string> = {};
@@ -144,6 +146,37 @@ const AssignPerHariModal = ({
                   textValue={`${s.nama} (${s.mulai?.slice(0, 5)} - ${s.selesai?.slice(0, 5)})`}
                 >
                   {s.nama} ({s.mulai?.slice(0, 5)} - {s.selesai?.slice(0, 5)})
+                </SelectItem>
+              ))}
+            </Select>
+
+            <Select
+              label="Pos"
+              variant="underlined"
+              labelPlacement="inside"
+              placeholder="Pilih Pos"
+              isInvalid={!!assignPerHariErrors.pos_uuid}
+              errorMessage={assignPerHariErrors.pos_uuid}
+              selectedKeys={assignPerHariData.pos_uuid ? [assignPerHariData.pos_uuid] : []}
+              onSelectionChange={(k) =>
+                setAssignPerHariData({
+                  ...assignPerHariData,
+                  pos_uuid: String(Array.from(k)[0]),
+                })
+              }
+              listboxProps={{
+                bottomContent: (
+                  <InfiniteScrollTrigger
+                    hasMore={scheduleOptions.hasMorePos}
+                    isLoading={scheduleOptions.isLoadingPos}
+                    onLoadMore={scheduleOptions.loadMorePos}
+                  />
+                ),
+              }}
+            >
+              {scheduleOptions.listPos.map((p: any) => (
+                <SelectItem key={p.uuid} textValue={p.nama}>
+                  {p.nama}
                 </SelectItem>
               ))}
             </Select>

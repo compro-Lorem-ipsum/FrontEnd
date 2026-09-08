@@ -82,7 +82,7 @@ const ShiftConfigSection = () => {
         color: "success",
         timeout: 3000,
       });
-      refreshShiftData();
+      setTimeout(() => window.location.reload(), 800);
     } catch (err: any) {
       addToast({
         title: "Gagal",
@@ -147,7 +147,7 @@ const ShiftConfigSection = () => {
         });
       }
       handleCloseShiftForm();
-      refreshShiftData();
+      setTimeout(() => window.location.reload(), 800);
     } catch (err: any) {
       addToast({
         title: "Gagal",

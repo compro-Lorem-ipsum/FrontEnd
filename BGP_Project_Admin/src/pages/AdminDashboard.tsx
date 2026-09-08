@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDashboard } from "../hooks/useDashboard";
+import { dashboardService } from "../services/dashboardService";
 import { FaBuilding, FaTransgender, FaUsers, FaEye } from "react-icons/fa";
 import { IoStatsChart } from "react-icons/io5";
 import { PiWarningCircleFill } from "react-icons/pi";
@@ -20,73 +22,13 @@ import {
 const columnsPerhatian = [
   { name: "No", uid: "no" },
   { name: "Nama", uid: "nama" },
+  { name: "Mitra", uid: "client" },
   { name: "Telat", uid: "telat" },
   { name: "Tidak Hadir", uid: "tidak_hadir" },
   { name: "Teguran", uid: "teguran" },
   { name: "SP", uid: "sp" },
   { name: "Aksi", uid: "aksi" },
 ];
-
-const mockDataPerhatian = [
-  {
-    id: 1,
-    nama: "Budi Santoso",
-    telat: "10",
-    tidak_hadir: "10",
-    teguran: "10",
-    sp: "10",
-  },
-  {
-    id: 2,
-    nama: "Agus Supriyanto",
-    telat: "10",
-    tidak_hadir: "10",
-    teguran: "10",
-    sp: "10",
-  },
-  {
-    id: 3,
-    nama: "Siti Rahayu",
-    telat: "8",
-    tidak_hadir: "7",
-    teguran: "5",
-    sp: "2",
-  },
-  {
-    id: 4,
-    nama: "Dedi Kurniawan",
-    telat: "7",
-    tidak_hadir: "9",
-    teguran: "4",
-    sp: "1",
-  },
-  {
-    id: 5,
-    nama: "Rudi Hermawan",
-    telat: "6",
-    tidak_hadir: "5",
-    teguran: "3",
-    sp: "-",
-  },
-  {
-    id: 6,
-    nama: "Lina Marlina",
-    telat: "5",
-    tidak_hadir: "4",
-    teguran: "2",
-    sp: "-",
-  },
-  {
-    id: 7,
-    nama: "Hendra Wijaya",
-    telat: "4",
-    tidak_hadir: "3",
-    teguran: "2",
-    sp: "-",
-  },
-];
-
-const ROWS_PER_PAGE = 3;
 
 const LegendItem = ({ color, label, value }: any) => (
   <div className="flex items-center justify-between">
@@ -139,15 +81,52 @@ const DonutChart = ({ data, size = 110, label }: any) => (
 
 const AdminDashboard = () => {
   const { user, greeting } = useDashboard();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [offendersData, setOffendersData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const [dashRes, offendersRes] = await Promise.all([
+          dashboardService.getDashboard(),
+          dashboardService.getOffenders(30, 30)
+        ]);
+
+        if (dashRes.ok) {
+          const dashJson = await dashRes.json();
+          setDashboardData(dashJson.data || dashJson);
+        }
+
+        if (offendersRes.ok) {
+          const offendersJson = await offendersRes.json();
+          setOffendersData(offendersJson.data || offendersJson);
+        }
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  const ROWS_PER_PAGE = 5;
 
   // stats
-  const totalPersonel = 170;
-  const maleCount = 141;
-  const femaleCount = 17;
-  const aktifCount = 141;
-  const cutiCount = 6;
-  const tidakAktifCount = 11;
+  const totalPersonel = dashboardData?.satpam?.total || 0;
+  const maleCount = dashboardData?.gender?.["1"] || 0;
+  const femaleCount = dashboardData?.gender?.["2"] || 0;
+  const aktifCount = dashboardData?.satpam?.active || 0;
+  const cutiCount = dashboardData?.satpam?.cuti || 0;
+  const tidakAktifCount = 
+    (dashboardData?.satpam?.inactive || 0) + 
+    (dashboardData?.satpam?.pending || 0) + 
+    (dashboardData?.satpam?.rejected || 0) + 
+    (dashboardData?.satpam?.resign || 0) + 
+    (dashboardData?.satpam?.unassigned || 0);
 
   const genderData = [
     { name: "Laki-laki", value: maleCount, color: "#122C93" },
@@ -159,9 +138,12 @@ const AdminDashboard = () => {
     { name: "Tidak Aktif", value: tidakAktifCount, color: "#dbeafe" },
   ];
 
+  const totalClient = dashboardData?.clients?.total || 0;
+  const clientsDistribution = dashboardData?.clients?.distribution || [];
+
   // pagination
-  const totalPages = Math.ceil(mockDataPerhatian.length / ROWS_PER_PAGE);
-  const pagedData = mockDataPerhatian.slice(
+  const totalPages = Math.ceil(offendersData.length / ROWS_PER_PAGE) || 1;
+  const pagedData = offendersData.slice(
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE,
   );
@@ -187,9 +169,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-end gap-2 mt-1">
-            <h2 className="font-extrabold text-4xl leading-none text-[#122C93]">
-              170
-            </h2>
+            <h2 className="font-extrabold text-4xl leading-none text-[#122C93]">{loading ? "-" : totalPersonel}</h2>
             <h2 className="font-light text-sm text-black mb-0.5">Personel</h2>
           </div>
         </div>
@@ -203,15 +183,13 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-end gap-2 mt-1">
-            <h2 className="font-extrabold text-4xl leading-none text-[#008236]">
-              158
-            </h2>
-            <h2 className="font-light text-sm text-black mb-0.5">dari 170</h2>
+            <h2 className="font-extrabold text-4xl leading-none text-[#008236]">{loading ? "-" : aktifCount}</h2>
+            <h2 className="font-light text-sm text-black mb-0.5">dari {totalPersonel}</h2>
           </div>
           <Progress
             aria-label="Satpam aktif"
             className="h-2 mt-1"
-            value={93}
+            value={totalPersonel > 0 ? (aktifCount / totalPersonel) * 100 : 0}
             classNames={{ track: "bg-[#D9D9D9]", indicator: "bg-[#008236]" }}
           />
         </div>
@@ -225,12 +203,8 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-end gap-2 mt-1">
-            <h2 className="font-extrabold text-4xl leading-none text-[#122C93]">
-              20
-            </h2>
-            <h2 className="font-light text-sm text-black mb-0.5">
-              Lokasi Aktif
-            </h2>
+            <h2 className="font-extrabold text-4xl leading-none text-[#122C93]">{loading ? "-" : totalClient}</h2>
+            <h2 className="font-light text-sm text-black mb-0.5">Lokasi Aktif</h2>
           </div>
         </div>
 
@@ -300,20 +274,19 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex flex-col gap-3 mt-1">
-            {[
-              { nama: "Sumarecon Mall Badung", val: 20, pct: 60 },
-              { nama: "Summarecon Mall Serpong", val: 15, pct: 45 },
-              { nama: "Summarecon Mall Bekasi", val: 18, pct: 54 },
-            ].map((item) => (
-              <div key={item.nama} className="flex flex-col">
+            {clientsDistribution
+              .sort((a: any, b: any) => b.satpam - a.satpam)
+              .slice(0, 3)
+              .map((item: any) => (
+              <div key={item.uuid} className="flex flex-col">
                 <div className="flex justify-between items-center">
                   <h2 className="font-medium text-xs truncate">{item.nama}</h2>
-                  <h2 className="text-[#8D8787] text-xs ml-1">{item.val}</h2>
+                  <h2 className="text-[#8D8787] text-xs ml-1">{item.satpam}</h2>
                 </div>
                 <Progress
                   aria-label={item.nama}
                   className="h-2 mt-1"
-                  value={item.pct}
+                  value={totalPersonel > 0 ? (item.satpam / totalPersonel) * 100 : 0}
                   classNames={{
                     track: "bg-[#D9D9D9]",
                     indicator: "bg-[#122C93]",
@@ -356,14 +329,14 @@ const AdminDashboard = () => {
             )}
           </TableHeader>
           <TableBody items={pagedData}>
-            {(item) => (
-              <TableRow key={item.id}>
+            {(item: any) => (
+              <TableRow key={item.uuid}>
                 {(columnKey) => {
                   switch (columnKey) {
                     case "no":
                       return (
                         <TableCell>
-                          {mockDataPerhatian.indexOf(item) + 1}
+                          {offendersData.indexOf(item) + 1}
                         </TableCell>
                       );
                     case "nama":
@@ -372,10 +345,16 @@ const AdminDashboard = () => {
                           <div className="font-medium">{item.nama}</div>
                         </TableCell>
                       );
+                    case "client":
+                      return (
+                        <TableCell>
+                          <div className="text-sm text-gray-500">{item.client}</div>
+                        </TableCell>
+                      );
                     case "telat":
-                      return <TableCell>{item.telat}</TableCell>;
+                      return <TableCell>{item.late}</TableCell>;
                     case "tidak_hadir":
-                      return <TableCell>{item.tidak_hadir}</TableCell>;
+                      return <TableCell>{item.absent}</TableCell>;
                     case "teguran":
                       return <TableCell>{item.teguran}</TableCell>;
                     case "sp":
@@ -383,12 +362,12 @@ const AdminDashboard = () => {
                         <TableCell>
                           <span
                             className={
-                              item.sp !== "-"
+                              item.sp && item.sp !== "0" && item.sp !== 0
                                 ? "text-[#C10007] font-semibold"
                                 : ""
                             }
                           >
-                            {item.sp}
+                            {item.sp || "-"}
                           </span>
                         </TableCell>
                       );
@@ -396,7 +375,10 @@ const AdminDashboard = () => {
                       return (
                         <TableCell>
                           <div className="flex justify-center">
-                            <FaEye className="text-[#122C93] text-base" />
+                            <FaEye 
+                              className="text-[#122C93] text-base cursor-pointer" 
+                              onClick={() => navigate("/AdminDetailSatpam", { state: { uuid: item.uuid } })} 
+                            />
                           </div>
                         </TableCell>
                       );

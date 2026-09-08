@@ -58,22 +58,24 @@ const excludeWeekdayFromAssignment = async (
   assignment: any,
   targetDateStr: string,
   targetDayCode: string,
-): Promise<{ from: string; to: string | null }> => {
-  const effectiveFrom: string = assignment.effective_from;
-  const effectiveTo: string | null = assignment.effective_to ?? null;
+): Promise<{ from: string; to: string | null; successorUuid: string | null; rollbackOp: "delete" | "patch-to" | "patch-rrule" | "patch-to+successor" }> => {
+  const effectiveFrom: string = assignment.effective_from.split("T")[0];
+  const effectiveTo: string | null = assignment.effective_to ? assignment.effective_to.split("T")[0] : null;
   const currentDays = parseByDay(assignment.rrule);
   const remainingDays = currentDays.filter((d) => d !== targetDayCode);
   const hasHistoryBefore = Boolean(effectiveFrom) && effectiveFrom < targetDateStr;
 
-  if (remainingDays.length === 0) {
-    // targetDayCode was the only weekday on this assignment.
-    if (!hasHistoryBefore) {
-      await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignment.uuid}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-      });
-      return { from: effectiveFrom, to: effectiveTo };
-    }
+  // --- CASE A: satu-satunya hari, tidak ada history sebelumnya → DELETE ---
+  if (remainingDays.length === 0 && !hasHistoryBefore) {
+    await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignment.uuid}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    return { from: effectiveFrom, to: effectiveTo, successorUuid: null, rollbackOp: "delete" };
+  }
+
+  // --- CASE B: satu-satunya hari, ada history → close dengan dayBefore ---
+  if (remainingDays.length === 0 && hasHistoryBefore) {
     const dayBefore = new Date(targetDateStr);
     dayBefore.setDate(dayBefore.getDate() - 1);
     const closeRes = await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignment.uuid}`, {
@@ -84,11 +86,11 @@ const excludeWeekdayFromAssignment = async (
     const closeResult = await closeRes.json().catch(() => ({}));
     if (!closeRes.ok)
       throw new Error(closeResult.error?.message || closeResult.message || "Gagal menutup jadwal lama");
-    return { from: targetDateStr, to: effectiveTo };
+    return { from: targetDateStr, to: effectiveTo, successorUuid: null, rollbackOp: "patch-to" };
   }
 
-  if (!hasHistoryBefore) {
-    // No history to preserve — narrow the existing assignment's rrule in place.
+  // --- CASE C: ada remaining days, tidak ada history → narrow rrule saja ---
+  if (remainingDays.length > 0 && !hasHistoryBefore) {
     const patchRes = await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${assignment.uuid}`, {
       method: "PATCH",
       headers: getHeaders(),
@@ -97,9 +99,10 @@ const excludeWeekdayFromAssignment = async (
     const patchResult = await patchRes.json().catch(() => ({}));
     if (!patchRes.ok)
       throw new Error(patchResult.error?.message || patchResult.message || "Gagal mengubah pola jadwal");
-    return { from: effectiveFrom, to: effectiveTo };
+    return { from: effectiveFrom, to: effectiveTo, successorUuid: null, rollbackOp: "patch-rrule" };
   }
 
+  // --- CASE D: ada remaining days DAN ada history → close old + buat successor ---
   // History exists before this date — close old (full rrule preserved as history),
   // open a successor carrying the remaining weekdays. Ranges never overlap, so
   // this is safe against ASSIGNMENT_OVERLAP.
@@ -130,7 +133,8 @@ const excludeWeekdayFromAssignment = async (
   if (!successorRes.ok)
     throw new Error(successorResult.error?.message || successorResult.message || "Gagal membuat jadwal lanjutan");
 
-  return { from: targetDateStr, to: effectiveTo };
+  const successorUuid: string = (successorResult.data?.uuid || successorResult.uuid);
+  return { from: targetDateStr, to: effectiveTo, successorUuid, rollbackOp: "patch-to+successor" };
 };
 
 const regenerateFrom = async (fromStr: string, toStrOverride?: string | null) => {
@@ -139,11 +143,12 @@ const regenerateFrom = async (fromStr: string, toStrOverride?: string | null) =>
   await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ from: fromStr, to: toDate.toISOString().split("T")[0] }),
+    body: JSON.stringify({ from: fromStr.split("T")[0], to: toDate.toISOString().split("T")[0] }),
   }).catch(() => { });
 };
 
 export const scheduleService = {
+  regenerateFrom,
   getAll: async (
     limit: number = 50,
     cursor: string | null = null,
@@ -274,17 +279,26 @@ export const scheduleService = {
       } else {
         // mode: "future" — change this weekday's pattern/pos/satpam going forward,
         // WITHOUT dragging the other weekday(s) on the same assignment along with it.
-        const targetDateStr = item.recurrence_id || item.work_date;
-
+        //
+        // FIX BUG #4 (tetap): Gunakan recurrence_id untuk menentukan weekday di rrule
+        // assignment (hari asli override), null-coalesce ke work_date untuk manual instance.
+        const rawTargetDate = item.recurrence_id ?? item.work_date;
+        const targetDateStr = rawTargetDate.split("T")[0];
         const oldAssignmentRes = await scheduleService.getAssignmentById(assignmentUuid);
         const oldAssignment = oldAssignmentRes.data || oldAssignmentRes;
-        const targetDayCode = DAY_CODE[new Date(targetDateStr).getDay()];
+        const targetDayCode = DAY_CODE[new Date(targetDateStr + "T00:00:00").getDay()];
+        const effectiveTo: string | null = oldAssignment.effective_to ?? null;
+        const currentDays = parseByDay(oldAssignment.rrule);
 
         // 1) Take this weekday out of the old assignment; other weekdays keep
         //    their original pattern/pos/satpam untouched.
-        const { from, to } = await excludeWeekdayFromAssignment(oldAssignment, targetDateStr, targetDayCode);
+        const { from, to, successorUuid, rollbackOp } = await excludeWeekdayFromAssignment(
+          oldAssignment, targetDateStr, targetDayCode
+        );
 
         // 2) Give the edited weekday its own assignment with the new values.
+        // SKENARIO 1 FIX: Jika step 2 gagal (misal: 409 ASSIGNMENT_OVERLAP),
+        // lakukan rollback step 1 secara penuh berdasarkan operasi yang sudah terjadi.
         const newAssignmentRes = await fetchWithAuth(`${BASE_URL_API}/shift-assignments`, {
           method: "POST",
           headers: getHeaders(),
@@ -298,14 +312,55 @@ export const scheduleService = {
           }),
         });
         const result = await newAssignmentRes.json().catch(() => ({}));
-        if (!newAssignmentRes.ok)
-          throw new Error(result.error?.message || result.message || "Gagal membuat jadwal baru");
+        if (!newAssignmentRes.ok) {
+          // ROLLBACK: Kembalikan assignment ke kondisi semula berdasarkan operasi yang terjadi
+          try {
+            if (rollbackOp === "patch-rrule") {
+              // Case C: rrule sudah di-narrow → kembalikan ke rrule semula
+              await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${oldAssignment.uuid}`, {
+                method: "PATCH",
+                headers: getHeaders(),
+                body: JSON.stringify({ rrule: buildRruleFromDays(currentDays) }),
+              });
+            } else if (rollbackOp === "patch-to" || rollbackOp === "patch-to+successor") {
+              // Case B/D: assignment lama sudah di-close → buka kembali effective_to
+              await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${oldAssignment.uuid}`, {
+                method: "PATCH",
+                headers: getHeaders(),
+                body: JSON.stringify({ effective_to: effectiveTo }),
+              });
+              // Case D: ada successor yang juga perlu dihapus
+              if (rollbackOp === "patch-to+successor" && successorUuid) {
+                await fetchWithAuth(`${BASE_URL_API}/shift-assignments/${successorUuid}`, {
+                  method: "DELETE",
+                  headers: getHeaders(),
+                });
+              }
+            }
+            // Case A ("delete"): assignment lama sudah dihapus, tidak bisa di-rollback
+          } catch (_) {
+            // Jika rollback gagal, biarkan — error utama sudah jelas bagi user
+          }
+          throw new Error(
+            result.error?.code === "ASSIGNMENT_OVERLAP"
+              ? "Tidak bisa mengubah jadwal: satpam ini sudah memiliki jadwal yang tumpang tindih di periode tersebut."
+              : result.error?.message || result.message || "Gagal membuat jadwal baru"
+          );
+        }
 
         await regenerateFrom(from, to);
         return result;
       }
     } else {
-      await scheduleService.delete(item.uuid);
+      // FIX BUG #3: Untuk manual instance (tanpa assignment), fallback edit adalah
+      // cancel instance lama lalu create baru. Ini adalah satu-satunya cara karena
+      // API tidak menyediakan PATCH pada shift-instances.
+      // Kita pastikan hanya cancel jika instance belum berstatus cancelled,
+      // agar tidak membuat cancelled record ganda yang tidak perlu.
+      const currentStatus = typeof item === "object" ? item.status : undefined;
+      if (currentStatus !== "cancelled") {
+        await scheduleService.delete(item);
+      }
       return await scheduleService.create(body);
     }
   },
@@ -352,10 +407,12 @@ export const scheduleService = {
         await regenerateFrom(recurrenceId, recurrenceId);
         return result;
       } else {
-        const targetDateStr = target.recurrence_id || target.work_date;
+        // delete mode: "future" — use ?? for null safety (not ||)
+        const rawTargetDate = target.recurrence_id ?? target.work_date;
+        const targetDateStr = rawTargetDate.split("T")[0];
         const assignmentRes = await scheduleService.getAssignmentById(assignmentUuid);
         const assignment = assignmentRes.data || assignmentRes;
-        const targetDayCode = DAY_CODE[new Date(targetDateStr).getDay()];
+        const targetDayCode = DAY_CODE[new Date(targetDateStr + "T00:00:00").getDay()];
 
         const { from, to } = await excludeWeekdayFromAssignment(assignment, targetDateStr, targetDayCode);
         await regenerateFrom(from, to);
@@ -395,9 +452,11 @@ export const scheduleService = {
     const assignmentResult = await assignmentRes.json().catch(() => ({}));
     if (!assignmentRes.ok)
       throw new Error(
-        assignmentResult.error?.message ||
-        assignmentResult.message ||
-        "Gagal membuat jadwal rutin",
+        assignmentResult.error?.code === "ASSIGNMENT_OVERLAP"
+          ? "Tidak bisa membuat jadwal: satpam ini sudah memiliki jadwal yang tumpang tindih di periode tersebut. Periksa jadwal yang sudah ada sebelum menambahkan yang baru."
+          : assignmentResult.error?.message ||
+            assignmentResult.message ||
+            "Gagal membuat jadwal rutin",
       );
 
     const generateRes = await fetchWithAuth(`${BASE_URL_API}/shift-instances/generate`, {
@@ -413,6 +472,65 @@ export const scheduleService = {
         "Gagal generate jadwal",
       );
 
+    // SKENARIO 2 FIX: Periksa apakah ada instance yang di-skip karena overlap.
+    // Backend mengembalikan { skipped_overlap: N } tanpa error jika ada hari yang
+    // tidak bisa di-generate karena satpam sudah punya jadwal di jam yang sama.
+    // Kita lempar warning agar UI bisa memberitahu user.
+    const skipped = generateResult.skipped_overlap ?? 0;
+    if (skipped > 0) {
+      const result = { ...generateResult, hasSkippedOverlap: true, skipped_overlap: skipped };
+      return result;
+    }
+
     return generateResult;
+  },
+
+  /**
+   * Direct cancel — strikes off THIS ROW immediately.
+   * Effect is instant; no regenerate needed.
+   * Use for: "he swapped with someone today", "covering sickness one time".
+   * Source=manual shifts MUST use this (they have no recurrence to point at).
+   */
+  cancelInstance: async (instanceUuid: string) => {
+    const res = await fetchWithAuth(`${BASE_URL_API}/shift-instances/${instanceUuid}/cancel`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error(result.error?.message || result.message || "Gagal membatalkan jadwal");
+    return result;
+  },
+
+  /**
+   * Cancel via exception rule — tells the RULE to stop producing this occurrence.
+   * Requires regenerate to take effect.
+   * Use for: "he is on leave", "permanently remove this day from the pattern".
+   * Only available for source=pattern or source=override (has assignment_uuid + recurrence_id).
+   */
+  createCancelException: async (
+    assignmentUuid: string,
+    recurrenceId: string,
+    reason: "admin" | "sakit" | "cuti" | "lembur" = "admin",
+  ) => {
+    const res = await fetchWithAuth(`${BASE_URL_API}/shift-exceptions`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        assignment_uuid: assignmentUuid,
+        recurrence_id: recurrenceId,
+        type: "cancel",
+        reason,
+      }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status === 409 && result.error?.code === "EXCEPTION_EXISTS") {
+        // Exception already exists — silently ignore, already cancelled via rule
+        return result;
+      }
+      throw new Error(result.error?.message || result.message || "Gagal membuat exception");
+    }
+    return result;
   },
 };
