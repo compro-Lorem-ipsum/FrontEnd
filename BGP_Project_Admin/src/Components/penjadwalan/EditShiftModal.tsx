@@ -20,6 +20,7 @@ import {
   Button,
   Select,
   SelectItem,
+  Input,
   addToast,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
@@ -60,12 +61,16 @@ const EditShiftModal = ({
 }: EditShiftModalProps) => {
   const [shiftUuid, setShiftUuid] = useState("");
   const [posUuid, setPosUuid] = useState("");
+  const [startLocal, setStartLocal] = useState("");
+  const [endLocal, setEndLocal] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen && item) {
       setShiftUuid(item.pattern.uuid);
       setPosUuid(item.pos.uuid);
+      setStartLocal("");
+      setEndLocal("");
     }
   }, [isOpen, item]);
 
@@ -81,6 +86,10 @@ const EditShiftModal = ({
       addToast({ title: "Validasi", description: "Shift dan Pos wajib dipilih", color: "warning" });
       return;
     }
+    if ((startLocal && !endLocal) || (!startLocal && endLocal)) {
+      addToast({ title: "Validasi", description: "Jam Mulai dan Jam Selesai harus diisi keduanya jika ingin menggunakan jam custom", color: "warning" });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await scheduleService.update(
@@ -90,6 +99,7 @@ const EditShiftModal = ({
           pos_uuid: posUuid,
           shift_uuid: shiftUuid,
           tanggal: item.work_date.split("T")[0],
+          ...(startLocal && endLocal ? { start_local: startLocal, end_local: endLocal } : {}),
         },
         "single",
       );
@@ -186,13 +196,13 @@ const EditShiftModal = ({
               <MdInfo className="flex-shrink-0 mt-0.5 text-base" />
               <span>
                 Jadwal ini adalah <strong>sekali pakai</strong> (tidak ada aturan di baliknya).
-                Tidak bisa dipindah atau diubah via aturan — hanya bisa dibatalkan langsung.
+                Anda bisa mengubahnya di sini, tapi perubahan jadwal ini tidak memengaruhi pola rutin apa pun.
               </span>
             </div>
           )}
 
-          {/* Rule-based shift: show edit fields */}
-          {!isManual && hasRule && (
+          {/* Edit form: available for rule-based and manual (fallback handles recreate) */}
+          {(hasRule || isManual) && item.status !== "completed" && (
             <div className="flex flex-col gap-4">
               <p className="text-xs text-[#6B6B6B] font-medium uppercase tracking-wide">
                 Ubah Jadwal Hari Ini Saja
@@ -229,6 +239,8 @@ const EditShiftModal = ({
                 labelPlacement="inside"
                 selectedKeys={posUuid ? [posUuid] : []}
                 onSelectionChange={(k) => setPosUuid(String(Array.from(k)[0]))}
+                isDisabled={!isManual && hasRule}
+                description={!isManual && hasRule ? "Pos tidak bisa diubah untuk jadwal dari aturan rutin (hanya Shift/Jam). Batalkan jadwal ini dan buat jadwal baru jika ingin pindah Pos." : ""}
                 listboxProps={{
                   bottomContent: (
                     <InfiniteScrollTrigger
@@ -245,6 +257,28 @@ const EditShiftModal = ({
                   </SelectItem>
                 ))}
               </Select>
+
+              <div className="flex gap-4">
+                <Input
+                  label="Jam Mulai (Opsional)"
+                  type="time"
+                  variant="underlined"
+                  value={startLocal}
+                  onChange={(e) => setStartLocal(e.target.value)}
+                  placeholder="Ikuti shift"
+                />
+                <Input
+                  label="Jam Selesai (Opsional)"
+                  type="time"
+                  variant="underlined"
+                  value={endLocal}
+                  onChange={(e) => setEndLocal(e.target.value)}
+                  placeholder="Ikuti shift"
+                />
+              </div>
+              <p className="text-[11px] text-gray-500 mt-[-8px]">
+                Biarkan kosong untuk mengikuti waktu default dari Shift yang dipilih.
+              </p>
             </div>
           )}
 
@@ -258,14 +292,14 @@ const EditShiftModal = ({
         </ModalBody>
 
         <ModalFooter className="flex-col gap-2 pb-6">
-          {/* Edit action — only for rule-based shifts */}
-          {!isManual && hasRule && item.status !== "completed" && (
+          {/* Edit action — available for both if not completed */}
+          {(hasRule || isManual) && item.status !== "completed" && (
             <Button
               className="w-full bg-[#122C93] text-white"
               onPress={handleEditSingleDay}
               isLoading={isSubmitting}
             >
-              Simpan Perubahan (Hari Ini Saja)
+              Simpan Perubahan
             </Button>
           )}
 
@@ -298,9 +332,9 @@ const EditShiftModal = ({
           </Button>
 
           {/* Explanation */}
-          {!isManual && item.status !== "completed" && (
+          {item.status !== "completed" && (
             <div className="w-full text-[11px] text-[#9CA3AF] space-y-1 border-t border-[#E4E9F7] pt-2 mt-1">
-              <p><strong className="text-amber-600">Batalkan dari Aturan:</strong> Hapus occurrence ini dari pola berulang. Jadwal hari Senin/Selasa/Rabu lainnya tetap ada. Cocok untuk cuti/izin.</p>
+              {!isManual && <p><strong className="text-amber-600">Batalkan dari Aturan:</strong> Hapus jadwal ini dari pola berulang. Jadwal hari lainnya tetap ada. Cocok untuk cuti/izin.</p>}
               <p><strong className="text-red-600">Batalkan Langsung:</strong> Hapus baris ini saja, tanpa mengubah aturan. Cocok untuk tukar jadwal sehari. Efek langsung tanpa perlu re-generate.</p>
             </div>
           )}
