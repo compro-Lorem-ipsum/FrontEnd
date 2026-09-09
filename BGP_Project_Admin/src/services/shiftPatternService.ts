@@ -67,6 +67,19 @@ export const shiftPatternService = {
       method: "DELETE",
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error("Gagal menghapus shift pattern");
+    if (!res.ok) {
+      let errorMsg = "Gagal menghapus shift pattern";
+      try {
+        const errorData = await res.json();
+        if (errorData?.error?.code === "PATTERN_IN_USE") {
+          errorMsg = "Tidak bisa menghapus shift karena masih ada satpam yang bekerja di shift tersebut, harap lepas penugasan satpam terlebih dahulu!";
+        } else if (errorData?.error?.message) {
+          errorMsg = errorData.error.message;
+        }
+      } catch (e) {
+        // ignore JSON parse error
+      }
+      throw new Error(errorMsg);
+    }
   },
 };
