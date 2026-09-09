@@ -330,7 +330,7 @@ const Sidebar = () => {
 
         {!isCollapsed && (
           <div className="text-center mt-2 text-[10px] text-gray-300 whitespace-nowrap overflow-hidden">
-            v2.0.0 &copy; 2026 Bima Global Security
+            v2.0.0 &copy; 2026 PT Bima Global Security
           </div>
         )}
       </div>

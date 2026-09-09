@@ -41,7 +41,7 @@ export const SystemNavbar = () => {
             href="/"
             className="hidden sm:block font-bold text-2xl tracking-tighter text-[#122C93] dark:text-white transition-colors"
           >
-            Bima Global Security
+            PT Bima Global Security
           </a>
         </div>
 
