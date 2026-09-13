@@ -93,7 +93,7 @@ export const Footer = ({
                 </li>
                 <li>
                   <a
-                    href="#tentang"
+                    href="#standar-layanan"
                     className="hover:text-[#122C93] dark:hover:text-white transition-colors"
                   >
                     {t("footer.about")}

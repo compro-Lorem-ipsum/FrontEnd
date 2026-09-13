@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /Admin
+Disallow: /Client
+Disallow: /auth-login
+
+Sitemap: https://teambgs.ninja/sitemap.xml
