@@ -19,7 +19,7 @@ import {
   LuChevronRight,
   LuScanFace,
 } from "react-icons/lu";
-import { BsPersonFillCheck } from "react-icons/bs";
+import { BsPersonFillCheck, BsBuildings } from "react-icons/bs";
 
 import { MdCoPresent } from "react-icons/md";
 import {
@@ -67,6 +67,13 @@ const Sidebar = () => {
       name: "Manage Client",
       icon: <IoMdSettings className="text-xl" />,
       path: "/AdminManageUsers",
+      hidden: role !== "admin",
+    },
+    {
+      key: "manage-cabang",
+      name: "Manage Cabang",
+      icon: <BsBuildings className="text-xl" />,
+      path: "/AdminManageCabang",
       hidden: role !== "admin",
     },
     {

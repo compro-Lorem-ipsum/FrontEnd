@@ -7,6 +7,7 @@ import PrivateRoute from "./Utils/PrivateRoute";
 import ScrollToTop from "./Utils/ScrollToTop";
 
 import AdminManageUsers from "./pages/AdminManageUsers";
+import AdminManageCabang from "./pages/AdminManageCabang";
 import AdminManageSatpam from "./pages/AdminManageSatpam";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminManageShift from "./pages/AdminManageShift";
@@ -90,6 +91,7 @@ function App() {
             />
             <Route path="/AdminAprovalAkun" element={<AdminAprovalAkun />} />
             <Route path="/AdminManageUsers" element={<AdminManageUsers />} />
+            <Route path="/AdminManageCabang" element={<AdminManageCabang />} />
             <Route path="/AdminManageShift" element={<AdminManageShift />} />
             <Route path="/AdminManagePos" element={<AdminManagePos />} />
             <Route
