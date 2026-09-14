@@ -15,9 +15,9 @@ export const getRole = (): string | undefined => {
 
 export const formatTanggal = (dateString?: string): string => {
   if (!dateString) return "-";
-  const safeDateString = dateString.endsWith("Z")
-    ? dateString
-    : `${dateString}Z`;
+  const safeDateString = dateString.includes("T") && !dateString.endsWith("Z")
+    ? `${dateString}Z`
+    : dateString;
 
   try {
     const date = new Date(safeDateString);
@@ -33,9 +33,9 @@ export const formatTanggal = (dateString?: string): string => {
 
 export const formatTanggalIndo = (dateString?: string): string => {
   if (!dateString) return "-";
-  const safeDateString = dateString.endsWith("Z")
-    ? dateString
-    : `${dateString}Z`;
+  const safeDateString = dateString.includes("T") && !dateString.endsWith("Z")
+    ? `${dateString}Z`
+    : dateString;
 
   try {
     const date = new Date(safeDateString);
@@ -61,7 +61,9 @@ export const getDeviceTimezone = (): string => {
 
 export const formatDateTimeZone = (isoString: string | null): string => {
   if (!isoString) return "-";
-  const safeDateString = isoString.endsWith("Z") ? isoString : `${isoString}Z`;
+  const safeDateString = isoString.includes("T") && !isoString.endsWith("Z") 
+    ? `${isoString}Z` 
+    : isoString;
 
   try {
     const date = new Date(safeDateString);
