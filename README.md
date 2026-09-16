@@ -1,149 +1,100 @@
-# 📸 Face Recognition System - Frontend Repository
+# BGP Project - Admin Dashboard
 
-Repository ini berisi source code Frontend untuk **Sistem Manajemen Keamanan & Face Recognition**. Project ini dibangun menggunakan React (Vite) dan terbagi menjadi dua modul utama: **Admin Dashboard** dan **Client Application**.
+BGP Project Admin Dashboard adalah aplikasi antarmuka web (frontend) yang dirancang untuk mengelola dan memonitor aktivitas keamanan (satpam) di berbagai cabang dan klien. Sistem ini mempermudah admin, pengelola cabang, dan klien dalam melakukan pengawasan, pengelolaan data satpam, rekap absensi, jadwal patroli, hingga merespons laporan darurat (Panic Alert).
 
-Project ini dikembangkan oleh tim yang terdiri dari:
-* Mobile Developer
-* Frontend Developer
-* Backend Developer
-* System Analyst
-* Quality Assurance (QA)
-* AI Engineer
+Aplikasi ini dibangun menggunakan ekosistem modern **React**, **TypeScript**, dan **Vite**, dengan antarmuka yang rapi dan responsif berkat integrasi **HeroUI** dan **Tailwind CSS**.
+
+## 🌟 Fitur Utama
+
+- **Role-Based Access Control (RBAC)**
+  Sistem ini memiliki pembagian peran yang ketat untuk `admin`, `cabang`, dan `client`. Setiap peran memiliki akses dan visibilitas fitur yang disesuaikan (misal: client hanya dapat melihat satpam yang ditugaskan kepada mereka).
+- **Manajemen Pengguna & Satpam**
+  Pendaftaran, persetujuan akun, dan pengelolaan detail profil setiap satpam dan klien.
+- **Monitoring Kehadiran & Patroli**
+  Rekap absensi harian dan rute/pos patroli yang divisualisasikan dengan tabel informatif.
+- **Panic Alert (Tombol Darurat)**
+  Monitoring real-time untuk laporan darurat dari aplikasi satpam, lengkap dengan status (Aktif, Dalam Penanganan, Selesai) dan pelacakan lokasi.
+- **Pengajuan Cuti & Lembur**
+  Modul untuk menyetujui atau menolak permohonan izin, cuti, atau lembur yang diajukan oleh satpam.
+- **Pengumuman & Repositori Dokumen**
+  Pusat siaran informasi massal dan repositori untuk mengunggah dokumen (SOP, Peraturan) yang bisa diakses dan diunduh oleh anggota terkait.
+
+## 🛠️ Teknologi yang Digunakan
+
+- **Core**: React 19, TypeScript, Vite
+- **Styling & UI**: Tailwind CSS v4, HeroUI, Framer Motion, GSAP
+- **Routing**: React Router DOM v7
+- **Maps**: Leaflet, React Leaflet, React Simple Maps
+- **Charts**: Recharts
+- **Date & Time**: Day.js
+- **Icons**: React Icons (HeroIcons)
+
+## 📋 Prasyarat Sistem
+
+Pastikan sistem Anda telah menginstal:
+- **Node.js** (versi 18.x atau lebih baru sangat disarankan)
+- **npm** atau **yarn**
+- **Git**
+
+## 🚀 Cara Setup dan Instalasi (Local Development)
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di lingkungan lokal:
+
+1. **Clone repositori**
+   ```bash
+   git clone <url-repository-anda>
+   cd BGP_Project_Admin
+   ```
+
+2. **Instalasi Dependencies**
+   Gunakan npm untuk menginstal semua paket yang dibutuhkan:
+   ```bash
+   npm install
+   ```
+
+3. **Konfigurasi Environment (Opsional)**
+   Jika proyek ini memerlukan URL API atau konfigurasi khusus, buat file `.env` di root direktori proyek. Contoh (sesuaikan dengan URL backend Anda):
+   ```env
+   VITE_API_URL=http://localhost:8000/api
+   ```
+   *(Catatan: Anda mungkin tidak perlu langkah ini jika endpoint sudah di-hardcode di service, namun ini adalah best practice).*
+
+4. **Jalankan Server Development**
+   Jalankan perintah berikut untuk memulai server lokal:
+   ```bash
+   npm run dev
+   ```
+   Aplikasi akan berjalan di mode development. Buka browser dan akses URL lokal yang tertera di terminal (biasanya `http://localhost:5173`).
+
+5. **Build untuk Production**
+   Jika ingin melakukan kompilasi aplikasi untuk keperluan deployment, jalankan:
+   ```bash
+   npm run build
+   ```
+   Hasil build akan dibuat di dalam folder `dist/`.
+
+## 📁 Struktur Folder Utama
+
+```text
+src/
+ ├── Components/    # Komponen React yang reusable (Tabel, Modal, Sidebar, dll)
+ ├── hooks/         # Custom React hooks untuk fetching data dan logic state
+ ├── pages/         # Komponen Halaman (Views) utama untuk React Router
+ ├── services/      # Layanan komunikasi API ke backend
+ ├── types/         # Definisi interface/type TypeScript
+ ├── Utils/         # Helper functions (format tanggal, auth cookie, dll)
+ ├── App.tsx        # Entry point Router & Layout aplikasi
+ └── main.tsx       # Root render & penyedia Context/Provider
+```
+
+## 📜 Skrip NPM
+
+Berikut adalah daftar skrip yang dapat dijalankan melalui terminal:
+
+- `npm run dev`: Memulai vite development server dengan HMR.
+- `npm run build`: Menjalankan TypeScript compiler (`tsc -b`) dan membuat production build dengan Vite.
+- `npm run lint`: Menjalankan ESLint untuk mengecek potensi error atau masalah penulisan kode.
+- `npm run preview`: Membuka server preview lokal untuk menguji folder `dist/` hasil build.
 
 ---
-
-## 📂 Struktur Project
-
-Pastikan Anda berada di direktori root yang memuat dua folder utama ini:
-
-1.  **`BGP_Project_Admin`** (Web Dashboard untuk Administrator)
-2.  **`BGP_Project_Client`** (Aplikasi Interface untuk User/Klien)
-
-> **Catatan:** Kedua aplikasi ini beroperasi secara terpisah dan memerlukan terminal masing-masing untuk dijalankan secara bersamaan.
-
----
-
-## 🛠️ Prasyarat (Prerequisites)
-
-Sebelum melakukan instalasi, pastikan sistem Anda telah memenuhi kebutuhan berikut:
-
-### 1. Install Node.js
-Project ini membutuhkan Node.js agar dapat berjalan.
-* **Download:** [https://nodejs.org/en/download](https://nodejs.org/en/download)
-* **Versi:** Disarankan menggunakan versi **LTS (Long Term Support)**.
-
-### 2. Verifikasi Instalasi
-Setelah menginstall Node.js, buka terminal (CMD, PowerShell, atau Terminal) dan jalankan perintah berikut:
-
-```bash
-node -v
-npm -v
-
-```
-
-*Jika `npm` tidak muncul, lakukan instalasi ulang Node.js atau jalankan `npm install -g npm`.*
-
----
-
-## ⚙️ Panduan Instalasi (Setup Guide)
-
-Lakukan langkah-langkah berikut untuk **kedua folder** (`BGP_Project_Admin` dan `BGP_Client`).
-
-### Langkah 1: Install Dependencies
-
-Anda harus masuk ke masing-masing folder dan menginstall library.
-
-**Untuk Admin:**
-
-```bash
-cd BGP_Project_Admin
-npm install
-
-```
-
-**Untuk Client:**
-*(Buka terminal baru atau kembali ke root folder)*
-
-```bash
-cd BGP_Project_Client
-npm install
-
-```
-
-### Langkah 2: Konfigurasi Environment Variable (.env)
-
-Agar frontend dapat berkomunikasi dengan Backend, Anda perlu mengatur URL API.
-
-1. Duplikat file `.env.example` lalu ubah namanya menjadi `.env` (atau buat file `.env` baru).
-2. Lakukan ini di dalam folder `BGP_Project_Admin` **DAN** `BGP_Project_Client`.
-3. Isi file `.env` dengan konfigurasi berikut:
-
-```env
-# FILE: .env
-
-# Opsi 1: Jika Backend berjalan di Local (Komputer sendiri)
-VITE_API_BASE_URL=http://localhost:5500
-
-# Opsi 2: Jika Backend sudah di-deploy (Production)
-# VITE_API_BASE_URL=[https://api.domain-anda.com](https://api.domain-anda.com)
-
-```
-
----
-
-## 🚀 Cara Menjalankan Aplikasi (Run Project)
-
-Karena ini adalah dua aplikasi berbeda, Anda perlu menjalankan **dua terminal** secara bersamaan.
-
-### Terminal 1 - Menjalankan Admin Dashboard
-
-```bash
-cd BGP_Project_Admin
-npm run dev
-
-```
-
-*Biasanya akan berjalan di: `http://localhost:5173*`
-
-### Terminal 2 - Menjalankan Client App
-
-*(Buka tab terminal baru)*
-
-```bash
-cd BGP_Project_Client
-npm run dev
-
-```
-
-*Biasanya akan berjalan di: `http://localhost:5174` (Vite otomatis mencari port kosong)*
-
----
-
-## 🐛 Troubleshooting & Notes
-
-### Port Conflict
-
-Jangan khawatir jika port `5173` sudah terpakai. Vite secara otomatis akan mengalihkan ke port `5174`, `5175`, dst.
-
-* Perhatikan output di terminal setelah menjalankan `npm run dev` untuk melihat port mana yang aktif.
-
-### API Connection Error
-
-Jika data tidak muncul atau login gagal, lakukan pengecekan berikut:
-
-1. **Backend Status:** Pastikan Backend Server sudah berjalan.
-2. **Environment Variable:** Cek kembali `VITE_API_BASE_URL` di file `.env`. Pastikan URL-nya benar.
-3. **CORS:** Pastikan tidak ada isu *Cross-Origin Resource Sharing* (CORS) di sisi Backend yang memblokir request dari Frontend.
-
-### Production Build
-
-Untuk melakukan build aplikasi ke tahap production (menghasilkan folder `dist` yang siap deploy), jalankan perintah berikut di masing-masing folder project:
-
-```bash
-npm run build
-
-```
-
-```
-
-```
+*Dibuat & Dikelola oleh Tim Pengembang BGP Project.*

@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# BGP Project - Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+BGP Project Admin Dashboard adalah aplikasi antarmuka web (frontend) yang dirancang untuk mengelola dan memonitor aktivitas keamanan (satpam) di berbagai cabang dan klien. Sistem ini mempermudah admin, pengelola cabang, dan klien dalam melakukan pengawasan, pengelolaan data satpam, rekap absensi, jadwal patroli, hingga merespons laporan darurat (Panic Alert).
 
-Currently, two official plugins are available:
+Aplikasi ini dibangun menggunakan ekosistem modern **React**, **TypeScript**, dan **Vite**, dengan antarmuka yang rapi dan responsif berkat integrasi **HeroUI** dan **Tailwind CSS**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🌟 Fitur Utama
 
-## React Compiler
+- **Role-Based Access Control (RBAC)**
+  Sistem ini memiliki pembagian peran yang ketat untuk `admin`, `cabang`, dan `client`. Setiap peran memiliki akses dan visibilitas fitur yang disesuaikan (misal: client hanya dapat melihat satpam yang ditugaskan kepada mereka).
+- **Manajemen Pengguna & Satpam**
+  Pendaftaran, persetujuan akun, dan pengelolaan detail profil setiap satpam dan klien.
+- **Monitoring Kehadiran & Patroli**
+  Rekap absensi harian dan rute/pos patroli yang divisualisasikan dengan tabel informatif.
+- **Panic Alert (Tombol Darurat)**
+  Monitoring real-time untuk laporan darurat dari aplikasi satpam, lengkap dengan status (Aktif, Dalam Penanganan, Selesai) dan pelacakan lokasi.
+- **Pengajuan Cuti & Lembur**
+  Modul untuk menyetujui atau menolak permohonan izin, cuti, atau lembur yang diajukan oleh satpam.
+- **Pengumuman & Repositori Dokumen**
+  Pusat siaran informasi massal dan repositori untuk mengunggah dokumen (SOP, Peraturan) yang bisa diakses dan diunduh oleh anggota terkait.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Teknologi yang Digunakan
 
-## Expanding the ESLint configuration
+- **Core**: React 19, TypeScript, Vite
+- **Styling & UI**: Tailwind CSS v4, HeroUI, Framer Motion, GSAP
+- **Routing**: React Router DOM v7
+- **Maps**: Leaflet, React Leaflet, React Simple Maps
+- **Charts**: Recharts
+- **Date & Time**: Day.js
+- **Icons**: React Icons (HeroIcons)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📋 Prasyarat Sistem
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Pastikan sistem Anda telah menginstal:
+- **Node.js** (versi 18.x atau lebih baru sangat disarankan)
+- **npm** atau **yarn**
+- **Git**
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 Cara Setup dan Instalasi (Local Development)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di lingkungan lokal:
+
+1. **Clone repositori**
+   ```bash
+   git clone <url-repository-anda>
+   cd BGP_Project_Admin
+   ```
+
+2. **Instalasi Dependencies**
+   Gunakan npm untuk menginstal semua paket yang dibutuhkan:
+   ```bash
+   npm install
+   ```
+
+3. **Konfigurasi Environment (Opsional)**
+   Jika proyek ini memerlukan URL API atau konfigurasi khusus, buat file `.env` di root direktori proyek. Contoh (sesuaikan dengan URL backend Anda):
+   ```env
+   VITE_API_URL=http://localhost:8000/api
+   ```
+   *(Catatan: Anda mungkin tidak perlu langkah ini jika endpoint sudah di-hardcode di service, namun ini adalah best practice).*
+
+4. **Jalankan Server Development**
+   Jalankan perintah berikut untuk memulai server lokal:
+   ```bash
+   npm run dev
+   ```
+   Aplikasi akan berjalan di mode development. Buka browser dan akses URL lokal yang tertera di terminal (biasanya `http://localhost:5173`).
+
+5. **Build untuk Production**
+   Jika ingin melakukan kompilasi aplikasi untuk keperluan deployment, jalankan:
+   ```bash
+   npm run build
+   ```
+   Hasil build akan dibuat di dalam folder `dist/`.
+
+## 📁 Struktur Folder Utama
+
+```text
+src/
+ ├── Components/    # Komponen React yang reusable (Tabel, Modal, Sidebar, dll)
+ ├── hooks/         # Custom React hooks untuk fetching data dan logic state
+ ├── pages/         # Komponen Halaman (Views) utama untuk React Router
+ ├── services/      # Layanan komunikasi API ke backend
+ ├── types/         # Definisi interface/type TypeScript
+ ├── Utils/         # Helper functions (format tanggal, auth cookie, dll)
+ ├── App.tsx        # Entry point Router & Layout aplikasi
+ └── main.tsx       # Root render & penyedia Context/Provider
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📜 Skrip NPM
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Berikut adalah daftar skrip yang dapat dijalankan melalui terminal:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `npm run dev`: Memulai vite development server dengan HMR.
+- `npm run build`: Menjalankan TypeScript compiler (`tsc -b`) dan membuat production build dengan Vite.
+- `npm run lint`: Menjalankan ESLint untuk mengecek potensi error atau masalah penulisan kode.
+- `npm run preview`: Membuka server preview lokal untuk menguji folder `dist/` hasil build.
+
+---
+*Dibuat & Dikelola oleh Tim Pengembang BGP Project.*
