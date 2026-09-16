@@ -83,7 +83,9 @@ const PengajuanTable = ({
   onTolak,
 }: PengajuanTableProps) => {
   const role = getRole();
-  const columns = role === "client" ? INITIAL_COLUMNS.filter(c => c.uid !== "aksi") : INITIAL_COLUMNS;
+  const columns = (role === "client" || role?.toLowerCase() === "cabang") 
+    ? INITIAL_COLUMNS.filter(c => c.uid !== "aksi") 
+    : INITIAL_COLUMNS;
 
   return (
     <Table

@@ -115,7 +115,7 @@ const AdminRepositoriDokumen = () => {
             satpam via aplikasi. Bisa untuk semua satpam atau client tertentu.
           </p>
         </div>
-        {role !== "client" && (
+        {role === "admin" && (
           <Button
             className="text-white font-semibold bg-[#122C93]"
             size="md"
@@ -293,7 +293,7 @@ const AdminRepositoriDokumen = () => {
                       return (
                         <TableCell>
                           <div className="flex justify-center gap-2">
-                            {role !== "client" && (
+                            {role === "admin" && (
                               <button
                                 className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
                                 onClick={() => handleEdit(item)}
@@ -314,7 +314,7 @@ const AdminRepositoriDokumen = () => {
                                 <LuDownload className="text-base" />
                               </button>
                             )}
-                            {role !== "client" && (
+                            {role === "admin" && (
                               <button
                                 className="border border-[#C7D2FE] text-[#A70202] rounded-lg p-2 hover:bg-[#FDEDED] cursor-pointer"
                                 onClick={() => handleDeletePrompt(item)}

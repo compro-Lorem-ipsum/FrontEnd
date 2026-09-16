@@ -1,15 +1,14 @@
 import { Button, useDisclosure, Select, SelectItem } from "@heroui/react";
 import { FiSearch } from "react-icons/fi";
-// Menggunakan hook dan komponen User sementara untuk Cabang
-import { useUserManagement } from "../hooks/useUserManagement";
-import { UserListTable } from "../Components/users/UserListTable";
-import { AddUserModal } from "../Components/users/AddUserModal";
+import { useCabangManagement } from "../hooks/useCabangManagement";
+import { CabangListTable } from "../Components/cabang/CabangListTable";
+import { AddCabangModal } from "../Components/cabang/AddCabangModal";
 import { DeleteConfirmationModal } from "../Components/common/DeleteConfirmationModal";
 
 const AdminManageCabang = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const {
-    users,
+    cabangs,
     loading,
     limit,
     setLimit,
@@ -22,7 +21,7 @@ const AdminManageCabang = () => {
     resetPagination,
     refreshData,
     deleteState,
-  } = useUserManagement();
+  } = useCabangManagement();
 
   return (
     <div className="flex flex-col p-5">
@@ -74,7 +73,7 @@ const AdminManageCabang = () => {
           </Select>
         </div>
 
-        <AddUserModal
+        <AddCabangModal
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           onSuccess={() => {
@@ -84,8 +83,8 @@ const AdminManageCabang = () => {
         />
 
         <div className="table-section-container mt-6">
-          <UserListTable
-            users={users}
+          <CabangListTable
+            cabangs={cabangs}
             loading={loading}
             hasMore={hasMore}
             currentPage={currentPage}

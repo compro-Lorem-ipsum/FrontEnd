@@ -64,7 +64,7 @@ const AdminManagePengumuman = () => {
               : "Broadcast informasi ke semua satpam atau hanya satpam di client tertentu."}
           </p>
         </div>
-        {userRole !== "client" && (
+        {userRole === "admin" && (
           <Button
             className="text-white font-semibold bg-[#122C93]"
             size="md"
