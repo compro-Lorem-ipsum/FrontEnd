@@ -4,6 +4,7 @@ import { FaIdCardAlt, FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 import { LuOctagonAlert } from "react-icons/lu";
 import { IoIosAlert } from "react-icons/io";
 import { Spinner, Button, Pagination } from "@heroui/react";
+import { getRole } from "../Utils/helpers";
 
 import { useAdminSatpamDetails } from "../hooks/useAdminSatpamDetails";
 import { SatpamDetailTabs } from "../Components/satpam/SatpamDetailTabs";
@@ -15,6 +16,9 @@ const AdminDetailsSatpam = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const uuid = location.state?.uuid;
+
+  const role = getRole();
+  const isCabang = role === "cabang";
 
   const { state, setters, handlers, modals } = useAdminSatpamDetails(uuid);
 
@@ -125,7 +129,7 @@ const AdminDetailsSatpam = () => {
       )}
 
       {/* Tab Section */}
-      <SatpamDetailTabs state={state} setters={setters} handlers={handlers} modals={modals} />
+      <SatpamDetailTabs state={state} setters={setters} handlers={handlers} modals={modals} readOnly={isCabang} />
 
       {/* Riwayat Pelanggaran */}
       <div className="flex flex-col gap-2 bg-white p-2 rounded-xl border border-[#E8EEFF]">
@@ -136,13 +140,15 @@ const AdminDetailsSatpam = () => {
               Riwayat Pelanggaran
             </h2>
           </div>
-          <Button
-            className="font-semibold text-white text-xs bg-[#122C93] px-3 py-1.5 rounded-lg"
-            size="sm"
-            onPress={handlers.handleTambahPelanggaran}
-          >
-            + Tambah Pelanggaran
-          </Button>
+          {!isCabang && (
+            <Button
+              className="font-semibold text-white text-xs bg-[#122C93] px-3 py-1.5 rounded-lg"
+              size="sm"
+              onPress={handlers.handleTambahPelanggaran}
+            >
+              + Tambah Pelanggaran
+            </Button>
+          )}
         </div>
 
         {state.isLoadingViolations ? (
@@ -165,14 +171,16 @@ const AdminDetailsSatpam = () => {
                 </h2>
               </div>
             </div>
-            <div className="flex flex-row gap-2.5 items-center">
-              <button onClick={(e) => handlers.handleEditViolation(currentPelanggaran, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
-                <FaRegEdit className="text-base cursor-pointer" />
-              </button>
-              <button onClick={(e) => handlers.handleDeleteViolation(currentPelanggaran.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
-                <FaRegTrashAlt className="text-base" />
-              </button>
-            </div>
+            {!isCabang && (
+              <div className="flex flex-row gap-2.5 items-center">
+                <button onClick={(e) => handlers.handleEditViolation(currentPelanggaran, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#122C93] hover:bg-white transition-colors">
+                  <FaRegEdit className="text-base cursor-pointer" />
+                </button>
+                <button onClick={(e) => handlers.handleDeleteViolation(currentPelanggaran.uuid, e)} className="p-2 border border-[#C7D2FE] rounded-lg text-[#A70202] hover:bg-[#FDEDED] transition-colors">
+                  <FaRegTrashAlt className="text-base" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center text-sm text-gray-500 py-4">Belum ada pelanggaran</div>

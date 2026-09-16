@@ -174,7 +174,7 @@ export const SatpamTable = ({
                     </TableCell>
                   );
                 case "aksi":
-                  const isClientAction = userRole?.toLowerCase() === "client";
+                  const hideActions = userRole?.toLowerCase() === "client" || userRole?.toLowerCase() === "cabang";
                   return (
                     <TableCell>
                       <div className="flex gap-2 w-max mx-auto justify-center">
@@ -188,7 +188,7 @@ export const SatpamTable = ({
                             <IoMdEye size={18} />
                           </Button>
                         </Tooltip>
-                        {!isClientAction && (
+                        {!hideActions && (
                           <>
                             <Tooltip content="Ubah">
                               <Button

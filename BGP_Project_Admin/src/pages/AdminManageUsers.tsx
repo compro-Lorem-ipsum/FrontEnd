@@ -4,6 +4,7 @@ import { useUserManagement } from "../hooks/useUserManagement";
 import { UserListTable } from "../Components/users/UserListTable";
 import { AddUserModal } from "../Components/users/AddUserModal";
 import { DeleteConfirmationModal } from "../Components/common/DeleteConfirmationModal";
+import { getRole } from "../Utils/helpers";
 
 const AdminManageUsers = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -22,6 +23,7 @@ const AdminManageUsers = () => {
     refreshData,
     deleteState,
   } = useUserManagement();
+  const role = getRole() || "";
 
   return (
     <div className="flex flex-col p-5">
@@ -30,13 +32,15 @@ const AdminManageUsers = () => {
           <h2 className="font-semibold text-[25px] text-[#122C93]">
             Manage Client
           </h2>
-          <Button
-            variant="solid"
-            onPress={onOpen}
-            className="bg-[#122C93] text-white font-semibold w-30 h-12 text-[16px]"
-          >
-            Tambah +
-          </Button>
+          {role !== "cabang" && (
+            <Button
+              variant="solid"
+              onPress={onOpen}
+              className="bg-[#122C93] text-white font-semibold w-30 h-12 text-[16px]"
+            >
+              Tambah +
+            </Button>
+          )}
         </div>
 
         <div className="container-search rounded-2xl flex flex-row gap-3 items-center bg-[#FFFFFF] p-3 border border-[#E4E9F7] mt-2">
@@ -88,6 +92,7 @@ const AdminManageUsers = () => {
             loading={loading}
             hasMore={hasMore}
             currentPage={currentPage}
+            userRole={role}
             onNextPage={handleNextPage}
             onPrevPage={handlePrevPage}
             onDeleteClick={deleteState.confirm}

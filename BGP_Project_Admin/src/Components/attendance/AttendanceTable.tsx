@@ -162,13 +162,15 @@ export const AttendanceTable = ({
                     <BiMessageDetail className="text-base" />
                   </button>
                 )}
-                <button
-                  className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
-                  onClick={() => onEdit(item.uuid)}
-                  title="Ubah Data"
-                >
-                  <FaRegEdit className="text-base" />
-                </button>
+                {role !== "cabang" && (
+                  <button
+                    className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] cursor-pointer"
+                    onClick={() => onEdit(item.uuid)}
+                    title="Ubah Data"
+                  >
+                    <FaRegEdit className="text-base" />
+                  </button>
+                )}
                 <button
                   className="border border-[#C7D2FE] text-[#122C93] rounded-lg p-2 hover:bg-[#F5F7FF] flex cursor-pointer"
                   onClick={() => onDownload(item.uuid)}

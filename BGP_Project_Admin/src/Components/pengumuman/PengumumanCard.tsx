@@ -8,6 +8,7 @@ interface PengumumanCardProps {
   onPressEdit?: (item: Announcement) => void;
   onPressDelete?: (item: Announcement) => void;
   hideActions?: boolean;
+  hideMitra?: boolean;
 }
 
 export const PengumumanCard = ({
@@ -15,6 +16,7 @@ export const PengumumanCard = ({
   onPressEdit,
   onPressDelete,
   hideActions = false,
+  hideMitra = false,
 }: PengumumanCardProps) => {
   const dateObj = new Date(item.datetime);
   const formattedDate = dateObj.toLocaleDateString("id-ID", {
@@ -68,7 +70,7 @@ export const PengumumanCard = ({
             </button>
           </div>
         )}
-        {!hideActions && (
+        {!hideMitra && (
           <div className="assign-to mt-auto">
             <h2 className="text-xs bg-[#DBEAFE] px-3 py-1 border border-[#122C93] font-light rounded-full whitespace-nowrap">
               {item.recipient_type === "all_client" ? "Semua Mitra" : "Mitra"}

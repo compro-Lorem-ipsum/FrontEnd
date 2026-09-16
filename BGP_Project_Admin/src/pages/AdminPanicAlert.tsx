@@ -84,7 +84,8 @@ const AdminPanicAlert = () => {
     { name: "Waktu", uid: "waktu" },
     { name: "Status", uid: "status" }
   );
-  if (role !== "admin") {
+  const roleLower = role?.toLowerCase() || "";
+  if (roleLower !== "cabang" && roleLower !== "admin") {
     columns.push({ name: "Aksi", uid: "aksi" });
   }
 

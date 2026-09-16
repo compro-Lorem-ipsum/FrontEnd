@@ -60,14 +60,14 @@ const Sidebar = () => {
       name: "Approval Akun",
       icon: <BsPersonFillCheck className="text-xl" />,
       path: "/AdminAprovalAkun",
-      hidden: role !== "admin",
+      hidden: role !== "admin" && role !== "cabang",
     },
     {
       key: "manage-admin",
       name: "Manage Client",
       icon: <IoMdSettings className="text-xl" />,
       path: "/AdminManageUsers",
-      hidden: role !== "admin",
+      hidden: role !== "admin" && role !== "cabang",
     },
     {
       key: "manage-cabang",

@@ -18,16 +18,25 @@ interface UserListTableProps {
   loading: boolean;
   hasMore: boolean;
   currentPage: number;
+  userRole: string;
   onNextPage: () => void;
   onPrevPage: () => void;
   onDeleteClick: (uuid: string) => void;
 }
+
+const INITIAL_COLUMNS = [
+  { name: "Nama Mitra", uid: "nama" },
+  { name: "Email", uid: "email" },
+  { name: "Pembuatan", uid: "created_at" },
+  { name: "Aksi", uid: "aksi" },
+];
 
 export const UserListTable = ({
   users,
   loading,
   hasMore,
   currentPage,
+  userRole,
   onNextPage,
   onPrevPage,
   onDeleteClick,
@@ -39,6 +48,11 @@ export const UserListTable = ({
       </div>
     );
   }
+
+  const columns =
+    userRole?.toLowerCase() === "cabang"
+      ? INITIAL_COLUMNS.filter((col) => col.uid !== "aksi")
+      : INITIAL_COLUMNS;
 
   return (
     <Table
@@ -63,36 +77,60 @@ export const UserListTable = ({
         </div>
       }
     >
-      <TableHeader>
-        <TableColumn>Nama Mitra</TableColumn>
-        <TableColumn>Email</TableColumn>
-        <TableColumn>Pembuatan</TableColumn>
-        <TableColumn className="text-center">Aksi</TableColumn>
+      <TableHeader columns={columns}>
+        {(column) => (
+          <TableColumn
+            key={column.uid}
+            align={column.uid === "aksi" ? "center" : "start"}
+          >
+            {column.name}
+          </TableColumn>
+        )}
       </TableHeader>
-      <TableBody emptyContent={"Tidak ada data user"}>
-        {users.map((item) => (
+      <TableBody items={users} emptyContent={"Tidak ada data user"}>
+        {(item) => (
           <TableRow key={item.uuid}>
-            <TableCell>
-              <div className="max-w-[250px] truncate" title={item.nama}>{item.nama}</div>
-            </TableCell>
-            <TableCell>
-              <div className="max-w-[300px] truncate" title={item.email}>{item.email}</div>
-            </TableCell>
-            <TableCell>{formatTanggal(item.created_at)}</TableCell>
-            <TableCell>
-              <div className="flex justify-center">
-                <Button
-                  size="sm"
-                  className="bg-[#A70202] text-white font-semibold"
-                  startContent={<FaTrash />}
-                  onPress={() => onDeleteClick(item.uuid)}
-                >
-                  Hapus
-                </Button>
-              </div>
-            </TableCell>
+            {(columnKey) => {
+              switch (columnKey) {
+                case "nama":
+                  return (
+                    <TableCell>
+                      <div className="max-w-[250px] truncate" title={item.nama}>
+                        {item.nama}
+                      </div>
+                    </TableCell>
+                  );
+                case "email":
+                  return (
+                    <TableCell>
+                      <div className="max-w-[300px] truncate" title={item.email}>
+                        {item.email}
+                      </div>
+                    </TableCell>
+                  );
+                case "created_at":
+                  return <TableCell>{formatTanggal(item.created_at)}</TableCell>;
+                case "aksi":
+                  return (
+                    <TableCell>
+                      <div className="flex justify-center">
+                        <Button
+                          size="sm"
+                          className="bg-[#A70202] text-white font-semibold"
+                          startContent={<FaTrash />}
+                          onPress={() => onDeleteClick(item.uuid)}
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    </TableCell>
+                  );
+                default:
+                  return <TableCell>-</TableCell>;
+              }
+            }}
           </TableRow>
-        ))}
+        )}
       </TableBody>
     </Table>
   );

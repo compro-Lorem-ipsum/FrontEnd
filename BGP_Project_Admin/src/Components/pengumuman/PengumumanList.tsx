@@ -43,7 +43,8 @@ export const PengumumanList = ({
               item={item}
               onPressEdit={onEdit}
               onPressDelete={onDelete}
-              hideActions={userRole === "client"}
+              hideActions={userRole === "client" || userRole?.toLowerCase() === "cabang"}
+              hideMitra={userRole === "client"}
             />
           ))
         )}

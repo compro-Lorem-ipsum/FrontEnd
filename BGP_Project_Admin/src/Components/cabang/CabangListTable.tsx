@@ -1,0 +1,99 @@
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+  Spinner,
+  Button,
+  Pagination,
+} from "@heroui/react";
+import { FaTrash } from "react-icons/fa";
+import type { User as Cabang } from "../../types/user";
+import { formatTanggal } from "../../Utils/helpers";
+
+interface CabangListTableProps {
+  cabangs: Cabang[];
+  loading: boolean;
+  hasMore: boolean;
+  currentPage: number;
+  onNextPage: () => void;
+  onPrevPage: () => void;
+  onDeleteClick: (uuid: string) => void;
+}
+
+export const CabangListTable = ({
+  cabangs,
+  loading,
+  hasMore,
+  currentPage,
+  onNextPage,
+  onPrevPage,
+  onDeleteClick,
+}: CabangListTableProps) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-10">
+        <Spinner label="Memuat data..." />
+      </div>
+    );
+  }
+
+  return (
+    <Table
+      aria-label="Tabel Data Cabang"
+      shadow="none"
+      isStriped
+      className="rounded-xl border border-gray-200"
+      bottomContent={
+        <div className="flex w-full justify-center items-center px-4 py-2">
+          <Pagination
+            showControls
+            page={currentPage}
+            total={Math.max(currentPage + (hasMore ? 1 : 0), 1)}
+            onChange={(page) => {
+              if (page > currentPage) onNextPage();
+              else if (page < currentPage) onPrevPage();
+            }}
+            classNames={{
+              item: "[&:not([data-active=true])]:hidden",
+            }}
+          />
+        </div>
+      }
+    >
+      <TableHeader>
+        <TableColumn>Nama Cabang</TableColumn>
+        <TableColumn>Email</TableColumn>
+        <TableColumn>Pembuatan</TableColumn>
+        <TableColumn className="text-center">Aksi</TableColumn>
+      </TableHeader>
+      <TableBody emptyContent={"Tidak ada data cabang"}>
+        {cabangs.map((item) => (
+          <TableRow key={item.uuid || item.user_uuid}>
+            <TableCell>
+              <div className="max-w-[250px] truncate" title={item.nama}>{item.nama}</div>
+            </TableCell>
+            <TableCell>
+              <div className="max-w-[300px] truncate" title={item.email}>{item.email}</div>
+            </TableCell>
+            <TableCell>{formatTanggal(item.created_at)}</TableCell>
+            <TableCell>
+              <div className="flex justify-center">
+                <Button
+                  size="sm"
+                  className="bg-[#A70202] text-white font-semibold"
+                  startContent={<FaTrash />}
+                  onPress={() => onDeleteClick(item.uuid || item.user_uuid)}
+                >
+                  Hapus
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};

@@ -4,6 +4,7 @@ import { useSatpamData } from "../hooks/useSatpamData";
 import { useApprovalAkun } from "../hooks/useApprovalAkun";
 import { ApprovalAkunTable } from "../Components/satpam/ApprovalAkunTable";
 import { ApprovalAkunModal } from "../Components/satpam/ApprovalAkunModal";
+import { getRole } from "../Utils/helpers";
 
 const AdminAprovalAkun = () => {
   const { 
@@ -25,6 +26,7 @@ const AdminAprovalAkun = () => {
   } = useSatpamData();
   
   const { modalState, approvalState, actions } = useApprovalAkun(refreshData);
+  const role = getRole() || "";
 
   return (
     <div className="flex flex-col p-5">
@@ -124,6 +126,7 @@ const AdminAprovalAkun = () => {
             limit={limit}
             currentPage={currentPage}
             isRejecting={approvalState.isRejecting}
+            userRole={role}
             onNextPage={handleNextPage}
             onPrevPage={handlePrevPage}
             onApproveConfirm={actions.handleOpenModal}
